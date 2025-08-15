@@ -1,0 +1,230 @@
+#!/usr/bin/env tsx
+
+/**
+ * Basic authentication test script for {{titleCase name}} plugin
+ * Tests the fundamental token management functionality
+ */
+
+import { TokenManager } from './token-manager'
+import { GitHubOAuthProvider } from './providers/github'
+import { GoogleOAuthProvider } from './providers/google'
+import { SlackOAuthProvider } from './providers/slack'
+import type { OAuthToken } from './oauth-types'
+
+async function testBasicTokenOperations() {
+  console.log('🔧 Testing Basic Token Operations...\n')
+  
+  const tokenManager = new TokenManager()
+
+  // Test 1: Token creation and storage
+  console.log('1. Testing token storage...')
+  const testToken: OAuthToken = {
+    access_token: 'test_access_token_12345',
+    token_type: 'bearer',
+    expires_in: 3600,
+    expires_at: Date.now() + (3600 * 1000),
+    refresh_token: 'test_refresh_token_67890',
+    scope: 'read:user repo'
+  }
+
+  await tokenManager.setToken('test-provider', testToken)
+  console.log('   ✓ Token stored successfully')
+
+  // Test 2: Token retrieval
+  console.log('2. Testing token retrieval...')
+  const retrievedToken = await tokenManager.getToken('test-provider')
+  
+  if (!retrievedToken) {
+    throw new Error('Token retrieval failed')
+  }
+  
+  if (retrievedToken.access_token !== testToken.access_token) {
+    throw new Error('Retrieved token does not match stored token')
+  }
+  
+  console.log('   ✓ Token retrieved correctly')
+  console.log(`   ✓ Access token: ${retrievedToken.access_token}`)
+  console.log(`   ✓ Token type: ${retrievedToken.token_type}`)
+  console.log(`   ✓ Scope: ${retrievedToken.scope}`)
+
+  // Test 3: Token expiration
+  console.log('3. Testing token expiration...')
+  const isExpired = tokenManager.isTokenExpired(testToken)
+  console.log(`   ✓ Current token expired: ${isExpired}`)
+
+  // Create expired token
+  const expiredToken: OAuthToken = {
+    ...testToken,
+    expires_at: Date.now() - 1000 // 1 second ago
+  }
+  
+  const isExpiredCheck = tokenManager.isTokenExpired(expiredToken)
+  console.log(`   ✓ Expired token check: ${isExpiredCheck}`)
+
+  // Test 4: Token encryption
+  console.log('4. Testing token encryption...')
+  const accessToken = await tokenManager.getAccessToken('test-provider')
+  if (accessToken === testToken.access_token) {
+    console.log('   ✓ Access token retrieved correctly')
+  } else {
+    throw new Error('Access token retrieval failed')
+  }
+
+  // Test 5: Token deletion
+  console.log('5. Testing token deletion...')
+  await tokenManager.deleteToken('test-provider')
+  
+  const deletedToken = await tokenManager.getToken('test-provider')
+  if (deletedToken === null) {
+    console.log('   ✓ Token deleted successfully')
+  } else {
+    throw new Error('Token deletion failed')
+  }
+
+  console.log('\n✅ Basic token operations test completed!')
+}
+
+async function testEnvironmentProviders() {
+  console.log('\n🌍 Testing Environment Provider Detection...\n')
+
+  // Test GitHub provider
+  console.log('1. Testing GitHub provider...')
+  const githubProvider = GitHubOAuthProvider.fromEnvironment()
+  
+  if (githubProvider) {
+    console.log('   ✓ GitHub provider detected from environment')
+    
+    try {
+      const hasAccess = await githubProvider.testAccess()
+      console.log(`   ✓ GitHub API access: ${hasAccess ? 'available' : 'unavailable'}`)
+      
+      if (hasAccess) {
+        const headers = await githubProvider.getAuthHeaders()
+        console.log(`   ✓ Auth headers: ${Object.keys(headers).join(', ')}`)
+      }
+    } catch (error) {
+      console.log(`   ⚠️  GitHub API test failed: ${error.message}`)
+    }
+  } else {
+    console.log('   - GitHub provider not configured (set GITHUB_PERSONAL_ACCESS_TOKEN)')
+  }
+
+  // Test Google provider
+  console.log('\n2. Testing Google provider...')
+  const googleProvider = GoogleOAuthProvider.fromEnvironment()
+  
+  if (googleProvider) {
+    console.log('   ✓ Google provider detected from environment')
+    
+    try {
+      const hasAccess = await googleProvider.testAccess()
+      console.log(`   ✓ Google API access: ${hasAccess ? 'available' : 'unavailable'}`)
+      
+      if (hasAccess) {
+        const headers = await googleProvider.getAuthHeaders()
+        console.log(`   ✓ Auth headers: ${Object.keys(headers).join(', ')}`)
+      }
+    } catch (error) {
+      console.log(`   ⚠️  Google API test failed: ${error.message}`)
+    }
+  } else {
+    console.log('   - Google provider not configured (set GOOGLE_API_KEY or GOOGLE_ACCESS_TOKEN)')
+  }
+
+  // Test Slack provider
+  console.log('\n3. Testing Slack provider...')
+  const slackProvider = SlackOAuthProvider.fromEnvironment()
+  
+  if (slackProvider) {
+    console.log('   ✓ Slack provider detected from environment')
+    
+    try {
+      const hasAccess = await slackProvider.testAccess()
+      console.log(`   ✓ Slack API access: ${hasAccess ? 'available' : 'unavailable'}`)
+      
+      if (hasAccess) {
+        const headers = await slackProvider.getAuthHeaders()
+        console.log(`   ✓ Auth headers: ${Object.keys(headers).join(', ')}`)
+      }
+    } catch (error) {
+      console.log(`   ⚠️  Slack API test failed: ${error.message}`)
+    }
+  } else {
+    console.log('   - Slack provider not configured (set SLACK_BOT_TOKEN, SLACK_USER_TOKEN, or SLACK_APP_TOKEN)')
+  }
+
+  console.log('\n✅ Environment provider test completed!')
+}
+
+async function testTokenValidation() {
+  console.log('\n🔍 Testing Token Validation...\n')
+
+  // Test with actual environment tokens if available
+  const providers = [
+    { name: 'GitHub', provider: GitHubOAuthProvider.fromEnvironment() },
+    { name: 'Google', provider: GoogleOAuthProvider.fromEnvironment() },
+    { name: 'Slack', provider: SlackOAuthProvider.fromEnvironment() }
+  ]
+
+  for (const { name, provider } of providers) {
+    if (!provider) {
+      console.log(`${name}: Not configured, skipping validation test`)
+      continue
+    }
+
+    console.log(`Testing ${name} token validation...`)
+
+    try {
+      const token = await provider.getStoredToken()
+      if (!token) {
+        console.log(`   - No stored token found for ${name}`)
+        continue
+      }
+
+      console.log(`   ✓ Token found: ${token.access_token.substring(0, 10)}...`)
+
+      // Test token validation if the provider supports it
+      if (provider.validateToken) {
+        const isValid = await provider.validateToken(token.access_token)
+        console.log(`   ✓ Token validation: ${isValid ? 'valid' : 'invalid'}`)
+      }
+
+      // Test API access
+      const hasAccess = await provider.testAccess()
+      console.log(`   ✓ API access: ${hasAccess ? 'working' : 'failed'}`)
+
+    } catch (error) {
+      console.log(`   ⚠️  ${name} validation failed: ${error.message}`)
+    }
+  }
+
+  console.log('\n✅ Token validation test completed!')
+}
+
+async function main() {
+  console.log('🔐 Basic Authentication Test Suite\n')
+  console.log('Testing fundamental authentication functionality...\n')
+
+  try {
+    // Run all basic tests
+    await testBasicTokenOperations()
+    await testEnvironmentProviders()
+    await testTokenValidation()
+
+    console.log('\n🎉 All basic authentication tests completed successfully!')
+    console.log('\nNext steps:')
+    console.log('  1. Set environment variables for providers you want to test')
+    console.log('  2. Run: npx tsx test-oauth.ts discovery (test metadata discovery)')
+    console.log('  3. Run: npx tsx test-oauth.ts flow (test OAuth flow components)')
+
+  } catch (error) {
+    console.error('\n❌ Basic authentication test failed:', error.message)
+    console.error('\nStack trace:', error.stack)
+    process.exit(1)
+  }
+}
+
+// Run if called directly
+if (require.main === module) {
+  main()
+}

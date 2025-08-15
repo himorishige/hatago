@@ -1,6 +1,7 @@
 import helloHatago from './hello-hatago.js'
 import oauthMetadata from './oauth-metadata.js'
 import { enhancedMcpProxy } from './enhanced-mcp-proxy.js'
+import { githubOAuthTestPlugin } from './github-oauth-test.js'
 
 // Environment variables with defaults
 const REQUIRE_AUTH = process.env.REQUIRE_AUTH === 'true'
@@ -20,4 +21,6 @@ export const defaultPlugins = [
   enhancedMcpProxy({
     useConfig: true, // Load from hatago.config.json
   }),
+  // GitHub OAuth Test Plugin
+  githubOAuthTestPlugin,
 ]

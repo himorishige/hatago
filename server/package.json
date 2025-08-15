@@ -6,18 +6,23 @@
   "description": "Hatago: lightweight, fast, simple remote MCP server with plugin architecture (Hono + @hono/mcp)",
   "scripts": {
     "dev": "tsx src/dev-node.ts",
+    "dev:stdio": "tsx src/stdio-server.ts",
     "dev:cf": "wrangler dev src/worker.ts",
     "build": "tsc -p tsconfig.json",
+    "build:stdio": "tsc src/stdio-server.ts --outDir dist --module ESNext --moduleResolution node --target ES2022",
     "typecheck": "tsc --noEmit",
-    "start": "node --enable-source-maps dist/dev-node.js"
+    "start": "node --enable-source-maps dist/dev-node.js",
+    "start:stdio": "node --enable-source-maps dist/stdio-server.js"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
+    "@himorishige/noren-core": "^0.6.2",
+    "@himorishige/noren-plugin-security": "^0.6.2",
     "@hono/mcp": "file:../docs/dist",
     "@hono/node-server": "^1.18.2",
-    "@modelcontextprotocol/sdk": "^1.17.2",
+    "@modelcontextprotocol/sdk": "^1.17.3",
     "hono": "^4.9.1",
     "zod": "^3.25.76"
   },

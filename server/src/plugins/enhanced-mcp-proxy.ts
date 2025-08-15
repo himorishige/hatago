@@ -6,6 +6,7 @@ import type {
 } from '../config/types.js'
 import { NamespaceManager } from '../config/namespace-manager.js'
 import { loadConfig } from '../config/loader.js'
+import { logger } from '../utils/logger.js'
 
 // Legacy type compatibility
 interface LegacyMCPServerConfig {
@@ -89,7 +90,10 @@ class EnhancedMCPClient {
       await this.initialize()
       return true
     } catch (error) {
-      console.warn(`Health check failed for ${this.config.id}:`, error)
+      logger.warn('Health check failed', {
+        server_id: this.config.id,
+        error: { message: (error as Error).message }
+      })
       return false
     }
   }
@@ -231,9 +235,11 @@ export const enhancedMcpProxy =
           namespaceStrategy: 'prefix',
           conflictResolution: 'error',
         }
-        console.log('Enhanced MCP Proxy: Using configuration file')
+        logger.info('Enhanced MCP Proxy using configuration file')
       } catch (error) {
-        console.warn('Enhanced MCP Proxy: Failed to load config file, falling back to options')
+        logger.warn('Enhanced MCP Proxy failed to load config file, falling back to options', {
+          error: { message: (error as Error).message }
+        })
         proxyConfig = createLegacyConfig(options)
       }
     } else {
@@ -244,11 +250,14 @@ export const enhancedMcpProxy =
     namespaceManager = new NamespaceManager(proxyConfig)
 
     if (proxyConfig.servers.length === 0) {
-      console.warn('Enhanced MCP Proxy: No servers configured, skipping')
+      logger.warn('Enhanced MCP Proxy: No servers configured, skipping')
       return
     }
 
-    console.log(`Enhanced MCP Proxy: Connecting to ${proxyConfig.servers.length} server(s)`)
+    logger.info('Enhanced MCP Proxy: Connecting to servers', {
+      server_count: proxyConfig.servers.length,
+      servers: proxyConfig.servers.map(s => ({ id: s.id, endpoint: s.endpoint }))
+    })
 
     // Connect to each server and register their tools
     const connectionPromises = proxyConfig.servers.map(serverConfig =>
@@ -260,21 +269,23 @@ export const enhancedMcpProxy =
 
     // Log namespace statistics
     const stats = namespaceManager.getStatistics()
-    console.log(
-      `Enhanced MCP Proxy: Registered ${stats.totalTools} tools with ${stats.totalConflicts} conflicts`
-    )
+    logger.info('Enhanced MCP Proxy: Registration complete', {
+      total_tools: stats.totalTools,
+      conflicts: stats.totalConflicts,
+      server_counts: stats.serverCounts
+    })
 
     // Log conflicts if any
     const conflicts = namespaceManager.getConflicts()
     if (conflicts.length > 0) {
-      console.warn('Enhanced MCP Proxy: Tool name conflicts detected:')
-      conflicts.forEach(conflict => {
-        console.warn(
-          `  - ${conflict.toolName}: ${conflict.existing.server} vs ${conflict.attempted.server}`
-        )
-        if (conflict.suggestion) {
-          console.warn(`    Resolved as: ${conflict.suggestion}`)
-        }
+      logger.warn('Enhanced MCP Proxy: Tool name conflicts detected', {
+        conflict_count: conflicts.length,
+        conflicts: conflicts.map(conflict => ({
+          tool_name: conflict.toolName,
+          existing_server: conflict.existing.server,
+          attempted_server: conflict.attempted.server,
+          suggestion: conflict.suggestion
+        }))
       })
     }
 
@@ -291,22 +302,32 @@ async function connectToEnhancedServer(
   namespaceManager: NamespaceManager
 ) {
   const client = new EnhancedMCPClient(serverConfig)
+  const serverLogger = logger.child({ server_id: serverConfig.id, endpoint: serverConfig.endpoint })
 
   try {
     // Initialize connection
-    console.log(`Enhanced MCP Proxy: Connecting to ${serverConfig.id} at ${serverConfig.endpoint}`)
+    serverLogger.info('Initializing connection to MCP server')
+    const startTime = Date.now()
+    
     const initResult = await client.initialize()
-    console.log(
-      `Enhanced MCP Proxy: Connected to ${serverConfig.id}:`,
-      initResult?.result?.serverInfo || initResult
-    )
+    const duration = Date.now() - startTime
+    
+    serverLogger.info('Connection established successfully', {
+      duration_ms: duration,
+      server_info: initResult?.result?.serverInfo
+    })
 
     // List available tools
+    const toolsStartTime = Date.now()
     const toolsResult = await client.listTools()
-    console.log(`Enhanced MCP Proxy: Tools result from ${serverConfig.id}:`, toolsResult)
+    const toolsDuration = Date.now() - toolsStartTime
     const remoteTools = toolsResult?.result?.tools || []
 
-    console.log(`Enhanced MCP Proxy: Found ${remoteTools.length} tools from ${serverConfig.id}`)
+    serverLogger.info('Retrieved tools from server', {
+      tool_count: remoteTools.length,
+      duration_ms: toolsDuration,
+      tools: remoteTools.map((t: any) => t.name)
+    })
 
     // Register each remote tool through namespace manager
     for (const remoteTool of remoteTools) {
@@ -347,20 +368,25 @@ async function connectToEnhancedServer(
           }
         )
 
-        console.log(`Enhanced MCP Proxy: Registered tool ${mappedToolName} <- ${remoteTool.name}`)
+        serverLogger.debug('Tool registered successfully', {
+          tool: remoteTool.name,
+          mapped_name: mappedToolName
+        })
       } catch (error) {
         if (error instanceof Error && error.message.includes('excluded')) {
-          console.log(`Enhanced MCP Proxy: Skipped excluded tool: ${remoteTool.name}`)
+          serverLogger.debug('Tool excluded by configuration', { tool: remoteTool.name })
         } else {
-          console.error(`Enhanced MCP Proxy: Failed to register ${remoteTool.name}:`, error)
+          serverLogger.error('Failed to register tool', {
+            tool: remoteTool.name,
+            error: { message: (error as Error).message, stack: (error as Error).stack }
+          })
         }
       }
     }
   } catch (error) {
-    console.error(
-      `Enhanced MCP Proxy: Failed to connect to ${serverConfig.id} (${serverConfig.endpoint}):`,
-      error
-    )
+    serverLogger.error('Failed to connect to MCP server', {
+      error: { message: (error as Error).message, stack: (error as Error).stack }
+    })
   }
 }
 
@@ -409,12 +435,18 @@ function setupHealthChecks(servers: CoreMCPServerConfig[]) {
       setInterval(async () => {
         const isHealthy = await client.healthCheck()
         if (!isHealthy) {
-          console.warn(`Health check failed for server ${serverConfig.id}`)
+          logger.warn('Health check failed for server', {
+            server_id: serverConfig.id,
+            endpoint: serverConfig.endpoint
+          })
           // Could emit events or take corrective action here
         }
       }, interval)
 
-      console.log(`Enhanced MCP Proxy: Health check enabled for ${serverConfig.id} (${interval}ms)`)
+      logger.info('Health check enabled for server', {
+        server_id: serverConfig.id,
+        interval_ms: interval
+      })
     }
   }
 }

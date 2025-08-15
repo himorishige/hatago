@@ -1,17 +1,18 @@
 import { z } from 'zod'
 import type { HatagoPlugin } from '../system/types.ts'
+import { logger } from '../utils/logger.js'
 
 /**
  * POC: streams "Hello Hatago" via MCP progress notifications
  * and returns the final text as tool result.
  *
- * Tool name: hello.hatago
+ * Tool name: hello_hatago
  */
 export const helloHatago =
   (): HatagoPlugin =>
   ({ server }) => {
     server.registerTool(
-      'hello.hatago',
+      'hello_hatago',
       {
         title: 'Hello Hatago',
         description: 'Emit progress that spells Hello Hatago, then return the text',
@@ -29,7 +30,10 @@ export const helloHatago =
 
         const { sendNotification } = extra
         if (token && typeof sendNotification === 'function') {
-          console.log('Testing extended StreamableHTTPTransport progress notifications')
+          logger.debug('Testing extended StreamableHTTPTransport progress notifications', {
+            tool: 'hello_hatago',
+            progressToken: token
+          })
 
           // Send progress notifications for each character
           for (let i = 0; i < chars.length; i++) {
@@ -46,7 +50,11 @@ export const helloHatago =
               // No delay for performance testing
               // await new Promise(resolve => setTimeout(resolve, 100))
             } catch (error) {
-              console.error(`Progress notification ${i + 1} failed:`, (error as Error).message)
+              logger.warn(`Progress notification ${i + 1} failed`, {
+                tool: 'hello_hatago',
+                notification_index: i + 1,
+                error: { message: (error as Error).message, stack: (error as Error).stack }
+              })
             }
           }
 
@@ -62,7 +70,10 @@ export const helloHatago =
               },
             })
           } catch (error) {
-            console.error('Final progress notification failed:', (error as Error).message)
+            logger.warn('Final progress notification failed', {
+              tool: 'hello_hatago',
+              error: { message: (error as Error).message, stack: (error as Error).stack }
+            })
           }
         }
 

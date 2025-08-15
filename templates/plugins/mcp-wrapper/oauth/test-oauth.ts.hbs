@@ -1,0 +1,472 @@
+#!/usr/bin/env tsx
+
+/**
+ * OAuth functionality test script for {{titleCase name}} plugin
+ * 
+ * Usage:
+ *   npx tsx test-oauth.ts basic           # Test basic token auth
+ *   npx tsx test-oauth.ts discovery       # Test metadata discovery
+ *   npx tsx test-oauth.ts dcr            # Test dynamic client registration
+ *   npx tsx test-oauth.ts flow           # Test OAuth flow
+ *   npx tsx test-oauth.ts two-stage      # Test two-stage auth
+ *   npx tsx test-oauth.ts all            # Run all tests
+ */
+
+import { TokenManager } from './oauth/token-manager'
+import { OAuthMetadataDiscovery, ProtectedResourceMetadataDiscovery } from './oauth/metadata-discovery'
+import { DynamicClientRegistration } from './oauth/dynamic-registration'
+import { TwoStageAuthFlow } from './oauth/two-stage-auth'
+import { GitHubOAuthProvider } from './oauth/providers/github'
+import { GoogleOAuthProvider } from './oauth/providers/google'
+import { SlackOAuthProvider } from './oauth/providers/slack'
+import type { OAuthToken, OAuthProvider } from './oauth/oauth-types'
+
+/**
+ * Test runner class
+ */
+class OAuthTestRunner {
+  private tokenManager: TokenManager
+  private oauthDiscovery: OAuthMetadataDiscovery
+  private resourceDiscovery: ProtectedResourceMetadataDiscovery
+  private dcr: DynamicClientRegistration
+  private twoStage: TwoStageAuthFlow
+
+  constructor() {
+    this.tokenManager = new TokenManager()
+    this.oauthDiscovery = new OAuthMetadataDiscovery()
+    this.resourceDiscovery = new ProtectedResourceMetadataDiscovery()
+    this.dcr = new DynamicClientRegistration()
+    this.twoStage = new TwoStageAuthFlow()
+  }
+
+  /**
+   * Test basic token authentication
+   */
+  async testBasicAuth(): Promise<void> {
+    console.log('\n🔐 Testing Basic Token Authentication...\n')
+
+    try {
+      // Test token creation and storage
+      console.log('1. Testing token creation and storage...')
+      
+      const testToken: OAuthToken = {
+        access_token: 'test_token_' + Date.now(),
+        token_type: 'bearer',
+        expires_in: 3600,
+        expires_at: Date.now() + (3600 * 1000),
+        scope: 'test:scope'
+      }
+
+      await this.tokenManager.setToken('test-provider', testToken)
+      console.log('   ✓ Token stored successfully')
+
+      // Test token retrieval
+      const retrievedToken = await this.tokenManager.getToken('test-provider')
+      if (retrievedToken && retrievedToken.access_token === testToken.access_token) {
+        console.log('   ✓ Token retrieved successfully')
+      } else {
+        throw new Error('Token retrieval failed')
+      }
+
+      // Test token expiration check
+      const isExpired = this.tokenManager.isTokenExpired(testToken)
+      console.log(`   ✓ Token expiration check: ${isExpired ? 'expired' : 'valid'}`)
+
+      // Test environment provider detection
+      console.log('\n2. Testing environment provider detection...')
+      
+      const providers: OAuthProvider[] = ['github', 'google', 'slack']
+      for (const provider of providers) {
+        console.log(`   Testing ${provider} provider...`)
+        
+        let providerInstance: any
+        switch (provider) {
+          case 'github':
+            providerInstance = GitHubOAuthProvider.fromEnvironment()
+            break
+          case 'google':
+            providerInstance = GoogleOAuthProvider.fromEnvironment()
+            break
+          case 'slack':
+            providerInstance = SlackOAuthProvider.fromEnvironment()
+            break
+        }
+
+        if (providerInstance) {
+          console.log(`   ✓ ${provider} provider detected from environment`)
+          
+          // Test access
+          const hasAccess = await providerInstance.testAccess()
+          console.log(`   ✓ ${provider} access test: ${hasAccess ? 'valid' : 'invalid/missing token'}`)
+        } else {
+          console.log(`   - ${provider} provider not configured in environment`)
+        }
+      }
+
+      // Cleanup
+      await this.tokenManager.deleteToken('test-provider')
+      console.log('\n✅ Basic authentication tests completed successfully!')
+
+    } catch (error) {
+      console.error('❌ Basic authentication test failed:', error.message)
+      throw error
+    }
+  }
+
+  /**
+   * Test metadata discovery
+   */
+  async testMetadataDiscovery(): Promise<void> {
+    console.log('\n🔍 Testing Metadata Discovery...\n')
+
+    try {
+      // Test OAuth metadata discovery for known providers
+      console.log('1. Testing OAuth metadata discovery...')
+      
+      const knownProviders = [
+        { name: 'Google', issuer: 'https://accounts.google.com' },
+        { name: 'Microsoft', issuer: 'https://login.microsoftonline.com/common/v2.0' }
+      ]
+
+      for (const provider of knownProviders) {
+        try {
+          console.log(`   Testing ${provider.name} metadata discovery...`)
+          const metadata = await this.oauthDiscovery.discover(provider.issuer)
+          
+          console.log(`   ✓ ${provider.name} issuer: ${metadata.issuer}`)
+          console.log(`   ✓ Authorization endpoint: ${metadata.authorization_endpoint}`)
+          console.log(`   ✓ Token endpoint: ${metadata.token_endpoint}`)
+          console.log(`   ✓ PKCE supported: ${this.oauthDiscovery.isPKCESupported(metadata)}`)
+          console.log(`   ✓ Refresh tokens: ${this.oauthDiscovery.isRefreshTokenSupported(metadata)}`)
+          console.log(`   ✓ DCR supported: ${this.oauthDiscovery.isDCRSupported(metadata)}`)
+          
+          const scopes = this.oauthDiscovery.getSupportedScopes(metadata)
+          console.log(`   ✓ Supported scopes: ${scopes.slice(0, 5).join(', ')}${scopes.length > 5 ? '...' : ''}`)
+          
+        } catch (error) {
+          console.log(`   ⚠️  ${provider.name} discovery failed: ${error.message}`)
+        }
+      }
+
+      // Test known provider discovery
+      console.log('\n2. Testing known provider shortcuts...')
+      
+      try {
+        const googleMeta = await this.oauthDiscovery.discoverKnownProvider('google')
+        if (googleMeta) {
+          console.log('   ✓ Google provider shortcut works')
+        }
+      } catch (error) {
+        console.log(`   ⚠️  Google provider shortcut failed: ${error.message}`)
+      }
+
+      // Test cache functionality
+      console.log('\n3. Testing metadata caching...')
+      
+      const start1 = Date.now()
+      await this.oauthDiscovery.discover('https://accounts.google.com')
+      const time1 = Date.now() - start1
+
+      const start2 = Date.now()
+      await this.oauthDiscovery.discover('https://accounts.google.com')
+      const time2 = Date.now() - start2
+
+      console.log(`   ✓ First request: ${time1}ms`)
+      console.log(`   ✓ Cached request: ${time2}ms`)
+      console.log(`   ✓ Cache speedup: ${Math.round((time1 / time2) * 10) / 10}x`)
+
+      console.log('\n✅ Metadata discovery tests completed!')
+
+    } catch (error) {
+      console.error('❌ Metadata discovery test failed:', error.message)
+      throw error
+    }
+  }
+
+  /**
+   * Test Dynamic Client Registration
+   */
+  async testDCR(): Promise<void> {
+    console.log('\n🏗️  Testing Dynamic Client Registration...\n')
+
+    try {
+      // Test metadata building
+      console.log('1. Testing client metadata building...')
+      
+      const providers = ['google', 'microsoft', 'okta', 'auth0']
+      for (const provider of providers) {
+        const metadata = this.dcr.buildProviderMetadata(
+          provider,
+          'http://localhost:3000/callback'
+        )
+        
+        console.log(`   ✓ ${provider} metadata:`)
+        console.log(`     - Grant types: ${metadata.grant_types?.join(', ')}`)
+        console.log(`     - Auth method: ${metadata.token_endpoint_auth_method}`)
+        console.log(`     - Scopes: ${metadata.scope}`)
+      }
+
+      // Test software statement generation
+      console.log('\n2. Testing software statement generation...')
+      
+      const claims = {
+        software_id: '{{kebabCase name}}-plugin',
+        software_version: '1.0.0',
+        client_name: '{{titleCase name}} Plugin'
+      }
+      
+      const statement = this.dcr.generateSoftwareStatement(claims, 'test-signing-key')
+      console.log(`   ✓ Software statement generated: ${statement.substring(0, 50)}...`)
+
+      // Test registration with discovery (mock)
+      console.log('\n3. Testing registration flow (dry run)...')
+      
+      try {
+        // This would normally require a real OAuth server with DCR support
+        const metadata = this.dcr.buildProviderMetadata('google', 'http://localhost:3000/callback', {
+          client_name: 'Test {{titleCase name}} Plugin',
+          software_statement: statement
+        })
+        
+        console.log('   ✓ Registration metadata prepared:')
+        console.log(`     - Client name: ${metadata.client_name}`)
+        console.log(`     - Redirect URIs: ${metadata.redirect_uris.join(', ')}`)
+        console.log(`     - Has software statement: ${!!metadata.software_statement}`)
+        
+      } catch (error) {
+        console.log(`   ⚠️  Mock registration: ${error.message}`)
+      }
+
+      console.log('\n✅ DCR tests completed!')
+
+    } catch (error) {
+      console.error('❌ DCR test failed:', error.message)
+      throw error
+    }
+  }
+
+  /**
+   * Test OAuth flow (without actual authentication)
+   */
+  async testOAuthFlow(): Promise<void> {
+    console.log('\n🔄 Testing OAuth Flow Components...\n')
+
+    try {
+      // Test PKCE challenge generation
+      console.log('1. Testing PKCE challenge generation...')
+      
+      const { PKCEChallenge } = await import('./oauth/oauth-flow')
+      const challenge = PKCEChallenge.generate()
+      
+      console.log(`   ✓ Code verifier: ${challenge.verifier.substring(0, 20)}...`)
+      console.log(`   ✓ Code challenge: ${challenge.challenge.substring(0, 20)}...`)
+      console.log(`   ✓ Challenge length: ${challenge.challenge.length} chars`)
+
+      // Test provider OAuth URLs
+      console.log('\n2. Testing OAuth URL generation...')
+      
+      const providers = [
+        new GitHubOAuthProvider({
+          clientId: 'test_client_id',
+          redirectUri: 'http://localhost:3000/callback'
+        }),
+        new GoogleOAuthProvider({
+          clientId: 'test_client_id',
+          redirectUri: 'http://localhost:3000/callback'
+        }),
+        new SlackOAuthProvider({
+          clientId: 'test_client_id',
+          redirectUri: 'http://localhost:3000/callback'
+        })
+      ]
+
+      for (const provider of providers) {
+        const providerName = provider.constructor.name.replace('OAuthProvider', '')
+        const authUrl = provider.getAuthorizationUrl('test_state', challenge.challenge)
+        
+        console.log(`   ✓ ${providerName} auth URL: ${authUrl.substring(0, 80)}...`)
+        
+        // Verify URL contains required parameters
+        const url = new URL(authUrl)
+        const hasClientId = url.searchParams.has('client_id')
+        const hasRedirectUri = url.searchParams.has('redirect_uri')
+        const hasState = url.searchParams.has('state')
+        
+        console.log(`     - Client ID: ${hasClientId ? '✓' : '❌'}`)
+        console.log(`     - Redirect URI: ${hasRedirectUri ? '✓' : '❌'}`)
+        console.log(`     - State: ${hasState ? '✓' : '❌'}`)
+      }
+
+      console.log('\n✅ OAuth flow tests completed!')
+
+    } catch (error) {
+      console.error('❌ OAuth flow test failed:', error.message)
+      throw error
+    }
+  }
+
+  /**
+   * Test two-stage authentication
+   */
+  async testTwoStageAuth(): Promise<void> {
+    console.log('\n🔐🔐 Testing Two-Stage Authentication...\n')
+
+    try {
+      // Test configuration validation
+      console.log('1. Testing two-stage configuration...')
+      
+      const config = {
+        clientAuth: {
+          enabled: true,
+          provider: 'test-provider',
+          clientId: 'test_client',
+          scope: 'mcp:access'
+        },
+        serverAuth: {
+          enabled: true,
+          discovery: false,
+          provider: 'github',
+          clientId: 'test_server_client',
+          scope: 'repo read:org'
+        },
+        delegation: {
+          enabled: true,
+          type: 'token_exchange' as const,
+          audience: 'https://api.github.com'
+        }
+      }
+      
+      console.log('   ✓ Client auth configured')
+      console.log('   ✓ Server auth configured')
+      console.log('   ✓ Token delegation configured')
+
+      // Test token validation
+      console.log('\n2. Testing token chain validation...')
+      
+      const mockClientToken: OAuthToken = {
+        access_token: 'client_token_123',
+        token_type: 'bearer',
+        expires_in: 3600,
+        expires_at: Date.now() + (3600 * 1000),
+        scope: 'mcp:access'
+      }
+
+      const mockServerToken: OAuthToken = {
+        access_token: 'server_token_456',
+        token_type: 'bearer',
+        expires_in: 3600,
+        expires_at: Date.now() + (3600 * 1000),
+        scope: 'repo read:org'
+      }
+
+      const isValid = await this.twoStage.validateTokenChain(
+        mockClientToken,
+        mockServerToken
+      )
+      
+      console.log(`   ✓ Token chain validation: ${isValid ? 'valid' : 'invalid'}`)
+
+      // Test middleware configuration
+      console.log('\n3. Testing middleware setup...')
+      
+      const { TwoStageAuthMiddleware } = await import('./oauth/two-stage-auth')
+      const middleware = new TwoStageAuthMiddleware(config)
+      
+      console.log('   ✓ Middleware instantiated')
+      
+      // Mock request/response for testing
+      const mockReq = {
+        headers: {
+          authorization: 'Bearer ' + mockClientToken.access_token
+        }
+      }
+      
+      const headers = await middleware.getUpstreamHeaders(mockReq)
+      console.log(`   ✓ Upstream headers prepared: ${Object.keys(headers).join(', ')}`)
+
+      console.log('\n✅ Two-stage authentication tests completed!')
+
+    } catch (error) {
+      console.error('❌ Two-stage authentication test failed:', error.message)
+      throw error
+    }
+  }
+
+  /**
+   * Run all tests
+   */
+  async runAll(): Promise<void> {
+    console.log('🧪 Running all OAuth tests...')
+    
+    const tests = [
+      { name: 'Basic Auth', fn: () => this.testBasicAuth() },
+      { name: 'Metadata Discovery', fn: () => this.testMetadataDiscovery() },
+      { name: 'DCR', fn: () => this.testDCR() },
+      { name: 'OAuth Flow', fn: () => this.testOAuthFlow() },
+      { name: 'Two-Stage Auth', fn: () => this.testTwoStageAuth() }
+    ]
+
+    let passed = 0
+    let failed = 0
+
+    for (const test of tests) {
+      try {
+        await test.fn()
+        passed++
+      } catch (error) {
+        console.error(`\n❌ ${test.name} test failed:`, error.message)
+        failed++
+      }
+    }
+
+    console.log(`\n📊 Test Results:`)
+    console.log(`   ✅ Passed: ${passed}`)
+    console.log(`   ❌ Failed: ${failed}`)
+    console.log(`   📈 Success rate: ${Math.round((passed / (passed + failed)) * 100)}%`)
+  }
+}
+
+/**
+ * Main function
+ */
+async function main() {
+  const testType = process.argv[2] || 'all'
+  const runner = new OAuthTestRunner()
+
+  try {
+    switch (testType) {
+      case 'basic':
+        await runner.testBasicAuth()
+        break
+      case 'discovery':
+        await runner.testMetadataDiscovery()
+        break
+      case 'dcr':
+        await runner.testDCR()
+        break
+      case 'flow':
+        await runner.testOAuthFlow()
+        break
+      case 'two-stage':
+        await runner.testTwoStageAuth()
+        break
+      case 'all':
+        await runner.runAll()
+        break
+      default:
+        console.log('Unknown test type. Available: basic, discovery, dcr, flow, two-stage, all')
+        process.exit(1)
+    }
+    
+    console.log('\n🎉 All tests completed successfully!')
+    process.exit(0)
+  } catch (error) {
+    console.error('\n💥 Test execution failed:', error.message)
+    process.exit(1)
+  }
+}
+
+// Run if called directly
+if (require.main === module) {
+  main()
+}

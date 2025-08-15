@@ -1,46 +1,6 @@
 {
   "proxy": {
-    "servers": [
-      {
-        "id": "clock",
-        "endpoint": "http://localhost:8788",
-        "namespace": "time",
-        "description": "External MCP Clock Server providing time and timezone tools",
-        "tools": {
-          "rename": {
-            "clock.getTime": "getCurrentTime",
-            "clock.getTimezone": "getTimezone"
-          },
-          "include": ["*"]
-        },
-        "timeout": 10000,
-        "healthCheck": {
-          "enabled": true,
-          "interval": 30000,
-          "timeout": 5000
-        }
-      },
-      {
-        "id": "math",
-        "endpoint": "http://localhost:8789",
-        "namespace": "calc",
-        "description": "External MCP Math Server providing calculation tools",
-        "tools": {
-          "rename": {
-            "math.calculate": "compute",
-            "math.random": "randomize"
-          },
-          "exclude": ["getTimezone"],
-          "include": ["*"]
-        },
-        "timeout": 10000,
-        "healthCheck": {
-          "enabled": true,
-          "interval": 45000,
-          "timeout": 5000
-        }
-      }
-    ],
+    "servers": [],
     "namespaceStrategy": "prefix",
     "conflictResolution": "rename",
     "namespace": {

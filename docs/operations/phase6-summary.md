@@ -16,6 +16,7 @@ Phase 6 "運用・監視機能" (Operations & Monitoring) has been successfully 
 - ✅ **SLO Burn Rate Calculation**: Multi-window burn rate detection
 
 **Key Metrics**:
+
 ```
 hatago_requests_total
 hatago_request_duration_seconds
@@ -56,6 +57,7 @@ hatago_slo_target{metric="availability_percent"} 99.95
 - ✅ **Metrics Tracking**: Request success/failure rates and queue depths
 
 **Configuration**:
+
 ```typescript
 {
   maxConcurrency: 1000,
@@ -77,6 +79,7 @@ hatago_slo_target{metric="availability_percent"} 99.95
 - ✅ **Alert Severity Levels**: Critical vs warning classification
 
 **Monitoring Stack**:
+
 - Prometheus for metrics collection and alerting
 - Grafana for visualization and dashboards
 - AlertManager for notification routing
@@ -94,6 +97,7 @@ hatago_slo_target{metric="availability_percent"} 99.95
 - ✅ **HTTP & MCP Interfaces**: Query logs via REST and MCP tools
 
 **Log Format**:
+
 ```json
 {
   "timestamp": "2024-08-15T10:30:45.123Z",
@@ -122,6 +126,7 @@ hatago_slo_target{metric="availability_percent"} 99.95
 - ✅ **Audit Logging**: Complete verification history tracking
 
 **Supported Algorithms**:
+
 - **Ed25519**: Recommended for new deployments (256-bit)
 - **RSA-PSS**: Legacy compatibility (2048-bit)
 - **ECDSA-P256**: FIPS compliance (256-bit)
@@ -169,24 +174,28 @@ hatago_slo_target{metric="availability_percent"} 99.95
 ## Production Readiness Checklist
 
 ### Infrastructure ✅
+
 - [x] Kubernetes deployment manifests
 - [x] Docker containers with health checks
 - [x] Resource requirements documented
 - [x] Scaling guidelines provided
 
 ### Monitoring ✅
+
 - [x] SLO targets defined and monitored
 - [x] Alerting rules configured
 - [x] Dashboards created
 - [x] Runbook documentation
 
 ### Security ✅
+
 - [x] Plugin signature verification
 - [x] Sensitive data redaction
 - [x] Security audit logging
 - [x] Compliance documentation
 
 ### Operations ✅
+
 - [x] Graceful shutdown implemented
 - [x] Health check endpoints
 - [x] Structured logging
@@ -195,21 +204,25 @@ hatago_slo_target{metric="availability_percent"} 99.95
 ## Performance Characteristics
 
 ### Latency
+
 - **P50**: <2ms (typical)
 - **P95**: <5ms (SLO target)
 - **P99**: <10ms (SLO target)
 
 ### Throughput
+
 - **Base Configuration**: 1000 concurrent requests
 - **Queue Capacity**: 500 pending requests
 - **Processing Rate**: 10,000+ requests/second
 
 ### Resource Usage
+
 - **Memory**: 512MB minimum, 2GB recommended
 - **CPU**: 0.5 cores minimum, 2 cores recommended
 - **Storage**: 1GB minimum, 10GB recommended
 
 ### Reliability
+
 - **Availability**: 99.95% target (26 minutes downtime/month)
 - **Error Rate**: <0.1% target
 - **Recovery Time**: <1 minute for circuit breaker reset
@@ -217,24 +230,28 @@ hatago_slo_target{metric="availability_percent"} 99.95
 ## Technology Stack Summary
 
 ### Core Technologies
+
 - **Runtime**: Node.js 18+ (primary), Cloudflare Workers, Deno, Bun
 - **Framework**: Hono (runtime-agnostic web framework)
 - **Protocol**: MCP (Model Context Protocol) over HTTP
 - **Language**: TypeScript with strict type checking
 
 ### Monitoring & Observability
+
 - **Metrics**: Prometheus with custom `hatago_*` metrics
 - **Logging**: Structured JSON with automatic request tracing
 - **Dashboards**: Grafana with SLO-focused visualizations
 - **Alerting**: AlertManager with multi-channel routing
 
 ### Security
+
 - **Signatures**: Ed25519, RSA-PSS, ECDSA-P256 via Web Crypto API
 - **Authentication**: OAuth 2.0 Bearer tokens (optional)
 - **Data Protection**: Automatic PII/credential redaction
 - **Audit**: Complete security event logging
 
 ### Development & Testing
+
 - **Testing**: Node.js test runner with integration tests
 - **Build**: TypeScript compiler with strict settings
 - **Packaging**: npm workspaces with pnpm
@@ -243,18 +260,21 @@ hatago_slo_target{metric="availability_percent"} 99.95
 ## Next Steps & Recommendations
 
 ### Immediate (Week 1)
+
 1. **Deploy monitoring stack** in staging environment
 2. **Configure alerting** for critical SLO breaches
 3. **Test graceful shutdown** in Kubernetes
 4. **Validate security policies** for production use
 
 ### Short Term (Month 1)
+
 1. **Performance testing** under production load
 2. **Security audit** of plugin verification system
 3. **Disaster recovery** procedures documentation
 4. **Team training** on operational procedures
 
 ### Long Term (Quarter 1)
+
 1. **Multi-region deployment** for high availability
 2. **Advanced security features** (HSM integration, mTLS)
 3. **Machine learning** for anomaly detection

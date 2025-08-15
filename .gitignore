@@ -10,6 +10,7 @@ node_modules
 # build artifacts
 packages/*/dist/
 packages/*/dist-test/
+server/dist/
 
 # test coverage
 coverage/

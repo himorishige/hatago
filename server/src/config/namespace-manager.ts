@@ -1,344 +1,169 @@
-import type {
-  MCPServerConfig,
-  ToolMappingInfo,
-  NamespaceConflict,
-  NamespaceConfig,
-  ProxyConfig,
-} from './types.js'
+/**
+ * Namespace manager for MCP tool names
+ */
 
-interface RemoteTool {
-  name: string
-  title?: string
-  description?: string
-  inputSchema?: any
+import type { MCPServerConfig, ProxyConfig } from './types.js'
+
+export interface ToolConflict {
+  toolName: string
+  existing: { server: string; tool: any }
+  attempted: { server: string; tool: any }
+  suggestion?: string
 }
 
-/**
- * Namespace manager for handling tool name conflicts and mapping
- */
-export class NamespaceManager {
-  private mappings = new Map<string, ToolMappingInfo>()
-  private conflicts: NamespaceConflict[] = []
-  private config: NamespaceConfig
-  private conflictResolution: 'error' | 'rename' | 'skip'
-  private namespaceStrategy: 'prefix' | 'suffix' | 'custom'
+export interface NamespaceStats {
+  totalTools: number
+  totalConflicts: number
+  serverCounts: Record<string, number>
+}
 
-  constructor(proxyConfig: ProxyConfig) {
-    this.config = proxyConfig.namespace || {
-      separator: ':',
-      caseSensitive: false,
-      maxLength: 64,
-    }
-    this.conflictResolution = proxyConfig.conflictResolution || 'error'
-    this.namespaceStrategy = proxyConfig.namespaceStrategy || 'prefix'
+export class NamespaceManager {
+  private registeredTools = new Map<string, { server: string; tool: any }>()
+  private conflicts: ToolConflict[] = []
+  private config: ProxyConfig
+
+  constructor(config: ProxyConfig) {
+    this.config = config
   }
 
   /**
-   * Register a tool from a remote server
+   * Register a tool with namespace management
    * @param serverConfig - Server configuration
-   * @param tool - Remote tool information
-   * @returns Final mapped tool name
+   * @param tool - Tool definition
+   * @returns Final tool name to use
    */
-  registerTool(serverConfig: MCPServerConfig, tool: RemoteTool): string {
-    // Apply tool filtering first
-    if (!this.shouldIncludeTool(serverConfig, tool)) {
-      throw new Error(`Tool ${tool.name} excluded by configuration`)
+  registerTool(serverConfig: MCPServerConfig, tool: any): string {
+    const originalName = tool.name
+
+    // Check if tool should be excluded
+    if (this.isToolExcluded(serverConfig, originalName)) {
+      throw new Error(`Tool ${originalName} is excluded`)
     }
 
-    // Get the base tool name (after renaming if configured)
-    const baseName = this.getBaseName(serverConfig, tool)
+    // Generate namespace-aware name
+    let finalName = this.generateToolName(serverConfig, originalName)
 
-    // Apply namespace strategy
-    const namespacedName = this.applyNamespaceStrategy(serverConfig, baseName)
+    // Handle conflicts
+    if (this.registeredTools.has(finalName)) {
+      const existing = this.registeredTools.get(finalName)!
+      const conflict: ToolConflict = {
+        toolName: originalName,
+        existing,
+        attempted: { server: serverConfig.id, tool }
+      }
 
-    // Validate tool name
-    this.validateToolName(namespacedName)
-
-    // Check for conflicts
-    const finalName = this.resolveConflicts(namespacedName, serverConfig, tool)
-
-    // Register the mapping
-    const mapping: ToolMappingInfo = {
-      original: tool.name,
-      mapped: finalName,
-      namespace: serverConfig.namespace || serverConfig.id,
-      server: serverConfig.id,
-      metadata: {
-        title: tool.title,
-        description: tool.description,
-        category: this.inferCategory(tool),
-      },
+      switch (this.config.conflictResolution) {
+        case 'error':
+          this.conflicts.push(conflict)
+          throw new Error(`Tool name conflict: ${finalName} already exists from ${existing.server}`)
+        
+        case 'skip':
+          this.conflicts.push(conflict)
+          throw new Error(`Tool ${finalName} skipped due to conflict`)
+        
+        case 'rename':
+          finalName = this.resolveConflict(serverConfig, originalName, finalName)
+          conflict.suggestion = finalName
+          this.conflicts.push(conflict)
+          break
+      }
     }
 
-    this.mappings.set(finalName, mapping)
+    // Register the tool
+    this.registeredTools.set(finalName, { 
+      server: serverConfig.id, 
+      tool: { ...tool, name: finalName } 
+    })
 
-    console.log(`Namespace: Registered ${tool.name} -> ${finalName} (${serverConfig.id})`)
     return finalName
   }
 
   /**
-   * Get all registered mappings
+   * Generate tool name with namespace strategy
    */
-  getMappings(): Map<string, ToolMappingInfo> {
-    return new Map(this.mappings)
+  private generateToolName(serverConfig: MCPServerConfig, toolName: string): string {
+    const namespace = this.config.namespace || {}
+    const separator = namespace.separator || '_'
+    
+    // Sanitize names (replace dots with separators for Claude Desktop compatibility)
+    const cleanToolName = toolName.replace(/\./g, separator)
+    
+    switch (this.config.namespaceStrategy) {
+      case 'prefix':
+        return `${serverConfig.id}${separator}${cleanToolName}`
+      
+      case 'suffix':
+        return `${cleanToolName}${separator}${serverConfig.id}`
+      
+      case 'none':
+      default:
+        return cleanToolName
+    }
   }
 
   /**
-   * Get mapping for a specific tool
+   * Resolve naming conflict by generating alternative name
    */
-  getMapping(toolName: string): ToolMappingInfo | undefined {
-    return this.mappings.get(toolName)
+  private resolveConflict(serverConfig: MCPServerConfig, originalName: string, conflictName: string): string {
+    const namespace = this.config.namespace || {}
+    const separator = namespace.separator || '_'
+    
+    for (let i = 2; i <= 10; i++) {
+      const alternative = `${conflictName}${separator}${i}`
+      if (!this.registeredTools.has(alternative)) {
+        return alternative
+      }
+    }
+
+    // Fallback to timestamp-based name
+    const timestamp = Date.now().toString(36)
+    return `${conflictName}${separator}${timestamp}`
   }
 
   /**
-   * Get all conflicts detected
+   * Check if tool should be excluded
    */
-  getConflicts(): NamespaceConflict[] {
+  private isToolExcluded(serverConfig: MCPServerConfig, toolName: string): boolean {
+    if (serverConfig.includedTools && !serverConfig.includedTools.includes(toolName)) {
+      return true
+    }
+    
+    if (serverConfig.excludedTools && serverConfig.excludedTools.includes(toolName)) {
+      return true
+    }
+    
+    return false
+  }
+
+  /**
+   * Get all registered conflicts
+   */
+  getConflicts(): ToolConflict[] {
     return [...this.conflicts]
   }
 
   /**
-   * Clear all mappings (for testing)
+   * Get namespace statistics
+   */
+  getStatistics(): NamespaceStats {
+    const serverCounts: Record<string, number> = {}
+    
+    for (const { server } of this.registeredTools.values()) {
+      serverCounts[server] = (serverCounts[server] || 0) + 1
+    }
+
+    return {
+      totalTools: this.registeredTools.size,
+      totalConflicts: this.conflicts.length,
+      serverCounts
+    }
+  }
+
+  /**
+   * Clear all registrations (for testing)
    */
   clear(): void {
-    this.mappings.clear()
-    this.conflicts = []
-  }
-
-  /**
-   * Check if tool should be included based on configuration
-   */
-  private shouldIncludeTool(serverConfig: MCPServerConfig, tool: RemoteTool): boolean {
-    const toolConfig = serverConfig.tools
-    if (!toolConfig) return true
-
-    // Check exclude list
-    if (toolConfig.exclude && this.matchesPattern(tool.name, toolConfig.exclude)) {
-      return false
-    }
-
-    // Check include list
-    if (toolConfig.include && toolConfig.include.length > 0) {
-      return this.matchesPattern(tool.name, toolConfig.include)
-    }
-
-    return true
-  }
-
-  /**
-   * Get base name for tool (apply renaming if configured)
-   */
-  private getBaseName(serverConfig: MCPServerConfig, tool: RemoteTool): string {
-    const rename = serverConfig.tools?.rename
-    if (rename && rename[tool.name]) {
-      return rename[tool.name]
-    }
-    return tool.name
-  }
-
-  /**
-   * Apply namespace strategy to tool name
-   */
-  private applyNamespaceStrategy(serverConfig: MCPServerConfig, baseName: string): string {
-    const namespace = serverConfig.namespace || serverConfig.id
-    const separator = this.config.separator || ':'
-
-    switch (this.namespaceStrategy) {
-      case 'prefix':
-        return `${namespace}${separator}${baseName}`
-      case 'suffix':
-        return `${baseName}${separator}${namespace}`
-      case 'custom':
-        // Custom strategy could be implemented here
-        return `${namespace}${separator}${baseName}`
-      default:
-        return `${namespace}${separator}${baseName}`
-    }
-  }
-
-  /**
-   * Validate tool name according to configuration
-   */
-  private validateToolName(toolName: string): void {
-    if (this.config.maxLength && toolName.length > this.config.maxLength) {
-      throw new Error(`Tool name too long: ${toolName} (max: ${this.config.maxLength})`)
-    }
-
-    // Additional validation rules can be added here
-    if (!/^[a-zA-Z0-9_:.\\-]+$/.test(toolName)) {
-      throw new Error(`Invalid characters in tool name: ${toolName}`)
-    }
-  }
-
-  /**
-   * Resolve naming conflicts
-   */
-  private resolveConflicts(
-    proposedName: string,
-    serverConfig: MCPServerConfig,
-    tool: RemoteTool
-  ): string {
-    const normalizedName = this.config.caseSensitive ? proposedName : proposedName.toLowerCase()
-    const existingMapping = this.findConflictingMapping(normalizedName)
-
-    if (!existingMapping) {
-      return proposedName
-    }
-
-    // Record the conflict
-    const conflict: NamespaceConflict = {
-      toolName: proposedName,
-      existing: existingMapping,
-      attempted: {
-        original: tool.name,
-        mapped: proposedName,
-        namespace: serverConfig.namespace || serverConfig.id,
-        server: serverConfig.id,
-      },
-    }
-
-    switch (this.conflictResolution) {
-      case 'error':
-        this.conflicts.push(conflict)
-        throw new Error(
-          `Tool name conflict: ${proposedName} already exists from ${existingMapping.server}`
-        )
-
-      case 'skip':
-        console.warn(
-          `Skipping conflicting tool: ${proposedName} (conflicts with ${existingMapping.server})`
-        )
-        throw new Error(`Tool skipped due to conflict: ${proposedName}`)
-
-      case 'rename':
-        const resolvedName = this.generateAlternativeName(proposedName, serverConfig)
-        conflict.suggestion = resolvedName
-        this.conflicts.push(conflict)
-        console.warn(`Renamed conflicting tool: ${proposedName} -> ${resolvedName}`)
-        return resolvedName
-
-      default:
-        throw new Error(`Unknown conflict resolution strategy: ${this.conflictResolution}`)
-    }
-  }
-
-  /**
-   * Find conflicting mapping (case-sensitive or insensitive)
-   */
-  private findConflictingMapping(toolName: string): ToolMappingInfo | undefined {
-    if (this.config.caseSensitive) {
-      return this.mappings.get(toolName)
-    }
-
-    // Case-insensitive search
-    for (const [key, mapping] of this.mappings) {
-      if (key.toLowerCase() === toolName.toLowerCase()) {
-        return mapping
-      }
-    }
-    return undefined
-  }
-
-  /**
-   * Generate alternative name for conflict resolution
-   */
-  private generateAlternativeName(baseName: string, serverConfig: MCPServerConfig): string {
-    const separator = this.config.separator || ':'
-    let counter = 1
-    let candidateName: string
-
-    do {
-      if (this.config.autoPrefix?.enabled) {
-        const format = this.config.autoPrefix.format
-        const prefix = format
-          .replace('{server}', serverConfig.id)
-          .replace('{index}', counter.toString())
-        candidateName = `${prefix}${separator}${baseName}`
-      } else {
-        candidateName = `${baseName}${separator}${counter}`
-      }
-      counter++
-    } while (this.findConflictingMapping(candidateName) && counter < 100)
-
-    if (counter >= 100) {
-      throw new Error(`Could not generate unique name for ${baseName} after 100 attempts`)
-    }
-
-    return candidateName
-  }
-
-  /**
-   * Check if tool name matches any pattern (supports wildcards)
-   */
-  private matchesPattern(toolName: string, patterns: string[]): boolean {
-    return patterns.some(pattern => {
-      if (pattern === '*') return true
-
-      // Convert glob pattern to regex
-      const regexPattern = pattern
-        .replace(/\\./g, '\\\\.')
-        .replace(/\\*/g, '.*')
-        .replace(/\\?/g, '.')
-
-      const regex = new RegExp(`^${regexPattern}$`, this.config.caseSensitive ? '' : 'i')
-      return regex.test(toolName)
-    })
-  }
-
-  /**
-   * Infer category from tool name and description
-   */
-  private inferCategory(tool: RemoteTool): string {
-    const name = tool.name.toLowerCase()
-    const description = (tool.description || '').toLowerCase()
-
-    // Simple category inference based on common patterns
-    if (name.includes('time') || name.includes('clock') || name.includes('date')) {
-      return 'time'
-    }
-    if (name.includes('weather') || description.includes('weather')) {
-      return 'weather'
-    }
-    if (name.includes('file') || name.includes('read') || name.includes('write')) {
-      return 'file'
-    }
-    if (name.includes('http') || name.includes('api') || name.includes('fetch')) {
-      return 'network'
-    }
-    if (name.includes('db') || name.includes('database') || name.includes('sql')) {
-      return 'database'
-    }
-
-    return 'general'
-  }
-
-  /**
-   * Get statistics about namespace usage
-   */
-  getStatistics() {
-    const stats = {
-      totalTools: this.mappings.size,
-      totalConflicts: this.conflicts.length,
-      serverBreakdown: new Map<string, number>(),
-      categoryBreakdown: new Map<string, number>(),
-      namespaceBreakdown: new Map<string, number>(),
-    }
-
-    for (const mapping of this.mappings.values()) {
-      // Server breakdown
-      const serverCount = stats.serverBreakdown.get(mapping.server) || 0
-      stats.serverBreakdown.set(mapping.server, serverCount + 1)
-
-      // Category breakdown
-      const category = mapping.metadata?.category || 'unknown'
-      const categoryCount = stats.categoryBreakdown.get(category) || 0
-      stats.categoryBreakdown.set(category, categoryCount + 1)
-
-      // Namespace breakdown
-      const namespaceCount = stats.namespaceBreakdown.get(mapping.namespace) || 0
-      stats.namespaceBreakdown.set(mapping.namespace, namespaceCount + 1)
-    }
-
-    return stats
+    this.registeredTools.clear()
+    this.conflicts.length = 0
   }
 }
