@@ -7,7 +7,7 @@ export enum LogLevel {
   DEBUG = 0,
   INFO = 1,
   WARN = 2,
-  ERROR = 3
+  ERROR = 3,
 }
 
 /**
@@ -68,7 +68,7 @@ export const structuredLogging: HatagoPluginFactory<StructuredLoggingConfig> =
       endpoint = '/logs',
       includeStackTrace = true,
       bufferSize = 1000,
-      redactFields = ['password', 'token', 'secret', 'key', 'authorization']
+      redactFields = ['password', 'token', 'secret', 'key', 'authorization'],
     } = config
 
     if (!enabled) {
@@ -115,7 +115,7 @@ export const structuredLogging: HatagoPluginFactory<StructuredLoggingConfig> =
         timestamp: new Date().toISOString(),
         level,
         message,
-        component: 'hatago-core'
+        component: 'hatago-core',
       }
 
       if (meta) {
@@ -126,7 +126,7 @@ export const structuredLogging: HatagoPluginFactory<StructuredLoggingConfig> =
         entry.error = {
           name: error.name,
           message: error.message,
-          ...(error.stack && { stack: error.stack })
+          ...(error.stack && { stack: error.stack }),
         }
       }
 
@@ -148,7 +148,7 @@ export const structuredLogging: HatagoPluginFactory<StructuredLoggingConfig> =
       const timestamp = entry.timestamp.split('T')[1]?.split('.')[0] || ''
       const component = entry.component ? `[${entry.component}]` : ''
       const meta = entry.meta ? ` ${JSON.stringify(entry.meta)}` : ''
-      
+
       return `${timestamp} ${levelName} ${component} ${entry.message}${meta}`
     }
 
@@ -180,7 +180,7 @@ export const structuredLogging: HatagoPluginFactory<StructuredLoggingConfig> =
         const entry = createLogEntry(LogLevel.ERROR, message, meta, error)
         addToBuffer(entry)
         console.error(formatLogEntry(entry))
-      }
+      },
     }
 
     // HTTP endpoint for log retrieval
@@ -205,7 +205,7 @@ export const structuredLogging: HatagoPluginFactory<StructuredLoggingConfig> =
         logs,
         total: logs.length,
         buffer_size: bufferSize,
-        current_level: LogLevel[level]
+        current_level: LogLevel[level],
       })
     })
 
@@ -215,7 +215,7 @@ export const structuredLogging: HatagoPluginFactory<StructuredLoggingConfig> =
       {
         title: 'Query Logs',
         description: 'Query structured logs with filtering options',
-        inputSchema: {}
+        inputSchema: {},
       },
       async (args: any) => {
         const { level: levelFilter, limit = 50, component } = args
@@ -237,14 +237,18 @@ export const structuredLogging: HatagoPluginFactory<StructuredLoggingConfig> =
           content: [
             {
               type: 'text',
-              text: JSON.stringify({
-                logs: logs.map(log => formatLogEntry(log)),
-                total: logs.length,
-                filters: { level: levelFilter, component },
-                available_levels: Object.keys(LogLevel).filter(k => isNaN(Number(k)))
-              }, null, 2)
-            }
-          ]
+              text: JSON.stringify(
+                {
+                  logs: logs.map(log => formatLogEntry(log)),
+                  total: logs.length,
+                  filters: { level: levelFilter, component },
+                  available_levels: Object.keys(LogLevel).filter(k => isNaN(Number(k))),
+                },
+                null,
+                2
+              ),
+            },
+          ],
         }
       }
     )
@@ -255,7 +259,7 @@ export const structuredLogging: HatagoPluginFactory<StructuredLoggingConfig> =
       {
         title: 'Log Configuration',
         description: 'Get or update logging configuration',
-        inputSchema: {}
+        inputSchema: {},
       },
       async (args: any) => {
         const { action, new_level } = args
@@ -268,9 +272,9 @@ export const structuredLogging: HatagoPluginFactory<StructuredLoggingConfig> =
               content: [
                 {
                   type: 'text',
-                  text: `Log level would be updated to ${new_level} (${levelNum}). Implementation requires config persistence.`
-                }
-              ]
+                  text: `Log level would be updated to ${new_level} (${levelNum}). Implementation requires config persistence.`,
+                },
+              ],
             }
           }
         }
@@ -279,21 +283,25 @@ export const structuredLogging: HatagoPluginFactory<StructuredLoggingConfig> =
           content: [
             {
               type: 'text',
-              text: JSON.stringify({
-                current_config: {
-                  enabled,
-                  level: LogLevel[level],
-                  format,
-                  endpoint,
-                  buffer_size: bufferSize,
-                  include_stack_trace: includeStackTrace
+              text: JSON.stringify(
+                {
+                  current_config: {
+                    enabled,
+                    level: LogLevel[level],
+                    format,
+                    endpoint,
+                    buffer_size: bufferSize,
+                    include_stack_trace: includeStackTrace,
+                  },
+                  buffer_usage: `${logBuffer.filter(Boolean).length}/${bufferSize}`,
+                  available_actions: ['set_level'],
+                  available_levels: Object.keys(LogLevel).filter(k => isNaN(Number(k))),
                 },
-                buffer_usage: `${logBuffer.filter(Boolean).length}/${bufferSize}`,
-                available_actions: ['set_level'],
-                available_levels: Object.keys(LogLevel).filter(k => isNaN(Number(k)))
-              }, null, 2)
-            }
-          ]
+                null,
+                2
+              ),
+            },
+          ],
         }
       }
     )
@@ -304,14 +312,15 @@ export const structuredLogging: HatagoPluginFactory<StructuredLoggingConfig> =
       level: LogLevel[level],
       format,
       endpoint,
-      buffer_size: bufferSize
+      buffer_size: bufferSize,
     })
 
     // Hook into request/response cycle for access logging
     app.use('*', async (c, next) => {
       const start = Date.now()
-      const traceId = c.req.header('x-trace-id') || `trace-${Date.now()}-${Math.random().toString(36).slice(2)}`
-      
+      const traceId =
+        c.req.header('x-trace-id') || `trace-${Date.now()}-${Math.random().toString(36).slice(2)}`
+
       // Set trace ID for downstream use (cast to any to avoid Hono typing issues)
       ;(c as any).set('traceId', traceId)
 
@@ -319,12 +328,12 @@ export const structuredLogging: HatagoPluginFactory<StructuredLoggingConfig> =
         method: c.req.method,
         path: c.req.path,
         user_agent: c.req.header('user-agent'),
-        trace_id: traceId
+        trace_id: traceId,
       })
 
       try {
         await next()
-        
+
         const duration = Date.now() - start
         const status = c.res.status
 
@@ -333,18 +342,22 @@ export const structuredLogging: HatagoPluginFactory<StructuredLoggingConfig> =
           path: c.req.path,
           status,
           duration_ms: duration,
-          trace_id: traceId
+          trace_id: traceId,
         })
       } catch (error) {
         const duration = Date.now() - start
-        
-        logger.error('Request failed', {
-          method: c.req.method,
-          path: c.req.path,
-          duration_ms: duration,
-          trace_id: traceId
-        }, error instanceof Error ? error : new Error(String(error)))
-        
+
+        logger.error(
+          'Request failed',
+          {
+            method: c.req.method,
+            path: c.req.path,
+            duration_ms: duration,
+            trace_id: traceId,
+          },
+          error instanceof Error ? error : new Error(String(error))
+        )
+
         throw error
       }
     })
@@ -352,6 +365,6 @@ export const structuredLogging: HatagoPluginFactory<StructuredLoggingConfig> =
     // Export logger for other plugins to use
     // Note: This would need proper dependency injection in a real implementation
     if (typeof globalThis !== 'undefined') {
-      (globalThis as any).__hatago_logger = logger
+      ;(globalThis as any).__hatago_logger = logger
     }
   }

@@ -1,0 +1,44 @@
+{
+  "name": "hatago-cli",
+  "version": "0.1.0",
+  "description": "Command line interface for Hatago MCP server",
+  "type": "module",
+  "bin": {
+    "hatago": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "templates"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:watch": "vitest --watch"
+  },
+  "dependencies": {
+    "@hatago/config": "workspace:*",
+    "commander": "^12.1.0",
+    "colorette": "^2.0.20",
+    "prompts": "^2.4.2",
+    "execa": "^9.5.1",
+    "get-port": "^7.1.0",
+    "chokidar": "^4.0.1",
+    "update-notifier": "^7.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.10",
+    "@types/prompts": "^2.4.9",
+    "@types/update-notifier": "^6.0.8",
+    "tsup": "^8.2.4",
+    "typescript": "^5.9.2",
+    "vitest": "^2.1.4"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

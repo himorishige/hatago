@@ -18,6 +18,6 @@ export const defaultPlugins = [
   }),
   // Enhanced MCP Proxy - uses hatago.config.json for configuration
   enhancedMcpProxy({
-    useConfig: true,  // Load from hatago.config.json
+    useConfig: true, // Load from hatago.config.json
   }),
 ]

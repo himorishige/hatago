@@ -1,5 +1,9 @@
 import type { HatagoPlugin, HatagoPluginFactory } from '../types.js'
-import { PluginVerifier, type PluginSignature, type VerificationResult } from '../security/plugin-verifier.js'
+import {
+  PluginVerifier,
+  type PluginSignature,
+  type VerificationResult,
+} from '../security/plugin-verifier.js'
 import { createDefaultLogger } from '../logger.js'
 
 const logger = createDefaultLogger('plugin-security')
@@ -47,7 +51,7 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
       allowTestKeys = true,
       maxSignatureAgeHours = 24,
       blockUnsigned = false,
-      endpoint = '/security'
+      endpoint = '/security',
     } = config
 
     if (!enabled) {
@@ -59,7 +63,7 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
       enabled,
       requireSigned,
       allowTestKeys,
-      maxSignatureAge: maxSignatureAgeHours * 60 * 60 * 1000
+      maxSignatureAge: maxSignatureAgeHours * 60 * 60 * 1000,
     })
 
     // Security metrics
@@ -69,7 +73,7 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
       invalidSignatures: 0,
       untrustedKeys: 0,
       expiredSignatures: 0,
-      blockedPlugins: 0
+      blockedPlugins: 0,
     }
 
     // Track verification results
@@ -88,15 +92,15 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
       pluginName?: string
     ): Promise<VerificationResult> => {
       metrics.totalVerifications++
-      
+
       logger.info('Verifying plugin signature', {
         pluginName,
         keyId: signature.keyId,
-        algorithm: signature.algorithm
+        algorithm: signature.algorithm,
       })
 
       const result = await verifier.verifyPlugin(pluginData, signature)
-      
+
       // Update metrics
       switch (result.status) {
         case 'valid':
@@ -117,7 +121,7 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
       verificationHistory.push({
         timestamp: new Date().toISOString(),
         ...(pluginName && { pluginName }),
-        result
+        result,
       })
 
       // Keep only last 100 verifications
@@ -130,21 +134,21 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
         logger.info('Plugin signature verified', {
           pluginName,
           keyId: signature.keyId,
-          signer: result.signer
+          signer: result.signer,
         })
       } else {
         logger.warn('Plugin signature verification failed', {
           pluginName,
           keyId: signature.keyId,
           status: result.status,
-          message: result.message
+          message: result.message,
         })
 
         if (blockUnsigned || requireSigned) {
           metrics.blockedPlugins++
           logger.error('Plugin blocked due to invalid signature', {
             pluginName,
-            keyId: signature.keyId
+            keyId: signature.keyId,
           })
         }
       }
@@ -161,7 +165,7 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
         maxSignatureAgeHours,
         blockUnsigned,
         metrics,
-        recentVerifications: verificationHistory.slice(-10)
+        recentVerifications: verificationHistory.slice(-10),
       })
     })
 
@@ -170,7 +174,7 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
       const keys = (verifier as any).defaultRegistry?.listKeys() || []
       return c.json({
         trustedKeys: keys.length,
-        keys: keys.map((keyId: string) => ({ keyId }))
+        keys: keys.map((keyId: string) => ({ keyId })),
       })
     })
 
@@ -180,7 +184,7 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
       {
         title: 'Verify Plugin Signature',
         description: 'Verify a plugin signature for testing purposes',
-        inputSchema: {}
+        inputSchema: {},
       },
       async (args: any) => {
         const { pluginName, signature, testData } = args
@@ -190,9 +194,9 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
             content: [
               {
                 type: 'text',
-                text: 'Error: Missing required parameters (signature, testData)'
-              }
-            ]
+                text: 'Error: Missing required parameters (signature, testData)',
+              },
+            ],
           }
         }
 
@@ -205,13 +209,17 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
             content: [
               {
                 type: 'text',
-                text: JSON.stringify({
-                  pluginName,
-                  verification: result,
-                  timestamp: new Date().toISOString()
-                }, null, 2)
-              }
-            ]
+                text: JSON.stringify(
+                  {
+                    pluginName,
+                    verification: result,
+                    timestamp: new Date().toISOString(),
+                  },
+                  null,
+                  2
+                ),
+              },
+            ],
           }
         } catch (error) {
           logger.error('Signature verification tool error', { pluginName }, error as Error)
@@ -219,9 +227,9 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
             content: [
               {
                 type: 'text',
-                text: `Error: ${error instanceof Error ? error.message : String(error)}`
-              }
-            ]
+                text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+              },
+            ],
           }
         }
       }
@@ -232,7 +240,7 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
       {
         title: 'Generate Test Key Pair',
         description: 'Generate a test key pair for plugin signing (development only)',
-        inputSchema: {}
+        inputSchema: {},
       },
       async (args: any) => {
         if (!allowTestKeys) {
@@ -240,9 +248,9 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
             content: [
               {
                 type: 'text',
-                text: 'Error: Test key generation is disabled'
-              }
-            ]
+                text: 'Error: Test key generation is disabled',
+              },
+            ],
           }
         }
 
@@ -255,26 +263,30 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
             algorithm,
             issuer: 'hatago-test',
             subject: `test-key-${keyPair.keyId}`,
-            validFrom: new Date().toISOString()
+            validFrom: new Date().toISOString(),
           })
 
           logger.info('Test key pair generated', {
             keyId: keyPair.keyId,
-            algorithm
+            algorithm,
           })
 
           return {
             content: [
               {
                 type: 'text',
-                text: JSON.stringify({
-                  keyId: keyPair.keyId,
-                  algorithm,
-                  message: 'Test key pair generated and added to trusted registry',
-                  note: 'Private key is not displayed for security reasons'
-                }, null, 2)
-              }
-            ]
+                text: JSON.stringify(
+                  {
+                    keyId: keyPair.keyId,
+                    algorithm,
+                    message: 'Test key pair generated and added to trusted registry',
+                    note: 'Private key is not displayed for security reasons',
+                  },
+                  null,
+                  2
+                ),
+              },
+            ],
           }
         } catch (error) {
           logger.error('Key generation error', {}, error as Error)
@@ -282,9 +294,9 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
             content: [
               {
                 type: 'text',
-                text: `Error: ${error instanceof Error ? error.message : String(error)}`
-              }
-            ]
+                text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+              },
+            ],
           }
         }
       }
@@ -295,7 +307,7 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
       {
         title: 'Sign Test Data',
         description: 'Sign test data with a generated key (development only)',
-        inputSchema: {}
+        inputSchema: {},
       },
       async (args: any) => {
         if (!allowTestKeys) {
@@ -303,9 +315,9 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
             content: [
               {
                 type: 'text',
-                text: 'Error: Test signing is disabled'
-              }
-            ]
+                text: 'Error: Test signing is disabled',
+              },
+            ],
           }
         }
 
@@ -317,16 +329,16 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
               content: [
                 {
                   type: 'text',
-                  text: 'Error: Missing testData parameter'
-                }
-              ]
+                  text: 'Error: Missing testData parameter',
+                },
+              ],
             }
           }
 
           // Generate new key pair for signing
           const keyPair = await verifier.generateKeyPair(algorithm)
           const pluginData = new TextEncoder().encode(testData)
-          
+
           // Sign the data
           const signature = await verifier.signPlugin(
             pluginData,
@@ -339,27 +351,31 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
           await verifier.addTrustedKey(keyPair.keyId, keyPair.publicKey, {
             algorithm,
             issuer: 'hatago-test',
-            subject: `test-signing-key-${keyPair.keyId}`
+            subject: `test-signing-key-${keyPair.keyId}`,
           })
 
           logger.info('Test data signed', {
             keyId: keyPair.keyId,
             algorithm,
-            dataLength: testData.length
+            dataLength: testData.length,
           })
 
           return {
             content: [
               {
                 type: 'text',
-                text: JSON.stringify({
-                  testData,
-                  signature,
-                  message: 'Test data signed successfully',
-                  verification_command: `Use security.verify tool with this signature and testData`
-                }, null, 2)
-              }
-            ]
+                text: JSON.stringify(
+                  {
+                    testData,
+                    signature,
+                    message: 'Test data signed successfully',
+                    verification_command: `Use security.verify tool with this signature and testData`,
+                  },
+                  null,
+                  2
+                ),
+              },
+            ],
           }
         } catch (error) {
           logger.error('Test signing error', {}, error as Error)
@@ -367,9 +383,9 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
             content: [
               {
                 type: 'text',
-                text: `Error: ${error instanceof Error ? error.message : String(error)}`
-              }
-            ]
+                text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+              },
+            ],
           }
         }
       }
@@ -380,31 +396,35 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
       {
         title: 'Security Status',
         description: 'Get plugin security system status and metrics',
-        inputSchema: {}
+        inputSchema: {},
       },
       async () => {
         return {
           content: [
             {
               type: 'text',
-              text: JSON.stringify({
-                config: {
-                  enabled,
-                  requireSigned,
-                  allowTestKeys,
-                  maxSignatureAgeHours,
-                  blockUnsigned
+              text: JSON.stringify(
+                {
+                  config: {
+                    enabled,
+                    requireSigned,
+                    allowTestKeys,
+                    maxSignatureAgeHours,
+                    blockUnsigned,
+                  },
+                  metrics,
+                  recentVerifications: verificationHistory.slice(-5).map(v => ({
+                    timestamp: v.timestamp,
+                    pluginName: v.pluginName,
+                    status: v.result.status,
+                    valid: v.result.valid,
+                  })),
                 },
-                metrics,
-                recentVerifications: verificationHistory.slice(-5).map(v => ({
-                  timestamp: v.timestamp,
-                  pluginName: v.pluginName,
-                  status: v.result.status,
-                  valid: v.result.valid
-                }))
-              }, null, 2)
-            }
-          ]
+                null,
+                2
+              ),
+            },
+          ],
         }
       }
     )
@@ -415,11 +435,11 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
       allowTestKeys,
       maxSignatureAgeHours,
       blockUnsigned,
-      endpoint
+      endpoint,
     })
 
     // Export verifier for use by other components
     if (typeof globalThis !== 'undefined') {
-      (globalThis as any).__hatago_plugin_verifier = verifier
+      ;(globalThis as any).__hatago_plugin_verifier = verifier
     }
   }

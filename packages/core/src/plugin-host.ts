@@ -111,7 +111,7 @@ export class DefaultPluginHost implements PluginHost {
 
   private validateRuntime(manifest: PluginManifest): void {
     const engines = manifest.engines
-    
+
     if (this.runtime === 'node' && engines.node) {
       // TODO: Add semver version checking
       // For now, just log the requirement
@@ -180,7 +180,10 @@ export class DefaultPluginHost implements PluginHost {
   private createFetchCapability(pluginName: string): typeof fetch {
     return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
       // Log fetch usage for auditing
-      console.log(`[${pluginName}] HTTP request:`, typeof input === 'string' ? input : input.toString())
+      console.log(
+        `[${pluginName}] HTTP request:`,
+        typeof input === 'string' ? input : input.toString()
+      )
       return fetch(input, init)
     }
   }
@@ -251,15 +254,15 @@ export class DefaultPluginHost implements PluginHost {
 
   private resolveEntryPoint(manifest: PluginManifest): string {
     const entry = manifest.entry
-    
+
     if (this.runtime === 'node' && entry.node) {
       return entry.node
     }
-    
+
     if (this.runtime === 'workers' && entry.workers) {
       return entry.workers
     }
-    
+
     return entry.default
   }
 

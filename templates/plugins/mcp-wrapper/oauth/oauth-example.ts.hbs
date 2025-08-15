@@ -1,0 +1,9 @@
+#!/usr/bin/env node /** * OAuth CLI example for
+{{titleCase name}}
+plugin * * Usage: * npx ts-node oauth-example.ts setup # Interactive OAuth setup * npx ts-node
+oauth-example.ts list # List stored tokens * npx ts-node oauth-example.ts revoke # Revoke tokens *
+npx ts-node oauth-example.ts refresh # Refresh tokens */ import { handleOAuthCommand } from
+'./oauth-cli' async function main() { const command = process.argv[2] || 'setup' const provider =
+process.argv[3] as any try { await handleOAuthCommand(command, provider) process.exit(0) } catch
+(error) { console.error('Error:', error.message) process.exit(1) } } // Run if called directly if
+(require.main === module) { main() }

@@ -167,10 +167,7 @@ export interface PluginContext {
  * Capability-aware plugin function
  */
 export interface CapabilityAwarePlugin {
-  (ctx: {
-    server: McpServer
-    capabilities: CapabilityRegistry
-  }): void | Promise<void>
+  (ctx: { server: McpServer; capabilities: CapabilityRegistry }): void | Promise<void>
 }
 
 /**

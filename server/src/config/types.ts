@@ -29,7 +29,7 @@ export interface NamespaceConfig {
   /** Auto prefix generation */
   autoPrefix?: {
     enabled: boolean
-    format: string  // e.g., '{server}_{index}'
+    format: string // e.g., '{server}_{index}'
   }
   /** Versioning support */
   versioning?: {
@@ -63,8 +63,8 @@ export interface MCPServerConfig {
   /** Health check configuration */
   healthCheck?: {
     enabled: boolean
-    interval: number  // milliseconds
-    timeout: number   // milliseconds
+    interval: number // milliseconds
+    timeout: number // milliseconds
   }
 }
 

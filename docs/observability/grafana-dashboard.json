@@ -15,7 +15,7 @@
         "id": 1,
         "title": "SLO Overview",
         "type": "stat",
-        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 0},
+        "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
         "targets": [
           {
             "expr": "hatago:success_rate:5m * 100",
@@ -28,7 +28,7 @@
             "refId": "B"
           },
           {
-            "expr": "hatago:latency_p99:5m * 1000", 
+            "expr": "hatago:latency_p99:5m * 1000",
             "legendFormat": "P99 Latency (ms)",
             "refId": "C"
           },
@@ -40,57 +40,57 @@
         ],
         "fieldConfig": {
           "defaults": {
-            "color": {"mode": "palette-classic"},
+            "color": { "mode": "palette-classic" },
             "mappings": [],
             "thresholds": {
               "steps": [
-                {"color": "red", "value": null},
-                {"color": "yellow", "value": 99.9},
-                {"color": "green", "value": 99.95}
+                { "color": "red", "value": null },
+                { "color": "yellow", "value": 99.9 },
+                { "color": "green", "value": 99.95 }
               ]
             }
           },
           "overrides": [
             {
-              "matcher": {"id": "byName", "options": "P95 Latency (ms)"},
+              "matcher": { "id": "byName", "options": "P95 Latency (ms)" },
               "properties": [
                 {
                   "id": "thresholds",
                   "value": {
                     "steps": [
-                      {"color": "green", "value": null},
-                      {"color": "yellow", "value": 3},
-                      {"color": "red", "value": 5}
+                      { "color": "green", "value": null },
+                      { "color": "yellow", "value": 3 },
+                      { "color": "red", "value": 5 }
                     ]
                   }
                 }
               ]
             },
             {
-              "matcher": {"id": "byName", "options": "P99 Latency (ms)"},
+              "matcher": { "id": "byName", "options": "P99 Latency (ms)" },
               "properties": [
                 {
                   "id": "thresholds",
                   "value": {
                     "steps": [
-                      {"color": "green", "value": null},
-                      {"color": "yellow", "value": 7},
-                      {"color": "red", "value": 10}
+                      { "color": "green", "value": null },
+                      { "color": "yellow", "value": 7 },
+                      { "color": "red", "value": 10 }
                     ]
                   }
                 }
               ]
             },
             {
-              "matcher": {"id": "byName", "options": "Error Rate %"},
+              "matcher": { "id": "byName", "options": "Error Rate %" },
               "properties": [
                 {
                   "id": "thresholds",
                   "value": {
                     "steps": [
-                      {"color": "green", "value": null},
-                      {"color": "yellow", "value": 0.05},
-                      {"color": "red", "value": 0.1}
+                      { "color": "green", "value": null },
+                      { "color": "yellow", "value": 0.05 },
+                      { "color": "red", "value": 0.1 }
                     ]
                   }
                 }
@@ -103,7 +103,7 @@
         "id": 2,
         "title": "Request Rate",
         "type": "graph",
-        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
         "targets": [
           {
             "expr": "hatago:request_rate:5m",
@@ -122,7 +122,7 @@
         "id": 3,
         "title": "Response Time Percentiles",
         "type": "graph",
-        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
         "targets": [
           {
             "expr": "hatago:latency_p95:5m * 1000",
@@ -151,7 +151,7 @@
         "id": 4,
         "title": "Error Rate by Status Code",
         "type": "graph",
-        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
         "targets": [
           {
             "expr": "rate(hatago_errors_total[5m]) by (code)",
@@ -170,7 +170,7 @@
         "id": 5,
         "title": "Plugin Events and Failures",
         "type": "graph",
-        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
         "targets": [
           {
             "expr": "rate(hatago_plugin_events_total[5m]) by (plugin)",
@@ -194,7 +194,7 @@
         "id": 6,
         "title": "SLO Burn Rate Alert Status",
         "type": "stat",
-        "gridPos": {"h": 4, "w": 24, "x": 0, "y": 24},
+        "gridPos": { "h": 4, "w": 24, "x": 0, "y": 24 },
         "targets": [
           {
             "expr": "ALERTS{alertname=~\"HatagoAvailabilitySLO.*\"}",
@@ -204,14 +204,14 @@
         ],
         "fieldConfig": {
           "defaults": {
-            "color": {"mode": "thresholds"},
+            "color": { "mode": "thresholds" },
             "mappings": [
               {
-                "options": {"0": {"text": "OK", "color": "green"}},
+                "options": { "0": { "text": "OK", "color": "green" } },
                 "type": "value"
               },
               {
-                "options": {"1": {"text": "FIRING", "color": "red"}},
+                "options": { "1": { "text": "FIRING", "color": "red" } },
                 "type": "value"
               }
             ]
@@ -222,7 +222,7 @@
         "id": 7,
         "title": "Circuit Breaker Status",
         "type": "stat",
-        "gridPos": {"h": 4, "w": 12, "x": 0, "y": 28},
+        "gridPos": { "h": 4, "w": 12, "x": 0, "y": 28 },
         "targets": [
           {
             "expr": "hatago_circuit_breaker_state",
@@ -232,18 +232,18 @@
         ],
         "fieldConfig": {
           "defaults": {
-            "color": {"mode": "thresholds"},
+            "color": { "mode": "thresholds" },
             "mappings": [
               {
-                "options": {"0": {"text": "CLOSED", "color": "green"}},
+                "options": { "0": { "text": "CLOSED", "color": "green" } },
                 "type": "value"
               },
               {
-                "options": {"1": {"text": "OPEN", "color": "red"}},
+                "options": { "1": { "text": "OPEN", "color": "red" } },
                 "type": "value"
               },
               {
-                "options": {"2": {"text": "HALF_OPEN", "color": "yellow"}},
+                "options": { "2": { "text": "HALF_OPEN", "color": "yellow" } },
                 "type": "value"
               }
             ]
@@ -254,7 +254,7 @@
         "id": 8,
         "title": "Inflight Requests",
         "type": "graph",
-        "gridPos": {"h": 4, "w": 12, "x": 12, "y": 28},
+        "gridPos": { "h": 4, "w": 12, "x": 12, "y": 28 },
         "targets": [
           {
             "expr": "hatago_inflight_requests",

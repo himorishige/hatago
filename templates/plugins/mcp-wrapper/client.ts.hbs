@@ -1,0 +1,1035 @@
+import fetch from 'node-fetch'
+import { spawn, ChildProcess } from 'child_process'
+import { EventEmitter } from 'events'
+import { createServer, Server } from 'net'
+{{#if oauth}}
+import { TokenManager } from './oauth/token-manager'
+import { OAuthProviderFactory } from './oauth/providers'
+{{/if}}
+import type {
+  {{titleCase name}}ClientOptions,
+  TransportType,
+  STDIOTransportConfig,
+  HTTPTransportConfig,
+  MCPTool,
+  MCPResource,
+  MCPToolResult,
+  MCPResourceContents,
+  MCPRequest,
+  MCPResponse,
+  ClientState,
+  ClientStats,
+  MCPConnectionError,
+  MCPProtocolError,
+  MCPToolError,
+  STDIOError,
+  ProcessError,
+{{#if caching}}
+  CacheEntry,
+{{/if}}
+  ToolExecutionContext,
+  ResourceReadContext
+} from './{{kebabCase name}}.types'
+
+/**
+ * Unified MCP Client for {{mcpServerName}}
+ * 
+ * This client supports both STDIO and HTTP transports for communicating
+ * with MCP servers, providing a unified interface regardless of the transport.
+ */
+export class {{titleCase name}}Client extends EventEmitter {
+  private state: ClientState = {
+    connected: false,
+    connecting: false,
+    toolCount: 0,
+    resourceCount: 0
+  }
+
+  private stats: ClientStats = {
+    requestCount: 0,
+    errorCount: 0,
+    averageResponseTime: 0,
+    uptime: 0
+  }
+
+  private tools: Map<string, MCPTool> = new Map()
+  private resources: Map<string, MCPResource> = new Map()
+  private requestId: number = 0
+  
+  // Transport-specific properties
+  private childProcess?: ChildProcess
+  private httpEndpoint?: string
+  private pendingRequests: Map<string | number, { resolve: Function, reject: Function }> = new Map()
+{{#if oauth}}
+  
+  // OAuth management
+  private tokenManager?: TokenManager
+  private oauthProvider?: any  // Can be GitHub, Google, Slack, etc.
+{{/if}}
+  
+{{#if caching}}
+  private cache: Map<string, CacheEntry> = new Map()
+  private cacheCleanupInterval?: NodeJS.Timeout
+{{/if}}
+{{#if healthCheck}}
+  private healthCheckInterval?: NodeJS.Timeout
+  private lastHealthCheck?: Date
+{{/if}}
+
+  constructor(private options: {{titleCase name}}ClientOptions) {
+    super()
+    this.stats.uptime = Date.now()
+{{#if oauth}}
+    
+    // Initialize OAuth if configured
+    this.initializeOAuth()
+{{/if}}
+{{#if caching}}
+    
+    // Set up cache cleanup if caching is enabled
+    if (this.options.cache?.enabled) {
+      this.setupCacheCleanup()
+    }
+{{/if}}
+{{#if healthCheck}}
+
+    // Set up health checking if enabled
+    if (this.options.healthCheck?.enabled) {
+      this.setupHealthChecking()
+    }
+{{/if}}
+  }
+
+  /**
+   * Connect to the MCP server
+   */
+  async connect(): Promise<void> {
+    if (this.state.connected || this.state.connecting) {
+      return
+    }
+
+    this.state.connecting = true
+    
+    try {
+      // Connect based on transport type
+      if (this.options.transport === 'stdio') {
+        await this.connectSTDIO()
+      } else {
+        await this.connectHTTP()
+      }
+
+      // Initialize MCP session
+      const response = await this.makeRequest({
+        jsonrpc: '2.0',
+        id: this.generateRequestId(),
+        method: 'initialize',
+        params: {
+          protocolVersion: '2025-06-18',
+          capabilities: {
+            tools: { listChanged: true },
+            resources: { subscribe: true, listChanged: true }
+          },
+          clientInfo: {
+            name: 'hatago-{{kebabCase name}}-client',
+            version: '1.0.0'
+          }
+        }
+      })
+
+      if (response.error) {
+        throw new MCPProtocolError(`Initialization failed: ${response.error.message}`)
+      }
+
+      this.state.connected = true
+      this.state.connecting = false
+      this.state.lastConnected = new Date()
+
+      // Load initial capabilities
+      await this.refreshCapabilities()
+
+      this.emit('connected')
+      const endpoint = this.options.transport === 'stdio' 
+        ? 'STDIO process' 
+        : this.httpEndpoint
+      console.log(`[{{titleCase name}}Client] Connected successfully via ${this.options.transport.toUpperCase()} to ${endpoint}`)
+
+    } catch (error) {
+      this.state.connecting = false
+      await this.cleanup()
+      
+      const mcpError = error instanceof MCPConnectionError || error instanceof STDIOError
+        ? error 
+        : new MCPConnectionError(`Failed to connect: ${error.message}`, error)
+      
+      this.emit('error', mcpError)
+      throw mcpError
+    }
+  }
+
+  /**
+   * Connect using STDIO transport
+   */
+  private async connectSTDIO(): Promise<void> {
+    if (!this.options.stdio) {
+      throw new STDIOError('STDIO configuration is required for STDIO transport')
+    }
+
+    const { command, args, env, cwd } = this.options.stdio
+
+    try {
+      this.childProcess = spawn(command, args, {
+        stdio: 'pipe',
+        env: { ...process.env, ...env },
+        cwd: cwd || process.cwd()
+      })
+
+      // Handle process events
+      this.childProcess.on('error', (error) => {
+        this.emit('error', new ProcessError(`Child process error: ${error.message}`, undefined, error))
+      })
+
+      this.childProcess.on('exit', (code, signal) => {
+        if (code !== 0 && code !== null) {
+          this.emit('error', new ProcessError(`Process exited with code ${code}`, code))
+        }
+        this.state.connected = false
+        this.emit('disconnected')
+      })
+
+      // Set up STDIO communication
+      this.childProcess.stdout?.on('data', (data) => {
+        this.handleSTDIOResponse(data.toString())
+      })
+
+      this.childProcess.stderr?.on('data', (data) => {
+        console.error(`[{{titleCase name}}Client STDERR] ${data.toString()}`)
+      })
+
+      // Wait for process to be ready
+      await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new STDIOError('Process startup timeout'))
+        }, 10000)
+
+        // Process is considered ready when it starts
+        if (this.childProcess?.pid) {
+          clearTimeout(timeout)
+          resolve(undefined)
+        }
+      })
+
+      console.log(`[{{titleCase name}}Client] STDIO process started with PID ${this.childProcess.pid}`)
+      
+    } catch (error) {
+      throw new STDIOError(`Failed to start STDIO process: ${error.message}`, error)
+    }
+  }
+
+  /**
+   * Connect using HTTP transport
+   */
+  private async connectHTTP(): Promise<void> {
+    if (!this.options.http) {
+      throw new MCPConnectionError('HTTP configuration is required for HTTP transport')
+    }
+
+{{#if oauth}}
+    // Authenticate if OAuth is configured
+    if (this.options.http.auth?.type === 'oauth' && this.oauthProvider) {
+      try {
+        await this.authenticateOAuth()
+      } catch (error) {
+        console.warn(`[{{titleCase name}}Client] OAuth authentication failed: ${error.message}`)
+        // Continue without authentication, might work with public endpoints
+      }
+    }
+{{/if}}
+
+    // Determine endpoint
+    if (this.options.http.endpoint) {
+      // Use external endpoint
+      this.httpEndpoint = this.options.http.endpoint
+    } else if (this.options.http.autoStart && this.options.http.autoStartConfig) {
+      // Auto-start server and get dynamic endpoint
+      this.httpEndpoint = await this.autoStartHTTPServer()
+    } else {
+      throw new MCPConnectionError('Either endpoint or autoStart configuration is required for HTTP transport')
+    }
+
+    // Test HTTP connection
+    try {
+      const response = await fetch(`${this.httpEndpoint.replace('/mcp', '/health')}`, {
+        method: 'GET',
+        timeout: this.options.timeout || 5000,
+        headers: await this.getAuthHeaders()
+      })
+
+      if (!response.ok) {
+        throw new MCPConnectionError(`HTTP server not ready: ${response.status} ${response.statusText}`)
+      }
+    } catch (error) {
+      if (error.name === 'AbortError' || error.code === 'ETIMEDOUT') {
+        throw new MCPConnectionError('Connection timeout')
+      }
+      throw new MCPConnectionError(`Cannot connect to ${this.httpEndpoint}: ${error.message}`)
+    }
+  }
+
+  /**
+   * Disconnect from the MCP server
+   */
+  async disconnect(): Promise<void> {
+    if (!this.state.connected) {
+      return
+    }
+
+    this.state.connected = false
+{{#if caching}}
+    
+    // Clear cache cleanup interval
+    if (this.cacheCleanupInterval) {
+      clearInterval(this.cacheCleanupInterval)
+      this.cacheCleanupInterval = undefined
+    }
+{{/if}}
+{{#if healthCheck}}
+
+    // Clear health check interval
+    if (this.healthCheckInterval) {
+      clearInterval(this.healthCheckInterval)
+      this.healthCheckInterval = undefined
+    }
+{{/if}}
+
+    this.tools.clear()
+    this.resources.clear()
+{{#if caching}}
+    this.cache.clear()
+{{/if}}
+
+    this.emit('disconnected')
+    console.log(`[{{titleCase name}}Client] Disconnected from ${this.options.endpoint}`)
+  }
+
+  /**
+   * Check if client is connected
+   */
+  isConnected(): boolean {
+    return this.state.connected
+  }
+
+  /**
+   * List available tools
+   */
+  async listTools(): Promise<MCPTool[]> {
+    if (!this.state.connected) {
+      throw new MCPConnectionError('Not connected to MCP server')
+    }
+
+    const response = await this.makeRequest({
+      jsonrpc: '2.0',
+      id: this.generateRequestId(),
+      method: 'tools/list'
+    })
+
+    if (response.error) {
+      throw new MCPProtocolError(`Failed to list tools: ${response.error.message}`)
+    }
+
+    const tools = response.result.tools
+    this.tools.clear()
+    tools.forEach((tool: MCPTool) => this.tools.set(tool.name, tool))
+    this.state.toolCount = tools.length
+
+    this.emit('toolsUpdated', tools)
+    return tools
+  }
+
+  /**
+   * Call a tool
+   */
+  async callTool(name: string, args: any): Promise<MCPToolResult> {
+    if (!this.state.connected) {
+      throw new MCPConnectionError('Not connected to MCP server')
+    }
+
+    const tool = this.tools.get(name)
+    if (!tool) {
+      throw new MCPToolError(name, 'Tool not found')
+    }
+
+{{#if caching}}
+    // Check cache first
+    if (this.options.cache?.enabled) {
+      const cacheKey = this.generateCacheKey('tool', name, args)
+      const cached = this.getCachedValue(cacheKey)
+      if (cached) {
+        console.log(`[{{titleCase name}}Client] Cache hit for tool ${name}`)
+        return cached
+      }
+    }
+
+{{/if}}
+    const context: ToolExecutionContext = {
+      toolName: name,
+      arguments: args,
+      startTime: new Date(),
+      requestId: this.generateRequestId().toString()
+    }
+
+    const startTime = Date.now()
+
+    try {
+      const response = await this.makeRequest({
+        jsonrpc: '2.0',
+        id: context.requestId,
+        method: 'tools/call',
+        params: {
+          name,
+          arguments: args
+        }
+      })
+
+      const responseTime = Date.now() - startTime
+      this.updateStats(responseTime, false)
+
+      if (response.error) {
+        this.stats.errorCount++
+        throw new MCPToolError(name, `Tool execution failed: ${response.error.message}`)
+      }
+
+      const result = response.result
+{{#if caching}}
+
+      // Cache the result if caching is enabled
+      if (this.options.cache?.enabled) {
+        const cacheKey = this.generateCacheKey('tool', name, args)
+        this.setCachedValue(cacheKey, result)
+      }
+{{/if}}
+
+      console.log(`[{{titleCase name}}Client] Tool ${name} executed successfully in ${responseTime}ms`)
+      return result
+
+    } catch (error) {
+      const responseTime = Date.now() - startTime
+      this.updateStats(responseTime, true)
+
+      if (error instanceof MCPToolError) {
+        throw error
+      }
+      
+      throw new MCPToolError(name, `Unexpected error: ${error.message}`, error)
+    }
+  }
+
+  /**
+   * List available resources
+   */
+  async listResources(): Promise<MCPResource[]> {
+    if (!this.state.connected) {
+      throw new MCPConnectionError('Not connected to MCP server')
+    }
+
+    const response = await this.makeRequest({
+      jsonrpc: '2.0',
+      id: this.generateRequestId(),
+      method: 'resources/list'
+    })
+
+    if (response.error) {
+      throw new MCPProtocolError(`Failed to list resources: ${response.error.message}`)
+    }
+
+    const resources = response.result.resources || []
+    this.resources.clear()
+    resources.forEach((resource: MCPResource) => this.resources.set(resource.uri, resource))
+    this.state.resourceCount = resources.length
+
+    this.emit('resourcesUpdated', resources)
+    return resources
+  }
+
+  /**
+   * Read a resource
+   */
+  async readResource(uri: string): Promise<MCPResourceContents> {
+    if (!this.state.connected) {
+      throw new MCPConnectionError('Not connected to MCP server')
+    }
+
+{{#if caching}}
+    // Check cache first
+    if (this.options.cache?.enabled) {
+      const cacheKey = this.generateCacheKey('resource', uri)
+      const cached = this.getCachedValue(cacheKey)
+      if (cached) {
+        console.log(`[{{titleCase name}}Client] Cache hit for resource ${uri}`)
+        return cached
+      }
+    }
+
+{{/if}}
+    const context: ResourceReadContext = {
+      uri,
+      startTime: new Date(),
+      requestId: this.generateRequestId().toString()
+    }
+
+    const startTime = Date.now()
+
+    try {
+      const response = await this.makeRequest({
+        jsonrpc: '2.0',
+        id: context.requestId,
+        method: 'resources/read',
+        params: { uri }
+      })
+
+      const responseTime = Date.now() - startTime
+      this.updateStats(responseTime, false)
+
+      if (response.error) {
+        this.stats.errorCount++
+        throw new MCPProtocolError(`Resource read failed: ${response.error.message}`)
+      }
+
+      const result = response.result
+{{#if caching}}
+
+      // Cache the result if caching is enabled
+      if (this.options.cache?.enabled) {
+        const cacheKey = this.generateCacheKey('resource', uri)
+        this.setCachedValue(cacheKey, result)
+      }
+{{/if}}
+
+      console.log(`[{{titleCase name}}Client] Resource ${uri} read successfully in ${responseTime}ms`)
+      return result
+
+    } catch (error) {
+      const responseTime = Date.now() - startTime
+      this.updateStats(responseTime, true)
+      
+      throw new MCPProtocolError(`Failed to read resource ${uri}: ${error.message}`, error)
+    }
+  }
+
+{{#if healthCheck}}
+  /**
+   * Check server health
+   */
+  async checkHealth(): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.options.endpoint}/health`, {
+        method: 'GET',
+        timeout: this.options.healthCheck?.timeout || 5000,
+        headers: await this.getAuthHeaders()
+      })
+
+      this.lastHealthCheck = new Date()
+      return response.ok
+    } catch (error) {
+      console.warn(`[{{titleCase name}}Client] Health check failed:`, error)
+      return false
+    }
+  }
+{{/if}}
+
+  /**
+   * Get client statistics
+   */
+  getStats(): ClientStats {
+    return {
+      ...this.stats,
+      uptime: Date.now() - this.stats.uptime
+    }
+  }
+
+  /**
+   * Get current state
+   */
+  getState(): ClientState {
+    return { ...this.state }
+  }
+
+  /**
+   * Get tool count
+   */
+  getToolCount(): number {
+    return this.state.toolCount
+  }
+
+  /**
+   * Get resource count
+   */
+  getResourceCount(): number {
+    return this.state.resourceCount
+  }
+
+  /**
+   * Get last connected time
+   */
+  getLastConnectedTime(): Date | undefined {
+    return this.state.lastConnected
+  }
+
+{{#if caching}}
+  /**
+   * Clear cache
+   */
+  clearCache(): void {
+    this.cache.clear()
+    console.log(`[{{titleCase name}}Client] Cache cleared`)
+  }
+
+  /**
+   * Get cache size
+   */
+  getCacheSize(): number {
+    return this.cache.size
+  }
+{{/if}}
+
+  // Private methods
+
+  private async makeRequest(request: MCPRequest): Promise<MCPResponse> {
+    if (this.options.transport === 'stdio') {
+      return this.makeSTDIORequest(request)
+    } else {
+      return this.makeHTTPRequest(request)
+    }
+  }
+
+  private async makeSTDIORequest(request: MCPRequest): Promise<MCPResponse> {
+    if (!this.childProcess || !this.childProcess.stdin) {
+      throw new STDIOError('STDIO process not available')
+    }
+
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        this.pendingRequests.delete(request.id)
+        reject(new STDIOError('Request timeout'))
+      }, this.options.timeout || 30000)
+
+      this.pendingRequests.set(request.id, {
+        resolve: (response: MCPResponse) => {
+          clearTimeout(timeout)
+          this.stats.requestCount++
+          resolve(response)
+        },
+        reject: (error: Error) => {
+          clearTimeout(timeout)
+          reject(error)
+        }
+      })
+
+      // Send request via STDIN
+      const requestLine = JSON.stringify(request) + '\n'
+      this.childProcess!.stdin!.write(requestLine)
+    })
+  }
+
+  private async makeHTTPRequest(request: MCPRequest): Promise<MCPResponse> {
+    const startTime = Date.now()
+    
+    try {
+      const response = await fetch(this.httpEndpoint!, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(await this.getAuthHeaders())
+        },
+        body: JSON.stringify(request),
+        timeout: this.options.timeout || 30000
+      })
+
+      if (!response.ok) {
+        throw new MCPConnectionError(`HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      this.stats.requestCount++
+      
+      return data as MCPResponse
+
+    } catch (error) {
+      if (error.name === 'AbortError' || error.code === 'ETIMEDOUT') {
+        throw new MCPConnectionError('Request timeout')
+      }
+      
+      if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+        throw new MCPConnectionError(`Cannot connect to ${this.httpEndpoint}`)
+      }
+      
+      throw error
+    }
+  }
+
+  private handleSTDIOResponse(data: string): void {
+    const lines = data.trim().split('\n')
+    
+    for (const line of lines) {
+      if (!line.trim()) continue
+      
+      try {
+        const response = JSON.parse(line) as MCPResponse
+        const pending = this.pendingRequests.get(response.id)
+        
+        if (pending) {
+          this.pendingRequests.delete(response.id)
+          if (response.error) {
+            pending.reject(new MCPProtocolError(`MCP Error: ${response.error.message}`))
+          } else {
+            pending.resolve(response)
+          }
+        }
+      } catch (error) {
+        console.error(`[{{titleCase name}}Client] Failed to parse STDIO response: ${line}`, error)
+      }
+    }
+  }
+
+  private async autoStartHTTPServer(): Promise<string> {
+    if (!this.options.http?.autoStartConfig) {
+      throw new MCPConnectionError('Auto-start configuration is required')
+    }
+
+    const config = this.options.http.autoStartConfig
+    const { command, preferredPort, portRange, maxRetries = 3, startupTimeout = 10000 } = config
+
+    // Find available port
+    const availablePort = await this.findAvailablePort(preferredPort, portRange)
+    if (!availablePort) {
+      throw new MCPConnectionError(`No available ports in range ${portRange.min}-${portRange.max}`)
+    }
+
+    // Start HTTP server process
+    const args = command.split(' ').slice(1) // Remove command itself
+    args.push('--port', availablePort.toString())
+
+    this.childProcess = spawn(command.split(' ')[0], args, {
+      stdio: 'pipe',
+      env: process.env
+    })
+
+    // Handle process events
+    this.childProcess.on('error', (error) => {
+      this.emit('error', new ProcessError(`HTTP server process error: ${error.message}`, undefined, error))
+    })
+
+    this.childProcess.on('exit', (code, signal) => {
+      if (code !== 0 && code !== null) {
+        this.emit('error', new ProcessError(`HTTP server exited with code ${code}`, code))
+      }
+    })
+
+    // Monitor process output
+    this.childProcess.stdout?.on('data', (data) => {
+      console.log(`[{{titleCase name}} HTTP Server] ${data}`)
+    })
+
+    this.childProcess.stderr?.on('data', (data) => {
+      console.error(`[{{titleCase name}} HTTP Server Error] ${data}`)
+    })
+
+    // Wait for server to be ready
+    const endpoint = `http://localhost:${availablePort}/mcp`
+    await this.waitForHTTPServer(endpoint, startupTimeout)
+    
+    console.log(`[{{titleCase name}}Client] HTTP server auto-started on port ${availablePort}`)
+    return endpoint
+  }
+
+  private async findAvailablePort(preferred: number, range: { min: number, max: number }): Promise<number | null> {
+    // Start from preferred port
+    for (let port = preferred; port <= range.max; port++) {
+      if (await this.isPortAvailable(port)) {
+        return port
+      }
+    }
+
+    // Try from range minimum if preferred was higher
+    if (preferred > range.min) {
+      for (let port = range.min; port < preferred; port++) {
+        if (await this.isPortAvailable(port)) {
+          return port
+        }
+      }
+    }
+
+    return null
+  }
+
+  private async isPortAvailable(port: number): Promise<boolean> {
+    return new Promise((resolve) => {
+      const server = createServer()
+      
+      server.listen(port, (err) => {
+        if (err) {
+          resolve(false)
+        } else {
+          server.close(() => resolve(true))
+        }
+      })
+      
+      server.on('error', () => resolve(false))
+    })
+  }
+
+  private async waitForHTTPServer(endpoint: string, timeout: number): Promise<void> {
+    const start = Date.now()
+    
+    while (Date.now() - start < timeout) {
+      try {
+        const response = await fetch(endpoint.replace('/mcp', '/health'), {
+          method: 'GET',
+          timeout: 2000
+        })
+        
+        if (response.ok) {
+          return // Server is ready
+        }
+      } catch {
+        // Server not ready yet, continue waiting
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 500))
+    }
+    
+    throw new MCPConnectionError(`HTTP server failed to start within ${timeout}ms`)
+  }
+
+  private async cleanup(): Promise<void> {
+    if (this.childProcess && !this.childProcess.killed) {
+      this.childProcess.kill('SIGTERM')
+      
+      // Wait for graceful shutdown
+      setTimeout(() => {
+        if (this.childProcess && !this.childProcess.killed) {
+          this.childProcess.kill('SIGKILL')
+        }
+      }, 5000)
+    }
+  }
+
+  private async getAuthHeaders(): Promise<Record<string, string>> {
+    const headers: Record<string, string> = {}
+    
+{{#if (ne authType 'none')}}
+    if (this.options.http?.auth) {
+      switch (this.options.http.auth.type) {
+{{#if (eq authType 'bearer')}}
+        case 'bearer':
+          if (this.options.http.auth.token) {
+            headers.Authorization = `Bearer ${this.options.http.auth.token}`
+          }
+          break
+{{/if}}
+{{#if (eq authType 'basic')}}
+        case 'basic':
+          if (this.options.http.auth.username && this.options.http.auth.password) {
+            const credentials = Buffer.from(`${this.options.http.auth.username}:${this.options.http.auth.password}`).toString('base64')
+            headers.Authorization = `Basic ${credentials}`
+          }
+          break
+{{/if}}
+{{#if oauth}}
+        case 'oauth':
+          if (this.tokenManager) {
+            const token = await this.tokenManager.getAccessToken('{{kebabCase name}}')
+            if (token) {
+              headers.Authorization = `Bearer ${token}`
+            }
+          }
+          break
+{{/if}}
+{{#if (eq authType 'custom')}}
+        case 'custom':
+          if (this.options.http.auth.headers) {
+            Object.assign(headers, this.options.http.auth.headers)
+          }
+          break
+{{/if}}
+      }
+    }
+{{/if}}
+
+    return headers
+  }
+
+{{#if oauth}}
+  /**
+   * Initialize OAuth
+   */
+  private initializeOAuth(): void {
+    if (this.options.transport !== 'http' || !this.options.http?.auth) {
+      return
+    }
+
+    if (this.options.http.auth.type === 'oauth' && this.options.http.auth.oauth) {
+      // Initialize token manager
+      this.tokenManager = new TokenManager()
+
+      // Initialize provider based on configuration
+      const oauthConfig = this.options.http.auth.oauth
+      
+      // Try to get from environment first
+      this.oauthProvider = OAuthProviderFactory.fromEnvironment(oauthConfig.provider)
+      
+      if (!this.oauthProvider) {
+        // Create new provider
+        this.oauthProvider = OAuthProviderFactory.create(oauthConfig)
+      }
+      
+      console.log(`[{{titleCase name}}Client] OAuth initialized for ${oauthConfig.provider}`)
+    }
+  }
+
+  /**
+   * Authenticate with OAuth
+   */
+  async authenticateOAuth(): Promise<void> {
+    if (!this.oauthProvider) {
+      throw new Error('OAuth provider not initialized')
+    }
+
+    // Check if authentication is needed
+    if (this.oauthProvider.needsAuthentication) {
+      const needsAuth = await this.oauthProvider.needsAuthentication()
+      
+      if (!needsAuth) {
+        console.log(`[{{titleCase name}}Client] Using existing OAuth token`)
+        return
+      }
+    } else {
+      // Fallback for providers without needsAuthentication
+      const existingToken = await this.oauthProvider.getStoredToken()
+      if (existingToken && !this.tokenManager?.isTokenExpired(existingToken)) {
+        console.log(`[{{titleCase name}}Client] Using existing OAuth token`)
+        return
+      }
+    }
+
+    // Check if provider supports OAuth flow
+    if (this.oauthProvider.performAuthFlow) {
+      console.log(`[{{titleCase name}}Client] Starting OAuth authentication flow...`)
+      
+      try {
+        await this.oauthProvider.performAuthFlow()
+        console.log(`[{{titleCase name}}Client] OAuth authentication successful`)
+      } catch (error) {
+        // Fallback to environment variables
+        console.error(`[{{titleCase name}}Client] OAuth flow failed: ${error.message}`)
+        console.log(`[{{titleCase name}}Client] Please set environment variables for authentication.`)
+        throw error
+      }
+    } else {
+      // Provider doesn't support OAuth flow yet
+      console.log(`[{{titleCase name}}Client] OAuth token required. Please set environment variables.`)
+      throw new Error('Authentication required')
+    }
+  }
+{{/if}}
+
+  private generateRequestId(): number {
+    return ++this.requestId
+  }
+
+  private async refreshCapabilities(): Promise<void> {
+    try {
+      await Promise.all([
+        this.listTools(),
+        this.listResources().catch(error => {
+          // Resources might not be supported, that's ok
+          console.warn(`[{{titleCase name}}Client] Failed to load resources:`, error.message)
+        })
+      ])
+    } catch (error) {
+      console.error(`[{{titleCase name}}Client] Failed to refresh capabilities:`, error)
+      throw error
+    }
+  }
+
+  private updateStats(responseTime: number, isError: boolean): void {
+    if (isError) {
+      this.stats.errorCount++
+    }
+
+    // Update average response time
+    const currentAvg = this.stats.averageResponseTime
+    const count = this.stats.requestCount
+    this.stats.averageResponseTime = ((currentAvg * (count - 1)) + responseTime) / count
+    this.stats.lastRequestTime = new Date()
+  }
+
+{{#if caching}}
+  private generateCacheKey(...parts: any[]): string {
+    return parts.map(part => 
+      typeof part === 'object' ? JSON.stringify(part) : String(part)
+    ).join(':')
+  }
+
+  private getCachedValue<T>(key: string): T | null {
+    const entry = this.cache.get(key)
+    if (!entry) return null
+
+    if (Date.now() - entry.timestamp > entry.ttl) {
+      this.cache.delete(key)
+      return null
+    }
+
+    return entry.data
+  }
+
+  private setCachedValue<T>(key: string, data: T): void {
+    if (!this.options.cache?.enabled) return
+
+    const ttl = this.options.cache.ttl || 300000
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now(),
+      ttl
+    })
+
+    // Cleanup old entries if cache is getting large
+    if (this.cache.size > (this.options.cache.maxSize || 1000)) {
+      this.cleanupCache()
+    }
+  }
+
+  private cleanupCache(): void {
+    const now = Date.now()
+    for (const [key, entry] of this.cache.entries()) {
+      if (now - entry.timestamp > entry.ttl) {
+        this.cache.delete(key)
+      }
+    }
+  }
+
+  private setupCacheCleanup(): void {
+    // Clean up expired cache entries every 5 minutes
+    this.cacheCleanupInterval = setInterval(() => {
+      this.cleanupCache()
+    }, 5 * 60 * 1000)
+  }
+{{/if}}
+
+{{#if healthCheck}}
+  private setupHealthChecking(): void {
+    if (!this.options.healthCheck?.enabled) return
+
+    const interval = this.options.healthCheck.interval || 60000
+    
+    this.healthCheckInterval = setInterval(async () => {
+      if (this.state.connected) {
+        const isHealthy = await this.checkHealth()
+        if (!isHealthy) {
+          console.warn(`[{{titleCase name}}Client] Health check failed for ${this.options.endpoint}`)
+          this.emit('error', new MCPConnectionError('Health check failed'))
+        }
+      }
+    }, interval)
+  }
+{{/if}}
+}

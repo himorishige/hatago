@@ -18,14 +18,14 @@ route:
       receiver: 'critical-alerts'
       group_wait: 5s
       repeat_interval: 30m
-    
+
     # Warning alerts - slower notification
     - match:
         severity: warning
       receiver: 'warning-alerts'
       group_wait: 30s
       repeat_interval: 2h
-    
+
     # Circuit breaker alerts
     - match:
         alertname: HatagoCircuitBreakerOpen
@@ -51,7 +51,7 @@ receivers:
           Summary: {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}
           Description: {{ range .Alerts }}{{ .Annotations.description }}{{ end }}
           Runbook: {{ range .Alerts }}{{ .Annotations.runbook_url }}{{ end }}
-    
+
     # Email notifications for critical alerts
     email_configs:
       - to: 'sre-team@company.com'
@@ -60,12 +60,12 @@ receivers:
           Alert: {{ .GroupLabels.alertname }}
           Severity: {{ .CommonLabels.severity }}
           Instance: {{ .GroupLabels.instance }}
-          
+
           Summary: {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}
           Description: {{ range .Alerts }}{{ .Annotations.description }}{{ end }}
-          
+
           Runbook: {{ range .Alerts }}{{ .Annotations.runbook_url }}{{ end }}
-          
+
           Time: {{ .FireTime }}
 
   - name: 'warning-alerts'
@@ -88,7 +88,7 @@ inhibit_rules:
     target_match:
       severity: warning
     equal: ['instance', 'alertname']
-  
+
   # Suppress availability alerts if instance is down
   - source_match:
       alertname: HatagoInstanceDown

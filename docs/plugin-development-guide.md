@@ -52,24 +52,24 @@ import type { CapabilityAwarePluginFactory, PluginContext } from '@hatago/core'
 const myPlugin: CapabilityAwarePluginFactory = (context: PluginContext) => {
   return async ({ server, capabilities }) => {
     const { logger, fetch } = capabilities
-    
+
     server.registerTool(
       'my.tool',
       {
         title: 'My Tool',
         description: 'Does something useful',
-        inputSchema: {}
+        inputSchema: {},
       },
       async (args: any) => {
         logger.info('Tool called', { args })
-        
+
         // Your tool implementation here
         return {
-          content: [{ type: 'text', text: 'Hello from my plugin!' }]
+          content: [{ type: 'text', text: 'Hello from my plugin!' }],
         }
       }
     )
-    
+
     logger.info('My plugin initialized')
   }
 }
@@ -106,13 +106,13 @@ Plugins use a capability-based security model where they must declare required c
 
 ### Available Capabilities
 
-| Capability | Description | Node.js | Workers |
-|------------|-------------|---------|---------|
-| `logger` | Structured logging | ✅ | ✅ |
-| `fetch` | HTTP client | ✅ | ✅ |
-| `kv` | Key-value storage | ✅ | ✅ |
-| `timer` | Timers and intervals | ✅ | ⚠️ Limited |
-| `crypto` | Cryptographic functions | ✅ | ✅ |
+| Capability | Description             | Node.js | Workers    |
+| ---------- | ----------------------- | ------- | ---------- |
+| `logger`   | Structured logging      | ✅      | ✅         |
+| `fetch`    | HTTP client             | ✅      | ✅         |
+| `kv`       | Key-value storage       | ✅      | ✅         |
+| `timer`    | Timers and intervals    | ✅      | ⚠️ Limited |
+| `crypto`   | Cryptographic functions | ✅      | ✅         |
 
 ### Using Capabilities
 
@@ -121,25 +121,29 @@ const myPlugin: CapabilityAwarePluginFactory = (context: PluginContext) => {
   return async ({ server, capabilities }) => {
     // Only declared capabilities are available
     const { logger, fetch, kv } = capabilities
-    
+
     // Use capabilities in your tools
-    server.registerTool('my.tool', {
-      title: 'My Tool',
-      description: 'Example tool',
-      inputSchema: {}
-    }, async (args: any) => {
-      // Log activity
-      logger.info('Processing request', { args })
-      
-      // Make HTTP request
-      const response = await fetch('https://api.example.com/data')
-      const data = await response.json()
-      
-      // Store in KV
-      await kv.set('last-result', JSON.stringify(data))
-      
-      return { content: [{ type: 'text', text: 'Done!' }] }
-    })
+    server.registerTool(
+      'my.tool',
+      {
+        title: 'My Tool',
+        description: 'Example tool',
+        inputSchema: {},
+      },
+      async (args: any) => {
+        // Log activity
+        logger.info('Processing request', { args })
+
+        // Make HTTP request
+        const response = await fetch('https://api.example.com/data')
+        const data = await response.json()
+
+        // Store in KV
+        await kv.set('last-result', JSON.stringify(data))
+
+        return { content: [{ type: 'text', text: 'Done!' }] }
+      }
+    )
   }
 }
 ```
@@ -155,7 +159,7 @@ Plugins follow the factory pattern:
 const myPlugin: CapabilityAwarePluginFactory = (context: PluginContext) => {
   // Setup phase - initialize configuration, validate requirements
   const config = context.config as MyPluginConfig
-  
+
   // Return the actual plugin function
   return async ({ server, capabilities }) => {
     // Registration phase - register tools, resources, etc.
@@ -170,9 +174,9 @@ The `PluginContext` provides:
 
 ```typescript
 interface PluginContext {
-  manifest: PluginManifest  // Plugin metadata
-  config: Record<string, unknown>  // User configuration
-  runtime: 'node' | 'workers'  // Current runtime
+  manifest: PluginManifest // Plugin metadata
+  config: Record<string, unknown> // User configuration
+  runtime: 'node' | 'workers' // Current runtime
 }
 ```
 
@@ -182,20 +186,24 @@ interface PluginContext {
 const myPlugin: CapabilityAwarePluginFactory = (context: PluginContext) => {
   return async ({ server, capabilities }) => {
     const { logger } = capabilities
-    
-    server.registerTool('my.tool', {
-      title: 'My Tool',
-      description: 'Tool that might fail',
-      inputSchema: {}
-    }, async (args: any) => {
-      try {
-        // Tool implementation
-        return { content: [{ type: 'text', text: 'Success!' }] }
-      } catch (error) {
-        logger.error('Tool failed', { error: error.message, args })
-        throw new Error(`Tool failed: ${error.message}`)
+
+    server.registerTool(
+      'my.tool',
+      {
+        title: 'My Tool',
+        description: 'Tool that might fail',
+        inputSchema: {},
+      },
+      async (args: any) => {
+        try {
+          // Tool implementation
+          return { content: [{ type: 'text', text: 'Success!' }] }
+        } catch (error) {
+          logger.error('Tool failed', { error: error.message, args })
+          throw new Error(`Tool failed: ${error.message}`)
+        }
       }
-    })
+    )
   }
 }
 ```
@@ -226,7 +234,7 @@ In `hatago.plugin.json`:
 {
   "entry": {
     "node": "./dist/node.js",
-    "workers": "./dist/workers.js", 
+    "workers": "./dist/workers.js",
     "default": "./dist/index.js"
   }
 }
@@ -248,31 +256,31 @@ describe('MyPlugin', () => {
       manifest: {
         name: '@test/my-plugin',
         version: '0.1.0',
-        capabilities: ['logger']
+        capabilities: ['logger'],
       },
       config: {},
-      runtime: 'node' as const
+      runtime: 'node' as const,
     }
-    
+
     const mockServer = {
-      registerTool: vi.fn()
+      registerTool: vi.fn(),
     }
-    
+
     const mockCapabilities = {
       logger: {
         info: vi.fn(),
         error: vi.fn(),
         warn: vi.fn(),
-        debug: vi.fn()
-      }
+        debug: vi.fn(),
+      },
     }
-    
+
     const plugin = myPlugin(context)
-    await plugin({ 
-      server: mockServer as any, 
-      capabilities: mockCapabilities as any 
+    await plugin({
+      server: mockServer as any,
+      capabilities: mockCapabilities as any,
     })
-    
+
     expect(mockServer.registerTool).toHaveBeenCalled()
   })
 })
@@ -290,11 +298,9 @@ import myPlugin from './src/index.js'
 async function test() {
   const { app, server } = await createApp({
     name: 'test-app',
-    plugins: [
-      myPlugin({ customOption: 'test' })
-    ]
+    plugins: [myPlugin({ customOption: 'test' })],
   })
-  
+
   // Test tool execution via MCP
   // ...
 }
@@ -310,7 +316,7 @@ Only declare capabilities you actually use:
 
 ```json
 {
-  "capabilities": ["logger"]  // Don't request fetch if you don't use it
+  "capabilities": ["logger"] // Don't request fetch if you don't use it
 }
 ```
 
@@ -335,11 +341,11 @@ Validate configuration early:
 ```typescript
 const myPlugin: CapabilityAwarePluginFactory = (context: PluginContext) => {
   const config = context.config as MyPluginConfig
-  
+
   if (config.requiredOption === undefined) {
     throw new Error('requiredOption is required')
   }
-  
+
   return async ({ server, capabilities }) => {
     // ...
   }
@@ -354,11 +360,11 @@ Clean up resources when possible:
 const myPlugin: CapabilityAwarePluginFactory = (context: PluginContext) => {
   return async ({ server, capabilities }) => {
     const { timer } = capabilities
-    
+
     const intervalId = timer?.setInterval(() => {
       // Periodic task
     }, 60000)
-    
+
     // Return cleanup function (optional)
     return () => {
       if (intervalId && timer) {
@@ -378,7 +384,7 @@ logger.info('Operation completed', {
   operation: 'data-sync',
   duration: Date.now() - start,
   recordCount: results.length,
-  pluginName: context.manifest.name
+  pluginName: context.manifest.name,
 })
 ```
 

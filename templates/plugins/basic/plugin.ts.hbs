@@ -1,0 +1,125 @@
+import type { HatagoPlugin } from '@hatago/core'
+
+/**
+ * {{description}}
+ * 
+ * @author {{author}}
+ * @version {{version}}
+ * @created {{timestamp}}
+ */
+export const {{camelCase name}}Plugin: HatagoPlugin = ({ server, app, env, getBaseUrl }) => {
+  {{#if hasTools}}
+  // Register tools
+  {{#each tools}}
+  server.registerTool({
+    name: '{{name}}',
+    description: '{{description}}',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        {{#each parameters}}
+        {{name}}: {
+          type: '{{type}}',
+          description: '{{description}}',
+          {{#if default}}default: {{default}},{{/if}}
+          {{#if required}}required: true,{{/if}}
+        },
+        {{/each}}
+      },
+    },
+  }, async ({{#if parameters}}{ {{#each parameters}}{{name}}{{#unless @last}}, {{/unless}}{{/each}} }{{else}}_params{{/if}}) => {
+    // TODO: Implement {{name}} tool logic
+    {{#if isAsync}}
+    return new Promise((resolve) => {
+      // Async implementation here
+      resolve({
+        content: [
+          {
+            type: 'text',
+            text: 'Tool {{name}} executed successfully',
+          },
+        ],
+      })
+    })
+    {{else}}
+    return {
+      content: [
+        {
+          type: 'text',
+          text: 'Tool {{name}} executed successfully',
+        },
+      ],
+    }
+    {{/if}}
+  })
+  
+  {{/each}}
+  {{/if}}
+  
+  {{#if hasResources}}
+  // Register resources
+  {{#each resources}}
+  server.registerResource({
+    uri: '{{uri}}',
+    name: '{{name}}',
+    description: '{{description}}',
+    mimeType: '{{mimeType}}',
+  }, async () => {
+    // TODO: Implement {{name}} resource logic
+    return {
+      content: [
+        {
+          type: 'text',
+          text: 'Resource {{name}} content',
+        },
+      ],
+    }
+  })
+  
+  {{/each}}
+  {{/if}}
+  
+  {{#if hasHttpRoutes}}
+  // Register HTTP routes
+  {{#each routes}}
+  app.{{method}}('{{path}}', async (c) => {
+    // TODO: Implement {{method}} {{path}} route
+    return c.json({ 
+      message: 'Route {{method}} {{path}} working',
+      plugin: '{{../name}}',
+      timestamp: new Date().toISOString(),
+    })
+  })
+  
+  {{/each}}
+  {{/if}}
+  
+  {{#if hasMiddleware}}
+  // Register middleware
+  app.use('*', async (c, next) => {
+    // TODO: Implement middleware logic
+    console.log(`[{{name}}] ${c.req.method} ${c.req.url}`)
+    await next()
+  })
+  
+  {{/if}}
+  
+  {{#if hasConfiguration}}
+  // Plugin configuration
+  const config = {
+    {{#each configOptions}}
+    {{name}}: env?.{{envVar}} || '{{defaultValue}}',
+    {{/each}}
+  }
+  
+  // Validate configuration
+  {{#each configOptions}}
+  {{#if required}}
+  if (!config.{{name}}) {
+    throw new Error('{{envVar}} environment variable is required for {{../name}} plugin')
+  }
+  {{/if}}
+  {{/each}}
+  
+  {{/if}}
+}

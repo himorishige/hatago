@@ -1,0 +1,491 @@
+# {{titleCase name}} Plugin
+
+{{description}}
+
+This plugin provides integration with {{mcpServerName}} by wrapping its MCP tools and resources, making them available through the Hatago interface.
+
+## Features
+
+- ✅ Automatic tool discovery and registration
+- ✅ Resource access and management
+{{#if caching}}
+- ✅ Response caching for improved performance
+{{/if}}
+{{#if healthCheck}}
+- ✅ Health monitoring and automatic reconnection
+{{/if}}
+{{#if autoStart}}
+- ✅ Auto-start external MCP server process
+{{/if}}
+{{#if (ne authType 'none')}}
+- ✅ {{titleCase authType}} authentication support
+{{/if}}
+- ✅ Comprehensive error handling and logging
+- ✅ HTTP status and health endpoints
+
+## Installation
+
+### Prerequisites
+
+- Node.js 18 or higher
+- {{mcpServerName}} installed and accessible
+{{#if (ne authType 'none')}}
+- Valid {{authType}} credentials for {{mcpServerName}}
+{{/if}}
+
+### Install {{mcpServerName}}
+
+```bash
+npm install -g {{mcpServerName}}
+```
+
+### Add Plugin to Hatago
+
+1. **Using Hatago CLI** (if available):
+   ```bash
+   hatago create-plugin {{name}} --template mcp-wrapper
+   ```
+
+2. **Manual Installation**:
+   ```bash
+   # Copy plugin files to your Hatago project
+   cp -r {{kebabCase name}}.* src/plugins/
+   ```
+
+## Configuration
+
+### Environment Variables
+
+{{#if (ne authType 'none')}}
+**Required:**
+- `{{authToken}}` - {{titleCase authType}} token for {{mcpServerName}}
+
+{{/if}}
+**Optional:**
+- `{{toUpperCase (snakeCase name)}}_ENDPOINT` - MCP server endpoint (default: `{{mcpServerEndpoint}}`)
+- `{{toUpperCase (snakeCase name)}}_PORT` - MCP server port (default: `{{mcpServerPort}}`)
+{{#if namespace}}
+- `{{toUpperCase (snakeCase name)}}_NAMESPACE` - Tool namespace prefix (default: `{{namespace}}`)
+{{/if}}
+{{#if caching}}
+- `{{toUpperCase (snakeCase name)}}_CACHE_ENABLED` - Enable caching (default: `true`)
+- `{{toUpperCase (snakeCase name)}}_CACHE_TTL` - Cache TTL in milliseconds (default: `300000`)
+{{/if}}
+{{#if healthCheck}}
+- `{{toUpperCase (snakeCase name)}}_HEALTH_CHECK` - Enable health checks (default: `true`)
+- `{{toUpperCase (snakeCase name)}}_HEALTH_INTERVAL` - Health check interval (default: `60000`)
+{{/if}}
+{{#if autoStart}}
+- `{{toUpperCase (snakeCase name)}}_AUTO_START` - Auto-start external server (default: `false`)
+{{/if}}
+
+### Example Configuration
+
+Create a `.env` file:
+
+```bash
+{{#if (ne authType 'none')}}
+{{authToken}}=your-auth-token-here
+{{/if}}
+{{toUpperCase (snakeCase name)}}_ENDPOINT={{mcpServerEndpoint}}
+{{toUpperCase (snakeCase name)}}_PORT={{mcpServerPort}}
+{{#if namespace}}
+{{toUpperCase (snakeCase name)}}_NAMESPACE={{namespace}}
+{{/if}}
+{{#if caching}}
+{{toUpperCase (snakeCase name)}}_CACHE_ENABLED=true
+{{toUpperCase (snakeCase name)}}_CACHE_TTL=300000
+{{/if}}
+{{#if healthCheck}}
+{{toUpperCase (snakeCase name)}}_HEALTH_CHECK=true
+{{toUpperCase (snakeCase name)}}_HEALTH_INTERVAL=60000
+{{/if}}
+{{#if autoStart}}
+{{toUpperCase (snakeCase name)}}_AUTO_START=false
+{{/if}}
+```
+
+### Hatago Configuration
+
+Add to your `hatago.config.jsonc`:
+
+```json
+{
+  "plugins": ["{{kebabCase name}}"]
+}
+```
+
+## Usage
+
+### STDIO Transport (Recommended)
+
+With STDIO transport, no external server setup is required. The plugin will automatically spawn and manage the {{mcpServerName}} process.
+
+```bash
+# Simply start Hatago - the plugin handles the rest!
+hatago dev
+```
+
+The plugin will automatically:
+1. Spawn {{mcpServerName}} as a child process
+2. Establish STDIO communication
+3. Discover and register tools/resources
+{{#if namespace}}
+4. Add the `{{namespace}}` namespace prefix to tool names
+{{/if}}
+
+### HTTP Transport (Alternative)
+
+#### Option 1: Auto-start (Recommended)
+The plugin can automatically start {{mcpServerName}} and find an available port:
+
+```bash
+# Set transport to HTTP and enable auto-start
+export {{toUpperCase (snakeCase name)}}_TRANSPORT=http
+
+# Start Hatago
+hatago dev
+```
+
+#### Option 2: External Server
+Run {{mcpServerName}} separately:
+
+```bash
+# Start {{mcpServerName}} on port {{mcpServerPort}}
+{{#if (ne authType 'none')}}
+{{authToken}}="${{authToken}}" {{mcpServerName}} --port {{mcpServerPort}}
+{{else}}
+{{mcpServerName}} --port {{mcpServerPort}}
+{{/if}}
+
+# In another terminal, start Hatago
+export {{toUpperCase (snakeCase name)}}_TRANSPORT=http
+export {{toUpperCase (snakeCase name)}}_ENDPOINT=http://localhost:{{mcpServerPort}}/mcp
+hatago dev
+```
+
+### Transport Comparison
+
+| Feature | STDIO | HTTP |
+|---------|-------|------|
+| Setup Complexity | ✅ Simple | ⚠️ Complex |
+| Port Management | ✅ Not needed | ⚠️ Required |
+| Performance | ✅ Fast | ⚠️ Network overhead |
+| Authentication | ✅ Process-level | ✅ Token-based |
+| External Access | ❌ Local only | ✅ Network accessible |
+| Use Case | Development | Production/Remote |
+
+## Available Tools
+
+The plugin will dynamically discover and register all tools from {{mcpServerName}}. Common tools include:
+
+{{#if tools}}
+{{#each tools}}
+### {{#if ../namespace}}{{../namespace}}.{{/if}}{{this.name}}
+
+{{this.description}}
+
+{{/each}}
+{{else}}
+*Tools will be discovered automatically when the plugin connects to {{mcpServerName}}.*
+{{/if}}
+
+To see all available tools:
+
+```bash
+# List all tools
+curl -X POST http://localhost:8787/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+```
+
+## HTTP Endpoints
+
+The plugin exposes several HTTP endpoints for monitoring and management:
+
+### Status Endpoint
+
+```bash
+curl http://localhost:8787/{{kebabCase name}}/status
+```
+
+Response:
+```json
+{
+  "status": "ok",
+  "plugin": "{{name}}",
+  "mcpServer": "{{mcpServerName}}",
+  "endpoint": "{{mcpServerEndpoint}}",
+  "connected": true,
+{{#if autoStart}}
+  "externalProcessRunning": false,
+{{/if}}
+  "toolsLoaded": 5,
+  "resourcesLoaded": 2
+}
+```
+
+{{#if healthCheck}}
+### Health Endpoint
+
+```bash
+curl http://localhost:8787/{{kebabCase name}}/health
+```
+
+Response:
+```json
+{
+  "status": "healthy",
+  "endpoint": "{{mcpServerEndpoint}}",
+  "lastCheck": "2025-08-15T10:30:00Z"
+}
+```
+{{/if}}
+
+### Configuration Resource
+
+```bash
+curl -X POST http://localhost:8787/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"resources/read","params":{"uri":"{{kebabCase name}}://config"}}'
+```
+
+## Docker Setup
+
+{{#if includeDocker}}
+Use the provided Docker Compose configuration to run both Hatago and {{mcpServerName}}:
+
+```bash
+# Start services
+docker-compose -f docker/{{kebabCase name}}-compose.yml up -d
+
+# View logs
+docker-compose -f docker/{{kebabCase name}}-compose.yml logs -f
+
+# Stop services
+docker-compose -f docker/{{kebabCase name}}-compose.yml down
+```
+{{else}}
+Create a Docker Compose configuration:
+
+```yaml
+version: '3.8'
+services:
+  hatago:
+    build: .
+    ports:
+      - "8787:8787"
+    environment:
+{{#if (ne authType 'none')}}
+      - {{authToken}}=${{{authToken}}}
+{{/if}}
+    depends_on:
+      - {{kebabCase mcpServerName}}
+
+  {{kebabCase mcpServerName}}:
+    image: node:20-alpine
+    command: npx {{mcpServerName}} --port {{mcpServerPort}} --host 0.0.0.0
+    environment:
+{{#if (ne authType 'none')}}
+      - {{authToken}}=${{{authToken}}}
+{{/if}}
+    ports:
+      - "{{mcpServerPort}}:{{mcpServerPort}}"
+```
+{{/if}}
+
+## Development
+
+### Testing the Plugin
+
+```bash
+# Run unit tests
+npm test src/plugins/{{kebabCase name}}.test.ts
+
+# Run integration tests
+npm test tests/integration/{{kebabCase name}}.integration.test.ts
+
+# Test with real MCP server
+{{#if (ne authType 'none')}}
+{{authToken}}="test-token" npm run test:integration
+{{else}}
+npm run test:integration
+{{/if}}
+```
+
+### Debugging
+
+Enable debug logging:
+
+```bash
+DEBUG={{kebabCase name}}:* hatago dev
+```
+
+### Plugin Structure
+
+```
+src/plugins/
+├── {{kebabCase name}}.ts              # Main plugin implementation
+├── {{kebabCase name}}.types.ts        # Type definitions
+├── {{kebabCase name}}.config.ts       # Configuration schema
+└── {{kebabCase name}}.client.ts       # MCP client implementation
+
+tests/
+├── plugins/{{kebabCase name}}.test.ts                    # Unit tests
+└── integration/{{kebabCase name}}.integration.test.ts   # Integration tests
+
+docs/plugins/{{titleCase name}}.md                       # This documentation
+```
+
+## Troubleshooting
+
+### Common Issues
+
+#### Connection Refused
+```
+Error: Cannot connect to {{mcpServerEndpoint}}
+```
+
+**Solutions:**
+1. Ensure {{mcpServerName}} is running on port {{mcpServerPort}}
+2. Check firewall settings
+3. Verify the endpoint URL is correct
+
+#### Authentication Failed
+```
+Error: 401 Unauthorized
+```
+
+**Solutions:**
+{{#if (ne authType 'none')}}
+1. Verify `{{authToken}}` environment variable is set
+2. Check token validity and permissions
+3. Ensure token format is correct
+{{else}}
+1. Check if authentication is required
+2. Verify server configuration
+{{/if}}
+
+#### Tool Not Found
+```
+Error: Tool 'example-tool' not found
+```
+
+**Solutions:**
+1. Check if {{mcpServerName}} is properly initialized
+2. Verify tool is available: `curl http://localhost:{{mcpServerPort}}/mcp -d '{"method":"tools/list"}'`
+3. Check plugin logs for tool discovery issues
+
+{{#if caching}}
+#### Cache Issues
+```
+Warning: Cache hit rate is low
+```
+
+**Solutions:**
+1. Increase cache TTL: `{{toUpperCase (snakeCase name)}}_CACHE_TTL=600000`
+2. Check if tools have varying parameters
+3. Monitor cache size and cleanup
+{{/if}}
+
+### Debug Commands
+
+```bash
+# Check plugin status
+curl http://localhost:8787/{{kebabCase name}}/status
+
+# Test MCP server directly
+curl -X POST {{mcpServerEndpoint}} \
+  -H "Content-Type: application/json" \
+{{#if (ne authType 'none')}}
+  -H "Authorization: Bearer ${{authToken}}" \
+{{/if}}
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+
+# Check Hatago logs
+tail -f logs/hatago.log | grep "{{name}}"
+```
+
+## Configuration Reference
+
+### Complete Configuration Schema
+
+```typescript
+interface {{titleCase name}}Config {
+  name: string                    // Plugin name
+  endpoint: string                // MCP server endpoint
+  port: number                    // MCP server port
+{{#if (ne authType 'none')}}
+  authToken: string              // Authentication token
+{{/if}}
+{{#if namespace}}
+  namespace?: string             // Tool namespace prefix
+{{/if}}
+{{#if caching}}
+  cache?: {
+    enabled: boolean             // Enable caching
+    ttl: number                 // Cache TTL in ms
+    maxSize?: number            // Maximum cache entries
+  }
+{{/if}}
+{{#if healthCheck}}
+  healthCheck?: {
+    enabled: boolean             // Enable health checks
+    interval: number            // Check interval in ms
+    timeout?: number            // Check timeout in ms
+    retries?: number            // Retry attempts
+  }
+{{/if}}
+{{#if autoStart}}
+  autoStart?: boolean           // Auto-start external server
+{{/if}}
+}
+```
+
+### Environment Variable Reference
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+{{#if (ne authType 'none')}}
+| `{{authToken}}` | string | *required* | {{titleCase authType}} authentication token |
+{{/if}}
+| `{{toUpperCase (snakeCase name)}}_ENDPOINT` | string | `{{mcpServerEndpoint}}` | MCP server endpoint URL |
+| `{{toUpperCase (snakeCase name)}}_PORT` | number | `{{mcpServerPort}}` | MCP server port number |
+{{#if namespace}}
+| `{{toUpperCase (snakeCase name)}}_NAMESPACE` | string | `{{namespace}}` | Tool namespace prefix |
+{{/if}}
+{{#if caching}}
+| `{{toUpperCase (snakeCase name)}}_CACHE_ENABLED` | boolean | `true` | Enable response caching |
+| `{{toUpperCase (snakeCase name)}}_CACHE_TTL` | number | `300000` | Cache TTL in milliseconds |
+{{/if}}
+{{#if healthCheck}}
+| `{{toUpperCase (snakeCase name)}}_HEALTH_CHECK` | boolean | `true` | Enable health checking |
+| `{{toUpperCase (snakeCase name)}}_HEALTH_INTERVAL` | number | `60000` | Health check interval |
+{{/if}}
+{{#if autoStart}}
+| `{{toUpperCase (snakeCase name)}}_AUTO_START` | boolean | `false` | Auto-start external server |
+{{/if}}
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/{{kebabCase name}}-improvement`
+3. Make your changes
+4. Add tests for new functionality
+5. Ensure all tests pass: `npm test`
+6. Submit a pull request
+
+## License
+
+This plugin is part of the Hatago project and is licensed under the same terms.
+
+## Support
+
+- **Documentation**: [Hatago Plugin Guide](https://hatago.dev/docs/plugins)
+- **Issues**: [GitHub Issues](https://github.com/himorishige/hatago/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/himorishige/hatago/discussions)
+- **{{mcpServerName}}**: [Official Repository](https://github.com/{{mcpServerName}})
+
+---
+
+*This plugin was generated using the Hatago MCP Wrapper template.*

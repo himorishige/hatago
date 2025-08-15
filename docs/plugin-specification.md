@@ -19,11 +19,7 @@ Every plugin must include a `hatago.plugin.json` manifest file:
     "node": ">=18",
     "workers": ">=2023-10-30"
   },
-  "capabilities": [
-    "fetch",
-    "kv", 
-    "logger"
-  ],
+  "capabilities": ["fetch", "kv", "logger"],
   "entry": {
     "node": "./dist/index.js",
     "workers": "./dist/worker.js",
@@ -81,15 +77,19 @@ export default function plugin(context: PluginContext): HatagoPlugin {
   return async ({ server, capabilities }) => {
     // Plugin implementation
     const { logger, fetch } = capabilities
-    
-    server.registerTool('my.tool', {
-      title: 'My Tool',
-      description: 'Example tool',
-      inputSchema: {}
-    }, async (args) => {
-      logger.info('Tool called', { args })
-      return { content: [{ type: 'text', text: 'Hello' }] }
-    })
+
+    server.registerTool(
+      'my.tool',
+      {
+        title: 'My Tool',
+        description: 'Example tool',
+        inputSchema: {},
+      },
+      async args => {
+        logger.info('Tool called', { args })
+        return { content: [{ type: 'text', text: 'Hello' }] }
+      }
+    )
   }
 }
 ```
@@ -177,9 +177,9 @@ import { createMockContext } from '@hatago/test-utils'
 
 test('plugin works', async () => {
   const context = createMockContext({
-    capabilities: ['logger', 'fetch']
+    capabilities: ['logger', 'fetch'],
   })
-  
+
   const plugin = await import('./src/index.js')
   // Test plugin behavior
 })
@@ -188,7 +188,7 @@ test('plugin works', async () => {
 ## Publishing
 
 1. Build for all target runtimes
-2. Run tests on all runtimes  
+2. Run tests on all runtimes
 3. Validate manifest schema
 4. Publish to npm registry
 

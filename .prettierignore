@@ -1,0 +1,12 @@
+node_modules/
+dist/
+build/
+.next/
+coverage/
+docs/dist/
+# Ignore Handlebars templates to avoid parser conflicts
+templates/**/*.hbs
+# Ignore all templated sources (contain {{...}} placeholders)
+templates/**
+# Prometheus YAML rules contain syntax Prettier YAML parser may flag
+docs/observability/**/*.yml

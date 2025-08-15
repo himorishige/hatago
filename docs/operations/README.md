@@ -62,12 +62,12 @@ curl http://localhost:8787/health/startup
 
 ### Target Metrics
 
-| Metric | Target | Measurement Window | Alert Threshold |
-|--------|--------|-------------------|-----------------|
-| **Availability** | 99.95% | 30-day rolling | <99.95% over 5min |
-| **P95 Latency** | <5ms | 5-minute window | >5ms for 5min |
-| **P99 Latency** | <10ms | 5-minute window | >10ms for 5min |
-| **Error Rate** | <0.1% | 5-minute window | >0.1% for 3min |
+| Metric           | Target | Measurement Window | Alert Threshold   |
+| ---------------- | ------ | ------------------ | ----------------- |
+| **Availability** | 99.95% | 30-day rolling     | <99.95% over 5min |
+| **P95 Latency**  | <5ms   | 5-minute window    | >5ms for 5min     |
+| **P99 Latency**  | <10ms  | 5-minute window    | >10ms for 5min    |
+| **Error Rate**   | <0.1%  | 5-minute window    | >0.1% for 3min    |
 
 ### SLO Monitoring
 
@@ -94,7 +94,7 @@ GET /health/live
 Response: {"status":"pass","timestamp":"2024-08-15T10:30:00Z","uptime":3600}
 
 # Readiness: Ready to accept traffic
-GET /health/ready  
+GET /health/ready
 Response: {"status":"pass","checks":{"plugins":"pass","mcp":"pass"}}
 
 # Startup: Initialization completed
@@ -108,26 +108,26 @@ Response: {"status":"pass","initialized":true,"plugins_loaded":5}
 # deployment.yaml
 spec:
   containers:
-  - name: hatago
-    livenessProbe:
-      httpGet:
-        path: /health/live
-        port: 8787
-      initialDelaySeconds: 30
-      periodSeconds: 10
-    readinessProbe:
-      httpGet:
-        path: /health/ready
-        port: 8787
-      initialDelaySeconds: 5
-      periodSeconds: 5
-    startupProbe:
-      httpGet:
-        path: /health/startup
-        port: 8787
-      initialDelaySeconds: 10
-      periodSeconds: 10
-      failureThreshold: 30
+    - name: hatago
+      livenessProbe:
+        httpGet:
+          path: /health/live
+          port: 8787
+        initialDelaySeconds: 30
+        periodSeconds: 10
+      readinessProbe:
+        httpGet:
+          path: /health/ready
+          port: 8787
+        initialDelaySeconds: 5
+        periodSeconds: 5
+      startupProbe:
+        httpGet:
+          path: /health/startup
+          port: 8787
+        initialDelaySeconds: 10
+        periodSeconds: 10
+        failureThreshold: 30
 ```
 
 ## Graceful Shutdown
@@ -147,7 +147,7 @@ kill -KILL <hatago-pid>
 ### Shutdown Process
 
 1. **Drain initiation** - Server stops accepting new requests
-2. **Request completion** - Existing requests finish processing  
+2. **Request completion** - Existing requests finish processing
 3. **Resource cleanup** - Connections closed, plugins unloaded
 4. **Process termination** - Clean exit after timeout
 
@@ -204,11 +204,13 @@ curl http://localhost:8787/mcp -d '{
 ### Alert Categories
 
 **Critical Alerts** (Immediate response):
+
 - Availability SLO breach (<99.95%)
 - Instance down (>30s)
 - Circuit breaker open
 
 **Warning Alerts** (Monitor and plan):
+
 - Latency SLO breach (P95 >5ms, P99 >10ms)
 - Error rate SLO breach (>0.1%)
 - High memory usage (>80%)
@@ -223,7 +225,7 @@ curl http://localhost:8787/mcp -d '{
      hatago:error_rate:1h > (14.4 * 0.0005))
   for: 2m
 
-# Slow burn rate: 10% budget in 24 hours  
+# Slow burn rate: 10% budget in 24 hours
 - alert: HatagoAvailabilitySLOBurnRateSlow
   expr: |
     (hatago:error_rate:30m > (2.88 * 0.0005) and
@@ -248,11 +250,13 @@ curl http://localhost:9093/api/v1/alerts
 ### Log Format
 
 **Development** (compact format):
+
 ```
 10:30:45 INFO [hatago-core] Request completed {"method":"POST","status":200,"duration_ms":42}
 ```
 
 **Production** (JSON format):
+
 ```json
 {
   "timestamp": "2024-08-15T10:30:45.123Z",
@@ -327,6 +331,7 @@ curl http://localhost:8787/security/keys
 ### Security Policies
 
 **Development** (Permissive):
+
 ```bash
 PLUGIN_SECURITY_ENABLED=true
 REQUIRE_SIGNED_PLUGINS=false
@@ -334,6 +339,7 @@ NODE_ENV=development
 ```
 
 **Production** (Strict):
+
 ```bash
 PLUGIN_SECURITY_ENABLED=true
 REQUIRE_SIGNED_PLUGINS=true
@@ -365,30 +371,35 @@ npm run test:logging
 ### Manual Testing Checklist
 
 **Health Checks**:
+
 - [ ] Liveness probe responds correctly
 - [ ] Readiness probe reflects service state
 - [ ] Startup probe indicates initialization
 - [ ] Drain endpoint stops accepting requests
 
 **Metrics & Alerting**:
+
 - [ ] Prometheus scrapes metrics successfully
 - [ ] SLO targets are exposed correctly
 - [ ] Alerts fire on SLO breaches
 - [ ] Grafana dashboards display data
 
 **Logging**:
+
 - [ ] Structured logs are formatted correctly
 - [ ] Sensitive data is redacted
 - [ ] Request tracing works end-to-end
 - [ ] Log queries return expected results
 
 **Security**:
+
 - [ ] Key generation works correctly
 - [ ] Signature verification passes/fails appropriately
 - [ ] Security metrics are tracked
 - [ ] Untrusted plugins are blocked (if configured)
 
 **Graceful Shutdown**:
+
 - [ ] SIGTERM triggers drain mode
 - [ ] In-flight requests complete
 - [ ] New requests are rejected during shutdown
@@ -419,12 +430,14 @@ watch 'curl -s http://localhost:8787/metrics | grep hatago_'
 ### Infrastructure Requirements
 
 **Minimum Resources**:
+
 - CPU: 0.5 cores
 - Memory: 512MB
 - Disk: 1GB
 - Network: 100Mbps
 
 **Recommended Resources**:
+
 - CPU: 2 cores
 - Memory: 2GB
 - Disk: 10GB SSD
@@ -491,39 +504,39 @@ spec:
         app: hatago
     spec:
       containers:
-      - name: hatago
-        image: hatago:latest
-        ports:
-        - containerPort: 8787
-        env:
-        - name: NODE_ENV
-          value: "production"
-        resources:
-          requests:
-            memory: "512Mi"
-            cpu: "0.5"
-          limits:
-            memory: "2Gi"
-            cpu: "2"
-        livenessProbe:
-          httpGet:
-            path: /health/live
-            port: 8787
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health/ready
-            port: 8787
-          initialDelaySeconds: 5
-          periodSeconds: 5
-        startupProbe:
-          httpGet:
-            path: /health/startup
-            port: 8787
-          initialDelaySeconds: 10
-          periodSeconds: 10
-          failureThreshold: 30
+        - name: hatago
+          image: hatago:latest
+          ports:
+            - containerPort: 8787
+          env:
+            - name: NODE_ENV
+              value: 'production'
+          resources:
+            requests:
+              memory: '512Mi'
+              cpu: '0.5'
+            limits:
+              memory: '2Gi'
+              cpu: '2'
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 8787
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8787
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          startupProbe:
+            httpGet:
+              path: /health/startup
+              port: 8787
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 30
 ---
 apiVersion: v1
 kind: Service
@@ -533,8 +546,8 @@ spec:
   selector:
     app: hatago
   ports:
-  - port: 8787
-    targetPort: 8787
+    - port: 8787
+      targetPort: 8787
   type: ClusterIP
 ```
 
@@ -572,24 +585,28 @@ spec:
 ### Common Issues
 
 **High Latency**:
+
 1. Check system resources (CPU, memory)
 2. Review slow request patterns in logs
 3. Examine database/external service performance
 4. Consider scaling horizontally
 
 **Memory Leaks**:
+
 1. Monitor memory usage trends
 2. Check plugin resource management
 3. Review log buffer sizes
 4. Restart affected instances
 
 **Security Violations**:
+
 1. Check plugin signature verification logs
 2. Review trusted key configuration
 3. Validate signing process
 4. Update security policies if needed
 
 **Circuit Breaker Issues**:
+
 1. Identify root cause of failures
 2. Check downstream dependencies
 3. Manually reset circuit breaker
@@ -619,7 +636,8 @@ curl http://localhost:8787/mcp -d '{"jsonrpc":"2.0","method":"tools/list"}'
 Hatago's Phase 6 operations and monitoring implementation provides a production-ready foundation for reliable MCP service delivery. The combination of SLO-based monitoring, comprehensive health checks, structured logging, and security features ensures operational excellence while maintaining the project's core philosophy of simplicity and efficiency.
 
 For additional details, refer to the component-specific documentation in:
+
 - `docs/observability/` - Monitoring and alerting setup
-- `docs/logging/` - Structured logging configuration  
+- `docs/logging/` - Structured logging configuration
 - `docs/security/` - Plugin security and signing
 - `docs/health/` - Health check implementation

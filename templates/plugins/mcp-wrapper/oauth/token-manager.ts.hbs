@@ -1,0 +1,385 @@
+/**
+ * Token manager for {{titleCase name}} plugin
+ * 
+ * Handles secure token storage, refresh, and validation
+ */
+
+import { readFile, writeFile, mkdir, unlink, access } from 'fs/promises'
+import { join, dirname } from 'path'
+import { homedir } from 'os'
+import crypto from 'crypto'
+import type { 
+  OAuthToken, 
+  TokenStorage, 
+  OAuthTokenError,
+  OAuthRefreshError 
+} from './oauth-types'
+
+/**
+ * In-memory token storage (default)
+ */
+export class MemoryTokenStorage implements TokenStorage {
+  private tokens: Map<string, OAuthToken> = new Map()
+
+  async get(key: string): Promise<OAuthToken | null> {
+    return this.tokens.get(key) || null
+  }
+
+  async set(key: string, token: OAuthToken): Promise<void> {
+    // Calculate expiration timestamp if not present
+    if (token.expires_in && !token.expires_at) {
+      token.expires_at = Date.now() + (token.expires_in * 1000)
+    }
+    this.tokens.set(key, token)
+  }
+
+  async delete(key: string): Promise<void> {
+    this.tokens.delete(key)
+  }
+
+  async has(key: string): Promise<boolean> {
+    return this.tokens.has(key)
+  }
+
+  clear(): void {
+    this.tokens.clear()
+  }
+}
+
+/**
+ * File-based token storage
+ */
+export class FileTokenStorage implements TokenStorage {
+  private filePath: string
+  private encryptionKey?: string
+
+  constructor(filePath?: string, encryptionKey?: string) {
+    this.filePath = filePath || join(homedir(), '.hatago', 'tokens.json')
+    this.encryptionKey = encryptionKey
+  }
+
+  async get(key: string): Promise<OAuthToken | null> {
+    try {
+      await access(this.filePath)
+      const content = await readFile(this.filePath, 'utf-8')
+      
+      let data = content
+      if (this.encryptionKey) {
+        data = this.decrypt(content)
+      }
+      
+      const tokens = JSON.parse(data)
+      return tokens[key] || null
+    } catch {
+      return null
+    }
+  }
+
+  async set(key: string, token: OAuthToken): Promise<void> {
+    // Calculate expiration timestamp
+    if (token.expires_in && !token.expires_at) {
+      token.expires_at = Date.now() + (token.expires_in * 1000)
+    }
+
+    let tokens: Record<string, OAuthToken> = {}
+    
+    try {
+      await access(this.filePath)
+      const content = await readFile(this.filePath, 'utf-8')
+      
+      let data = content
+      if (this.encryptionKey) {
+        data = this.decrypt(content)
+      }
+      
+      tokens = JSON.parse(data)
+    } catch {
+      // File doesn't exist, will create new one
+    }
+
+    tokens[key] = token
+
+    // Ensure directory exists
+    const dir = dirname(this.filePath)
+    await mkdir(dir, { recursive: true })
+
+    let data = JSON.stringify(tokens, null, 2)
+    if (this.encryptionKey) {
+      data = this.encrypt(data)
+    }
+
+    await writeFile(this.filePath, data, { mode: 0o600 })
+  }
+
+  async delete(key: string): Promise<void> {
+    try {
+      await access(this.filePath)
+      const content = await readFile(this.filePath, 'utf-8')
+      
+      let data = content
+      if (this.encryptionKey) {
+        data = this.decrypt(content)
+      }
+      
+      const tokens = JSON.parse(data)
+      delete tokens[key]
+
+      data = JSON.stringify(tokens, null, 2)
+      if (this.encryptionKey) {
+        data = this.encrypt(data)
+      }
+
+      await writeFile(this.filePath, data, { mode: 0o600 })
+    } catch {
+      // File doesn't exist, nothing to delete
+    }
+  }
+
+  async has(key: string): Promise<boolean> {
+    const token = await this.get(key)
+    return token !== null
+  }
+
+  private encrypt(data: string): string {
+    const iv = crypto.randomBytes(16)
+    const cipher = crypto.createCipheriv(
+      'aes-256-cbc',
+      Buffer.from(this.encryptionKey!, 'hex'),
+      iv
+    )
+    
+    let encrypted = cipher.update(data, 'utf8', 'hex')
+    encrypted += cipher.final('hex')
+    
+    return iv.toString('hex') + ':' + encrypted
+  }
+
+  private decrypt(data: string): string {
+    const [ivHex, encrypted] = data.split(':')
+    const iv = Buffer.from(ivHex, 'hex')
+    const decipher = crypto.createDecipheriv(
+      'aes-256-cbc',
+      Buffer.from(this.encryptionKey!, 'hex'),
+      iv
+    )
+    
+    let decrypted = decipher.update(encrypted, 'hex', 'utf8')
+    decrypted += decipher.final('utf8')
+    
+    return decrypted
+  }
+}
+
+/**
+ * Token manager with refresh capabilities
+ */
+export class TokenManager {
+  private storage: TokenStorage
+  private refreshCallbacks: Map<string, (token: OAuthToken) => Promise<OAuthToken>> = new Map()
+  private refreshPromises: Map<string, Promise<OAuthToken>> = new Map()
+
+  constructor(storage?: TokenStorage) {
+    this.storage = storage || new MemoryTokenStorage()
+  }
+
+  /**
+   * Get token, refreshing if necessary
+   */
+  async getToken(key: string): Promise<OAuthToken | null> {
+    const token = await this.storage.get(key)
+    
+    if (!token) {
+      return null
+    }
+
+    // Check if token is expired
+    if (this.isTokenExpired(token)) {
+      // Try to refresh if refresh callback is registered
+      if (this.refreshCallbacks.has(key) && token.refresh_token) {
+        try {
+          return await this.refreshToken(key, token)
+        } catch (error) {
+          console.error(`Failed to refresh token for ${key}:`, error)
+          // Return expired token, let the caller handle it
+          return token
+        }
+      }
+    }
+
+    return token
+  }
+
+  /**
+   * Set token in storage
+   */
+  async setToken(key: string, token: OAuthToken): Promise<void> {
+    await this.storage.set(key, token)
+  }
+
+  /**
+   * Delete token from storage
+   */
+  async deleteToken(key: string): Promise<void> {
+    await this.storage.delete(key)
+    this.refreshCallbacks.delete(key)
+    this.refreshPromises.delete(key)
+  }
+
+  /**
+   * Register refresh callback
+   */
+  registerRefreshCallback(
+    key: string, 
+    callback: (token: OAuthToken) => Promise<OAuthToken>
+  ): void {
+    this.refreshCallbacks.set(key, callback)
+  }
+
+  /**
+   * Check if token is expired
+   */
+  isTokenExpired(token: OAuthToken): boolean {
+    if (!token.expires_at) {
+      // No expiration info, assume valid
+      return false
+    }
+
+    // Check with 5 minute buffer
+    const bufferMs = 5 * 60 * 1000
+    return Date.now() > (token.expires_at - bufferMs)
+  }
+
+  /**
+   * Refresh token
+   */
+  private async refreshToken(key: string, oldToken: OAuthToken): Promise<OAuthToken> {
+    // Check if refresh is already in progress
+    if (this.refreshPromises.has(key)) {
+      return this.refreshPromises.get(key)!
+    }
+
+    const refreshCallback = this.refreshCallbacks.get(key)
+    if (!refreshCallback) {
+      throw new OAuthRefreshError('No refresh callback registered')
+    }
+
+    if (!oldToken.refresh_token) {
+      throw new OAuthRefreshError('No refresh token available')
+    }
+
+    // Start refresh process
+    const refreshPromise = (async () => {
+      try {
+        const newToken = await refreshCallback(oldToken)
+        
+        // Save new token
+        await this.setToken(key, newToken)
+        
+        return newToken
+      } finally {
+        // Clear refresh promise
+        this.refreshPromises.delete(key)
+      }
+    })()
+
+    this.refreshPromises.set(key, refreshPromise)
+    return refreshPromise
+  }
+
+  /**
+   * Get valid access token string
+   */
+  async getAccessToken(key: string): Promise<string | null> {
+    const token = await this.getToken(key)
+    return token?.access_token || null
+  }
+
+  /**
+   * Create token from environment variables
+   */
+  static createTokenFromEnv(
+    tokenEnvVar?: string,
+    provider?: string
+  ): OAuthToken | null {
+    // Check provider-specific token variables
+    const envMappings: Record<string, string> = {
+      github: 'GITHUB_PERSONAL_ACCESS_TOKEN',
+      google: 'GOOGLE_API_KEY',
+      slack: 'SLACK_BOT_TOKEN',
+      azure: 'AZURE_ACCESS_TOKEN'
+    }
+
+    let token: string | undefined
+    
+    if (tokenEnvVar && process.env[tokenEnvVar]) {
+      token = process.env[tokenEnvVar]
+    } else if (provider && envMappings[provider]) {
+      token = process.env[envMappings[provider]]
+    } else {
+      // Try common token environment variables
+      token = process.env['{{toUpperCase (snakeCase name)}}_TOKEN'] ||
+              process.env['{{toUpperCase (snakeCase name)}}_API_KEY'] ||
+              process.env['API_TOKEN'] ||
+              process.env['ACCESS_TOKEN']
+    }
+
+    if (!token) {
+      return null
+    }
+
+    return {
+      access_token: token,
+      token_type: 'Bearer',
+      // Assume tokens from env vars don't expire
+      expires_at: undefined
+    }
+  }
+
+  /**
+   * Clear all tokens
+   */
+  async clearAll(): Promise<void> {
+    if (this.storage instanceof MemoryTokenStorage) {
+      this.storage.clear()
+    }
+    this.refreshCallbacks.clear()
+    this.refreshPromises.clear()
+  }
+
+  /**
+   * Export tokens (for debugging)
+   */
+  async exportTokens(): Promise<Record<string, OAuthToken>> {
+    if (this.storage instanceof MemoryTokenStorage) {
+      const tokens: Record<string, OAuthToken> = {}
+      // Note: This is a simplified export, real implementation would need access to internal map
+      return tokens
+    }
+    return {}
+  }
+}
+
+/**
+ * Global token manager instance
+ */
+let globalTokenManager: TokenManager | null = null
+
+/**
+ * Get or create global token manager
+ */
+export function getTokenManager(storage?: TokenStorage): TokenManager {
+  if (!globalTokenManager) {
+    globalTokenManager = new TokenManager(storage)
+  }
+  return globalTokenManager
+}
+
+/**
+ * Reset global token manager
+ */
+export function resetTokenManager(): void {
+  if (globalTokenManager) {
+    globalTokenManager.clearAll()
+    globalTokenManager = null
+  }
+}

@@ -5,6 +5,7 @@ This document explains how to integrate external MCP servers with Hatago using t
 ## Overview
 
 Hatago provides a powerful system for connecting to external MCP servers with:
+
 - **Configuration-based management** via `hatago.config.json`
 - **Advanced namespace management** to avoid tool name conflicts
 - **Flexible tool filtering and renaming**
@@ -40,6 +41,7 @@ pnpm dev
 ```
 
 Hatago will automatically:
+
 - Connect to the external server
 - Register all tools with the `external:` namespace prefix
 - Handle authentication and health checks
@@ -76,16 +78,16 @@ Hatago will automatically:
 
 #### Server Fields
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `id` | string | ✅ | Unique identifier for the server |
-| `endpoint` | string | ✅ | MCP server endpoint URL |
-| `namespace` | string | ❌ | Custom namespace (defaults to `id`) |
-| `description` | string | ❌ | Human-readable description |
-| `tools` | object | ❌ | Tool filtering and renaming configuration |
-| `auth` | object | ❌ | Authentication configuration |
-| `timeout` | number | ❌ | Request timeout in milliseconds (default: 30000) |
-| `healthCheck` | object | ❌ | Health monitoring configuration |
+| Field         | Type   | Required | Description                                      |
+| ------------- | ------ | -------- | ------------------------------------------------ |
+| `id`          | string | ✅       | Unique identifier for the server                 |
+| `endpoint`    | string | ✅       | MCP server endpoint URL                          |
+| `namespace`   | string | ❌       | Custom namespace (defaults to `id`)              |
+| `description` | string | ❌       | Human-readable description                       |
+| `tools`       | object | ❌       | Tool filtering and renaming configuration        |
+| `auth`        | object | ❌       | Authentication configuration                     |
+| `timeout`     | number | ❌       | Request timeout in milliseconds (default: 30000) |
+| `healthCheck` | object | ❌       | Health monitoring configuration                  |
 
 ### Tool Configuration
 
@@ -110,6 +112,7 @@ Hatago will automatically:
 ```
 
 Patterns support wildcards:
+
 - `*` matches any characters
 - `math.*` matches `math.add`, `math.subtract`, etc.
 - `debug.*` matches `debug.log`, `debug.trace`, etc.
@@ -198,7 +201,7 @@ Patterns support wildcards:
         }
       },
       {
-        "id": "math-server", 
+        "id": "math-server",
         "endpoint": "http://localhost:8789",
         "namespace": "calc",
         "tools": {
@@ -214,6 +217,7 @@ Patterns support wildcards:
 ```
 
 Result:
+
 - `time:getCurrentTime` (from time-server's `clock.getTime`)
 - `calc:math.add` (from math-server's `math.add`)
 - Conflicting tool names are automatically renamed
@@ -283,6 +287,7 @@ Environment variables in configuration are expanded automatically:
 ```
 
 Supported formats:
+
 - `${VAR_NAME}` - Required variable
 - `${VAR_NAME:default}` - Variable with default value
 
@@ -311,6 +316,7 @@ Enhanced MCP Proxy: Failed to connect to server-id
 ```
 
 **Solutions:**
+
 1. Verify the external server is running
 2. Check the endpoint URL in configuration
 3. Verify authentication credentials
@@ -323,8 +329,9 @@ Tool name conflict: toolName already exists from server1
 ```
 
 **Solutions:**
+
 1. Use different namespaces for servers
-2. Set `conflictResolution: "rename"` 
+2. Set `conflictResolution: "rename"`
 3. Use tool renaming in configuration
 4. Filter out conflicting tools with `exclude`
 
@@ -335,6 +342,7 @@ Enhanced MCP Proxy: Found 0 tools from server-id
 ```
 
 **Solutions:**
+
 1. Check tool filtering (`include`/`exclude` patterns)
 2. Verify the external server exposes tools correctly
 3. Test the external server directly with curl
@@ -345,6 +353,7 @@ Enhanced MCP Proxy: Found 0 tools from server-id
 #### Enable Detailed Logging
 
 Set environment variable:
+
 ```bash
 DEBUG=hatago:* pnpm dev
 ```
@@ -453,6 +462,7 @@ Configure connection limits:
 ### Tool Categories
 
 Tools are automatically categorized based on name patterns:
+
 - `time.*` → `time` category
 - `math.*` → `math` category
 - `file.*` → `file` category
@@ -463,16 +473,18 @@ Tools are automatically categorized based on name patterns:
 ### From Basic MCP Proxy
 
 Old configuration:
+
 ```javascript
 mcpProxy({
   server: {
     id: 'external',
-    endpoint: 'http://localhost:8080'
-  }
+    endpoint: 'http://localhost:8080',
+  },
 })
 ```
 
 New configuration:
+
 ```json
 {
   "proxy": {
@@ -508,6 +520,7 @@ The enhanced proxy maintains backward compatibility with the old plugin API for 
 ## Support and Contributing
 
 For issues, questions, or contributions:
+
 - **Documentation**: [docs/](./docs/)
 - **Examples**: [examples/](./examples/)
 - **Issues**: Create GitHub issues for bugs or feature requests

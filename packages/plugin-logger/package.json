@@ -11,15 +11,18 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": ["dist", "hatago.plugin.json"],
+  "files": [
+    "dist",
+    "hatago.plugin.json"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
     "lint": "biome lint src",
     "lint:fix": "biome lint --write src",
-    "format": "biome format src",
-    "format:fix": "biome format --write src"
+    "format": "pnpm -w run format",
+    "format:fix": "pnpm -w run format:fix"
   },
   "dependencies": {
     "@hatago/core": "workspace:*"

@@ -1,0 +1,323 @@
+/**
+ * Type definitions for {{name}} plugin
+ */
+
+/**
+ * MCP protocol types
+ */
+export interface MCPTool {
+  name: string
+  description: string
+  inputSchema: any
+}
+
+export interface MCPResource {
+  uri: string
+  name: string
+  description: string
+  mimeType: string
+}
+
+export interface MCPToolResult {
+  content: Array<{
+    type: 'text' | 'image' | 'resource'
+    text?: string
+    data?: string
+    uri?: string
+  }>
+}
+
+export interface MCPResourceContents {
+  contents: Array<{
+    type: 'text' | 'blob'
+    text?: string
+    blob?: string
+    uri?: string
+  }>
+}
+
+/**
+ * Transport configuration
+ */
+export type TransportType = 'stdio' | 'http'
+
+/**
+ * STDIO transport configuration
+ */
+export interface STDIOTransportConfig {
+  command: string
+  args: string[]
+  env?: Record<string, string>
+  cwd?: string
+}
+
+/**
+ * HTTP transport configuration
+ */
+export interface HTTPTransportConfig {
+  endpoint?: string  // For external servers
+  autoStart?: boolean
+  autoStartConfig?: {
+    command: string
+    preferredPort: number
+    portRange: { min: number, max: number }
+    maxRetries?: number
+    startupTimeout?: number
+  }
+}
+
+/**
+ * Import OAuth types
+ */
+{{#if oauth}}
+export { 
+  OAuthConfig, 
+  OAuthToken, 
+  OAuthProvider,
+  OAuthError,
+  OAuthTokenError 
+} from './oauth/oauth-types'
+{{/if}}
+
+/**
+ * Authentication configuration (HTTP only)
+ */
+{{#if (eq transport 'http')}}
+{{#if (ne authType 'none')}}
+export interface AuthConfig {
+  type: '{{authType}}' | 'oauth'
+{{#if (eq authType 'bearer')}}
+  token?: string
+{{/if}}
+{{#if (eq authType 'basic')}}
+  username?: string
+  password?: string
+{{/if}}
+{{#if (eq authType 'custom')}}
+  headers?: Record<string, string>
+{{/if}}
+{{#if oauth}}
+  oauth?: OAuthConfig
+{{/if}}
+}
+{{/if}}
+{{/if}}
+
+/**
+ * Cache configuration
+ */
+{{#if caching}}
+export interface CacheConfig {
+  enabled: boolean
+  ttl: number
+  maxSize?: number
+}
+{{/if}}
+
+/**
+ * Health check configuration
+ */
+{{#if healthCheck}}
+export interface HealthCheckConfig {
+  enabled: boolean
+  interval: number
+  timeout?: number
+  retries?: number
+}
+{{/if}}
+
+/**
+ * Unified MCP client options
+ */
+export interface {{titleCase name}}ClientOptions {
+  transport: TransportType
+  timeout?: number
+  
+  // STDIO-specific options
+  stdio?: STDIOTransportConfig
+  
+  // HTTP-specific options
+  http?: HTTPTransportConfig & {
+{{#if (eq transport 'http')}}
+{{#if (ne authType 'none')}}
+    auth?: AuthConfig
+{{/if}}
+{{/if}}
+  }
+  
+{{#if caching}}
+  cache?: CacheConfig
+{{/if}}
+{{#if healthCheck}}
+  healthCheck?: HealthCheckConfig
+{{/if}}
+}
+
+/**
+ * Plugin configuration
+ */
+export interface {{titleCase name}}Config {
+  name: string
+  transport: TransportType
+  
+  // STDIO configuration
+  stdio?: STDIOTransportConfig
+  
+  // HTTP configuration  
+  http?: HTTPTransportConfig & {
+{{#if (eq transport 'http')}}
+{{#if (ne authType 'none')}}
+    authToken?: string
+{{/if}}
+{{/if}}
+  }
+  
+{{#if namespace}}
+  namespace?: string
+{{/if}}
+{{#if caching}}
+  cache?: CacheConfig
+{{/if}}
+{{#if healthCheck}}
+  healthCheck?: HealthCheckConfig
+{{/if}}
+}
+
+/**
+ * MCP request/response types
+ */
+export interface MCPRequest {
+  jsonrpc: '2.0'
+  id: string | number
+  method: string
+  params?: any
+}
+
+export interface MCPResponse {
+  jsonrpc: '2.0'
+  id: string | number
+  result?: any
+  error?: {
+    code: number
+    message: string
+    data?: any
+  }
+}
+
+/**
+ * Client state types
+ */
+export interface ClientState {
+  connected: boolean
+  connecting: boolean
+  lastConnected?: Date
+  lastError?: Error
+  toolCount: number
+  resourceCount: number
+}
+
+/**
+ * Error types
+ */
+export class {{titleCase name}}Error extends Error {
+  constructor(
+    message: string,
+    public code?: string,
+    public originalError?: Error
+  ) {
+    super(message)
+    this.name = '{{titleCase name}}Error'
+  }
+}
+
+export class MCPConnectionError extends {{titleCase name}}Error {
+  constructor(message: string, originalError?: Error) {
+    super(message, 'CONNECTION_ERROR', originalError)
+    this.name = 'MCPConnectionError'
+  }
+}
+
+export class MCPProtocolError extends {{titleCase name}}Error {
+  constructor(message: string, originalError?: Error) {
+    super(message, 'PROTOCOL_ERROR', originalError)
+    this.name = 'MCPProtocolError'
+  }
+}
+
+export class MCPToolError extends {{titleCase name}}Error {
+  constructor(toolName: string, message: string, originalError?: Error) {
+    super(`Tool '${toolName}' error: ${message}`, 'TOOL_ERROR', originalError)
+    this.name = 'MCPToolError'
+  }
+}
+
+export class STDIOError extends {{titleCase name}}Error {
+  constructor(message: string, originalError?: Error) {
+    super(message, 'STDIO_ERROR', originalError)
+    this.name = 'STDIOError'
+  }
+}
+
+export class ProcessError extends {{titleCase name}}Error {
+  constructor(message: string, exitCode?: number, originalError?: Error) {
+    super(message, 'PROCESS_ERROR', originalError)
+    this.name = 'ProcessError'
+    this.exitCode = exitCode
+  }
+  
+  public readonly exitCode?: number
+}
+
+/**
+ * Event types
+ */
+export interface ClientEvents {
+  connected: () => void
+  disconnected: () => void
+  error: (error: Error) => void
+  toolsUpdated: (tools: MCPTool[]) => void
+  resourcesUpdated: (resources: MCPResource[]) => void
+}
+
+/**
+ * Statistics and monitoring
+ */
+export interface ClientStats {
+  requestCount: number
+  errorCount: number
+  averageResponseTime: number
+  lastRequestTime?: Date
+  uptime: number
+}
+
+/**
+ * Cache entry type
+ */
+{{#if caching}}
+export interface CacheEntry<T = any> {
+  data: T
+  timestamp: number
+  ttl: number
+}
+{{/if}}
+
+/**
+ * Tool execution context
+ */
+export interface ToolExecutionContext {
+  toolName: string
+  arguments: any
+  startTime: Date
+  requestId: string
+  userId?: string
+}
+
+/**
+ * Resource read context
+ */
+export interface ResourceReadContext {
+  uri: string
+  startTime: Date
+  requestId: string
+  userId?: string
+}

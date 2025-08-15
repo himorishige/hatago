@@ -14,17 +14,21 @@
     "clean": "pnpm -r clean",
     "lint": "biome lint .",
     "lint:fix": "biome lint --write .",
-    "format": "biome format .",
-    "format:fix": "biome format --write .",
+    "format": "prettier -c .",
+    "format:fix": "prettier -w .",
     "check": "biome check .",
     "check:fix": "biome check --write ."
   },
-  "workspaces": ["packages/*", "server"],
+  "workspaces": [
+    "packages/*",
+    "server"
+  ],
   "engines": {
     "node": ">=18"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "prettier": "^3.3.3",
     "typescript": "^5.9.2"
   }
 }

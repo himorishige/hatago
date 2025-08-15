@@ -83,17 +83,20 @@ export interface PluginVerifierConfig {
  * Simple in-memory key registry for development
  */
 export class InMemoryKeyRegistry implements TrustedKeyRegistry {
-  private keys = new Map<string, {
-    key: CryptoKey
-    trusted: boolean
-    metadata: {
-      algorithm: string
-      issuer?: string
-      subject?: string
-      validFrom?: string
-      validTo?: string
+  private keys = new Map<
+    string,
+    {
+      key: CryptoKey
+      trusted: boolean
+      metadata: {
+        algorithm: string
+        issuer?: string
+        subject?: string
+        validFrom?: string
+        validTo?: string
+      }
     }
-  }>()
+  >()
 
   async addKey(
     keyId: string,
@@ -140,19 +143,19 @@ export class PluginVerifier {
 
   constructor(config: PluginVerifierConfig = {}) {
     this.defaultRegistry = new InMemoryKeyRegistry()
-    
+
     this.config = {
       enabled: config.enabled ?? true,
       requireSigned: config.requireSigned ?? false,
       maxSignatureAge: config.maxSignatureAge ?? 24 * 60 * 60 * 1000, // 24 hours
       keyRegistry: config.keyRegistry ?? this.defaultRegistry,
-      allowTestKeys: config.allowTestKeys ?? true
+      allowTestKeys: config.allowTestKeys ?? true,
     }
 
     logger.info('Plugin verifier initialized', {
       enabled: this.config.enabled,
       requireSigned: this.config.requireSigned,
-      maxSignatureAge: this.config.maxSignatureAge
+      maxSignatureAge: this.config.maxSignatureAge,
     })
   }
 
@@ -170,7 +173,7 @@ export class PluginVerifier {
         valid: true,
         status: 'valid',
         message: 'Signature verification disabled',
-        verifiedAt
+        verifiedAt,
       }
     }
 
@@ -182,7 +185,7 @@ export class PluginVerifier {
           valid: false,
           status: 'expired',
           message: `Signature expired (age: ${Math.round(signatureAge / 1000 / 60)} minutes)`,
-          verifiedAt
+          verifiedAt,
         }
       }
 
@@ -193,7 +196,7 @@ export class PluginVerifier {
           valid: false,
           status: 'untrusted',
           message: `Unknown key ID: ${signature.keyId}`,
-          verifiedAt
+          verifiedAt,
         }
       }
 
@@ -204,7 +207,7 @@ export class PluginVerifier {
           valid: false,
           status: 'untrusted',
           message: `Untrusted key: ${signature.keyId}`,
-          verifiedAt
+          verifiedAt,
         }
       }
 
@@ -222,7 +225,7 @@ export class PluginVerifier {
           valid: false,
           status: 'invalid',
           message: 'Signature verification failed',
-          verifiedAt
+          verifiedAt,
         }
       }
 
@@ -231,7 +234,7 @@ export class PluginVerifier {
       const signer = {
         keyId: signature.keyId,
         ...(keyInfo?.issuer && { issuer: keyInfo.issuer }),
-        ...(keyInfo?.subject && { subject: keyInfo.subject })
+        ...(keyInfo?.subject && { subject: keyInfo.subject }),
       }
 
       return {
@@ -239,18 +242,17 @@ export class PluginVerifier {
         status: 'valid',
         message: 'Signature verified successfully',
         signer,
-        verifiedAt
+        verifiedAt,
       }
-
     } catch (error) {
       logger.error('Plugin verification error', { keyId: signature.keyId }, error as Error)
-      
+
       return {
         valid: false,
         status: 'error',
         message: 'Verification error occurred',
         verifiedAt,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       }
     }
   }
@@ -272,11 +274,13 @@ export class PluginVerifier {
         algorithm,
         signature,
         keyId,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       }
     } catch (error) {
       logger.error('Plugin signing error', { keyId, algorithm }, error as Error)
-      throw new Error(`Failed to sign plugin: ${error instanceof Error ? error.message : String(error)}`)
+      throw new Error(
+        `Failed to sign plugin: ${error instanceof Error ? error.message : String(error)}`
+      )
     }
   }
 
@@ -294,7 +298,7 @@ export class PluginVerifier {
     return {
       publicKey: keyPair.publicKey,
       privateKey: keyPair.privateKey,
-      keyId
+      keyId,
     }
   }
 
@@ -344,14 +348,16 @@ export class PluginVerifier {
     return new Uint8Array(signature)
   }
 
-  private async generateCryptoKeyPair(algorithm: PluginSignature['algorithm']): Promise<CryptoKeyPair> {
+  private async generateCryptoKeyPair(
+    algorithm: PluginSignature['algorithm']
+  ): Promise<CryptoKeyPair> {
     const keyGenAlg = this.getKeyGenerationAlgorithm(algorithm)
     const result = await crypto.subtle.generateKey(
       keyGenAlg,
       true, // extractable
       ['sign', 'verify']
     )
-    
+
     // Ensure we got a key pair, not a single key
     if ('privateKey' in result && 'publicKey' in result) {
       return result as CryptoKeyPair
@@ -373,12 +379,12 @@ export class PluginVerifier {
       case 'rsa-pss':
         return {
           name: 'RSA-PSS',
-          saltLength: 32
+          saltLength: 32,
         } as RsaPssParams
       case 'ecdsa-p256':
         return {
           name: 'ECDSA',
-          hash: 'SHA-256'
+          hash: 'SHA-256',
         } as EcdsaParams
       default:
         throw new Error(`Unsupported algorithm: ${algorithm}`)
@@ -394,12 +400,12 @@ export class PluginVerifier {
           name: 'RSA-PSS',
           modulusLength: 2048,
           publicExponent: new Uint8Array([1, 0, 1]),
-          hash: 'SHA-256'
+          hash: 'SHA-256',
         } as RsaHashedKeyGenParams
       case 'ecdsa-p256':
         return {
           name: 'ECDSA',
-          namedCurve: 'P-256'
+          namedCurve: 'P-256',
         } as EcKeyGenParams
       default:
         throw new Error(`Unsupported algorithm: ${algorithm}`)
@@ -427,5 +433,5 @@ export class PluginVerifier {
 export const defaultPluginVerifier = new PluginVerifier({
   enabled: true,
   requireSigned: false, // Start with false for development
-  allowTestKeys: true
+  allowTestKeys: true,
 })

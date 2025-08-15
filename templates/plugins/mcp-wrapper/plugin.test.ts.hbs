@@ -1,0 +1,564 @@
+import { describe, it, expect, beforeEach, afterEach, vi, type MockedFunction } from 'vitest'
+import { McpServer } from '@hono/mcp'
+import { Hono } from 'hono'
+import {{camelCase name}}Plugin from '../src/plugins/{{kebabCase name}}'
+import { {{titleCase name}}Client } from '../src/plugins/{{kebabCase name}}.client'
+
+// Mock the client
+vi.mock('../src/plugins/{{kebabCase name}}.client')
+
+describe('{{titleCase name}} Plugin', () => {
+  let app: Hono
+  let server: McpServer
+  let mockClient: Partial<{{titleCase name}}Client>
+  let mockEnv: Record<string, unknown>
+
+  beforeEach(() => {
+    // Reset mocks
+    vi.clearAllMocks()
+
+    // Setup Hatago components
+    app = new Hono()
+    server = new McpServer({
+      name: 'test-server',
+      version: '1.0.0'
+    })
+
+    // Mock environment variables
+    mockEnv = {
+      {{toUpperCase (snakeCase name)}}_TRANSPORT: '{{transport}}',
+{{#if (eq transport 'stdio')}}
+      {{toUpperCase (snakeCase name)}}_STDIO_COMMAND: '{{mcpCommand}}',
+      {{toUpperCase (snakeCase name)}}_STDIO_ARGS: '{{#each mcpArgs}}{{this}}{{#unless @last}},{{/unless}}{{/each}}',
+{{/if}}
+{{#if (eq transport 'http')}}
+      {{toUpperCase (snakeCase name)}}_ENDPOINT: '{{mcpServerEndpoint}}',
+      {{toUpperCase (snakeCase name)}}_PORT: '{{mcpServerPort}}',
+{{#if (ne authType 'none')}}
+      {{authToken}}: 'test-auth-token',
+{{/if}}
+{{/if}}
+{{#if namespace}}
+      {{toUpperCase (snakeCase name)}}_NAMESPACE: '{{namespace}}',
+{{/if}}
+{{#if caching}}
+      {{toUpperCase (snakeCase name)}}_CACHE_ENABLED: 'true',
+      {{toUpperCase (snakeCase name)}}_CACHE_TTL: '300000',
+{{/if}}
+{{#if healthCheck}}
+      {{toUpperCase (snakeCase name)}}_HEALTH_CHECK: 'true',
+      {{toUpperCase (snakeCase name)}}_HEALTH_INTERVAL: '60000'
+{{/if}}
+    }
+
+    // Setup mock client
+    mockClient = {
+      connect: vi.fn().mockResolvedValue(undefined),
+      disconnect: vi.fn().mockResolvedValue(undefined),
+      isConnected: vi.fn().mockReturnValue(true),
+      listTools: vi.fn().mockResolvedValue([
+        {
+          name: 'test-tool',
+          description: 'A test tool',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              input: { type: 'string' }
+            },
+            required: ['input']
+          }
+        }
+      ]),
+      listResources: vi.fn().mockResolvedValue([
+        {
+          uri: 'test://resource',
+          name: 'Test Resource',
+          description: 'A test resource',
+          mimeType: 'application/json'
+        }
+      ]),
+      callTool: vi.fn().mockResolvedValue({
+        content: [{
+          type: 'text',
+          text: 'Test tool result'
+        }]
+      }),
+      readResource: vi.fn().mockResolvedValue({
+        contents: [{
+          type: 'text',
+          text: '{"test": "resource content"}'
+        }]
+      }),
+      getToolCount: vi.fn().mockReturnValue(1),
+      getResourceCount: vi.fn().mockReturnValue(1),
+      getLastConnectedTime: vi.fn().mockReturnValue(new Date()),
+{{#if healthCheck}}
+      checkHealth: vi.fn().mockResolvedValue(true)
+{{/if}}
+    }
+
+    // Mock the constructor
+    ;({{titleCase name}}Client as any).mockImplementation(() => mockClient)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  describe('Plugin initialization', () => {
+    it('should initialize successfully with valid configuration', async () => {
+      await expect(
+        {{camelCase name}}Plugin({
+          server,
+          app,
+          env: mockEnv,
+          getBaseUrl: () => new URL('http://localhost:8787')
+        })
+      ).resolves.not.toThrow()
+
+      // Verify client was created and connected
+      expect({{titleCase name}}Client).toHaveBeenCalledWith({
+        endpoint: '{{mcpServerEndpoint}}',
+{{#if (ne authType 'none')}}
+        auth: {
+          type: '{{authType}}',
+          token: 'test-auth-token'
+        },
+{{/if}}
+        timeout: 30000,
+{{#if caching}}
+        cache: {
+          enabled: true,
+          ttl: 300000
+        },
+{{/if}}
+{{#if healthCheck}}
+        healthCheck: {
+          enabled: true,
+          interval: 60000
+        }
+{{/if}}
+      })
+
+      expect(mockClient.connect).toHaveBeenCalled()
+    })
+
+{{#if (ne authType 'none')}}
+    it('should throw error when auth token is missing', async () => {
+      const envWithoutToken = { ...mockEnv }
+      delete envWithoutToken.{{authToken}}
+
+      await expect(
+        {{camelCase name}}Plugin({
+          server,
+          app,
+          env: envWithoutToken,
+          getBaseUrl: () => new URL('http://localhost:8787')
+        })
+      ).rejects.toThrow('{{authToken}} environment variable is required')
+    })
+{{/if}}
+
+    it('should handle client connection failure', async () => {
+      mockClient.connect = vi.fn().mockRejectedValue(new Error('Connection failed'))
+
+      await expect(
+        {{camelCase name}}Plugin({
+          server,
+          app,
+          env: mockEnv,
+          getBaseUrl: () => new URL('http://localhost:8787')
+        })
+      ).rejects.toThrow('Connection failed')
+    })
+  })
+
+  describe('Tool registration', () => {
+    beforeEach(async () => {
+      await {{camelCase name}}Plugin({
+        server,
+        app,
+        env: mockEnv,
+        getBaseUrl: () => new URL('http://localhost:8787')
+      })
+    })
+
+    it('should register tools from external MCP server', () => {
+      const tools = server.getAvailableTools()
+      
+      expect(tools).toContainEqual(
+        expect.objectContaining({
+{{#if namespace}}
+          name: '{{namespace}}.test-tool',
+{{else}}
+          name: 'test-tool',
+{{/if}}
+          description: 'A test tool (via {{mcpServerName}})'
+        })
+      )
+    })
+
+    it('should execute tools correctly', async () => {
+{{#if namespace}}
+      const toolName = '{{namespace}}.test-tool'
+{{else}}
+      const toolName = 'test-tool'
+{{/if}}
+      const args = { input: 'test input' }
+
+      const result = await server.callTool(toolName, args)
+
+      expect(mockClient.callTool).toHaveBeenCalledWith('test-tool', args)
+      expect(result).toEqual({
+        content: [{
+          type: 'text',
+          text: 'Test tool result'
+        }]
+      })
+    })
+
+    it('should handle tool execution errors', async () => {
+      mockClient.callTool = vi.fn().mockRejectedValue(new Error('Tool execution failed'))
+
+{{#if namespace}}
+      const toolName = '{{namespace}}.test-tool'
+{{else}}
+      const toolName = 'test-tool'
+{{/if}}
+      
+      await expect(
+        server.callTool(toolName, { input: 'test' })
+      ).rejects.toThrow('{{mcpServerName}} tool execution failed')
+    })
+  })
+
+  describe('Resource registration', () => {
+    beforeEach(async () => {
+      await {{camelCase name}}Plugin({
+        server,
+        app,
+        env: mockEnv,
+        getBaseUrl: () => new URL('http://localhost:8787')
+      })
+    })
+
+    it('should register resources from external MCP server', () => {
+      const resources = server.getAvailableResources()
+      
+      expect(resources).toContainEqual(
+        expect.objectContaining({
+          uri: 'test://resource',
+          name: 'Test Resource',
+          description: 'A test resource (via {{mcpServerName}})'
+        })
+      )
+    })
+
+    it('should read resources correctly', async () => {
+      const uri = 'test://resource'
+
+      const result = await server.readResource(uri)
+
+      expect(mockClient.readResource).toHaveBeenCalledWith(uri)
+      expect(result).toEqual({
+        contents: [{
+          type: 'text',
+          text: '{"test": "resource content"}'
+        }]
+      })
+    })
+
+    it('should handle resource read errors', async () => {
+      mockClient.readResource = vi.fn().mockRejectedValue(new Error('Resource read failed'))
+
+      await expect(
+        server.readResource('test://resource')
+      ).rejects.toThrow('{{mcpServerName}} resource read failed')
+    })
+  })
+
+  describe('HTTP endpoints', () => {
+    let request: any
+
+    beforeEach(async () => {
+      await {{camelCase name}}Plugin({
+        server,
+        app,
+        env: mockEnv,
+        getBaseUrl: () => new URL('http://localhost:8787')
+      })
+
+      // Mock request object
+      request = {
+        req: { method: 'GET' },
+        json: vi.fn(),
+        status: vi.fn().mockReturnThis()
+      }
+    })
+
+    describe('Status endpoint', () => {
+      it('should return plugin status', async () => {
+        const response = await app.request('/{{kebabCase name}}/status')
+        const data = await response.json()
+
+        expect(response.status).toBe(200)
+        expect(data).toEqual({
+          status: 'ok',
+          plugin: '{{name}}',
+          mcpServer: '{{mcpServerName}}',
+          endpoint: '{{mcpServerEndpoint}}',
+          connected: true,
+{{#if autoStart}}
+          externalProcessRunning: false,
+{{/if}}
+          toolsLoaded: 1,
+          resourcesLoaded: 1
+        })
+      })
+    })
+
+{{#if healthCheck}}
+    describe('Health endpoint', () => {
+      it('should return healthy status when server is healthy', async () => {
+        const response = await app.request('/{{kebabCase name}}/health')
+        const data = await response.json()
+
+        expect(response.status).toBe(200)
+        expect(data.status).toBe('healthy')
+        expect(data.endpoint).toBe('{{mcpServerEndpoint}}')
+        expect(mockClient.checkHealth).toHaveBeenCalled()
+      })
+
+      it('should return unhealthy status when server is unhealthy', async () => {
+        mockClient.checkHealth = vi.fn().mockResolvedValue(false)
+
+        const response = await app.request('/{{kebabCase name}}/health')
+        const data = await response.json()
+
+        expect(response.status).toBe(503)
+        expect(data.status).toBe('unhealthy')
+      })
+
+      it('should handle health check errors', async () => {
+        mockClient.checkHealth = vi.fn().mockRejectedValue(new Error('Health check failed'))
+
+        const response = await app.request('/{{kebabCase name}}/health')
+        const data = await response.json()
+
+        expect(response.status).toBe(500)
+        expect(data.status).toBe('error')
+        expect(data.error).toBe('Health check failed')
+      })
+    })
+{{/if}}
+  })
+
+  describe('Plugin configuration resource', () => {
+    beforeEach(async () => {
+      await {{camelCase name}}Plugin({
+        server,
+        app,
+        env: mockEnv,
+        getBaseUrl: () => new URL('http://localhost:8787')
+      })
+    })
+
+    it('should provide configuration resource', async () => {
+      const result = await server.readResource('{{kebabCase name}}://config')
+      const config = JSON.parse(result.contents[0].text)
+
+      expect(config).toEqual({
+        name: '{{name}}',
+        description: '{{description}}',
+        mcpServer: '{{mcpServerName}}',
+        endpoint: '{{mcpServerEndpoint}}',
+        connected: true,
+{{#if namespace}}
+        namespace: '{{namespace}}',
+{{/if}}
+{{#if caching}}
+        caching: {
+          enabled: true,
+          ttl: 300000
+        },
+{{/if}}
+{{#if healthCheck}}
+        healthCheck: {
+          enabled: true,
+          interval: 60000
+        },
+{{/if}}
+{{#if autoStart}}
+        autoStart: false,
+        externalProcessRunning: false,
+{{/if}}
+        toolsAvailable: 1,
+        resourcesAvailable: 1,
+        lastConnected: expect.any(String),
+        version: '1.0.0'
+      })
+    })
+  })
+
+  describe('Configuration parsing', () => {
+    it('should use custom endpoint from environment', async () => {
+      const customEnv = {
+        ...mockEnv,
+        {{toUpperCase (snakeCase name)}}_ENDPOINT: 'http://custom:3002/mcp'
+      }
+
+      await {{camelCase name}}Plugin({
+        server,
+        app,
+        env: customEnv,
+        getBaseUrl: () => new URL('http://localhost:8787')
+      })
+
+      expect({{titleCase name}}Client).toHaveBeenCalledWith(
+        expect.objectContaining({
+          endpoint: 'http://custom:3002/mcp'
+        })
+      )
+    })
+
+    it('should use custom port from environment', async () => {
+      const customEnv = {
+        ...mockEnv,
+        {{toUpperCase (snakeCase name)}}_PORT: '3003'
+      }
+
+      // Note: Since endpoint contains the port, we need to mock the config parsing
+      await {{camelCase name}}Plugin({
+        server,
+        app,
+        env: customEnv,
+        getBaseUrl: () => new URL('http://localhost:8787')
+      })
+
+      // Port is used in endpoint construction, verify it's parsed correctly
+      expect({{titleCase name}}Client).toHaveBeenCalled()
+    })
+
+{{#if caching}}
+    it('should disable caching when configured', async () => {
+      const customEnv = {
+        ...mockEnv,
+        {{toUpperCase (snakeCase name)}}_CACHE_ENABLED: 'false'
+      }
+
+      await {{camelCase name}}Plugin({
+        server,
+        app,
+        env: customEnv,
+        getBaseUrl: () => new URL('http://localhost:8787')
+      })
+
+      expect({{titleCase name}}Client).toHaveBeenCalledWith(
+        expect.objectContaining({
+          cache: {
+            enabled: false,
+            ttl: 300000
+          }
+        })
+      )
+    })
+{{/if}}
+
+{{#if healthCheck}}
+    it('should use custom health check interval', async () => {
+      const customEnv = {
+        ...mockEnv,
+        {{toUpperCase (snakeCase name)}}_HEALTH_INTERVAL: '30000'
+      }
+
+      await {{camelCase name}}Plugin({
+        server,
+        app,
+        env: customEnv,
+        getBaseUrl: () => new URL('http://localhost:8787')
+      })
+
+      expect({{titleCase name}}Client).toHaveBeenCalledWith(
+        expect.objectContaining({
+          healthCheck: {
+            enabled: true,
+            interval: 30000
+          }
+        })
+      )
+    })
+{{/if}}
+  })
+
+  describe('Error scenarios', () => {
+    it('should handle tool discovery failure gracefully', async () => {
+      mockClient.listTools = vi.fn().mockRejectedValue(new Error('Failed to list tools'))
+
+      await expect(
+        {{camelCase name}}Plugin({
+          server,
+          app,
+          env: mockEnv,
+          getBaseUrl: () => new URL('http://localhost:8787')
+        })
+      ).rejects.toThrow('Failed to list tools')
+    })
+
+    it('should handle resource discovery failure gracefully', async () => {
+      mockClient.listResources = vi.fn().mockRejectedValue(new Error('Failed to list resources'))
+
+      // Should not throw error, resources are optional
+      await expect(
+        {{camelCase name}}Plugin({
+          server,
+          app,
+          env: mockEnv,
+          getBaseUrl: () => new URL('http://localhost:8787')
+        })
+      ).resolves.not.toThrow()
+    })
+  })
+
+{{#if autoStart}}
+  describe('Auto-start functionality', () => {
+    it('should auto-start external process when configured', async () => {
+      const autoStartEnv = {
+        ...mockEnv,
+        {{toUpperCase (snakeCase name)}}_AUTO_START: 'true'
+      }
+
+      // Mock spawn to avoid actually starting a process
+      const mockSpawn = vi.fn().mockReturnValue({
+        stdout: { on: vi.fn() },
+        stderr: { on: vi.fn() },
+        on: vi.fn(),
+        kill: vi.fn(),
+        killed: false
+      })
+
+      vi.doMock('child_process', () => ({
+        spawn: mockSpawn
+      }))
+
+      await {{camelCase name}}Plugin({
+        server,
+        app,
+        env: autoStartEnv,
+        getBaseUrl: () => new URL('http://localhost:8787')
+      })
+
+      expect(mockSpawn).toHaveBeenCalledWith(
+        'npx',
+        ['{{mcpServerName}}', '--port', '{{mcpServerPort}}'],
+        expect.objectContaining({
+          env: expect.objectContaining({
+{{#if (ne authType 'none')}}
+            {{authToken}}: 'test-auth-token'
+{{/if}}
+          })
+        })
+      )
+    })
+  })
+{{/if}}
+})

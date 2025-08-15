@@ -39,18 +39,18 @@ export async function serveApp(options: ServeOptions = {}) {
   // Graceful shutdown handler
   const gracefulShutdown = (signal: string) => {
     console.log(`\n📡 Received ${signal}, starting graceful shutdown...`)
-    
+
     if (isShuttingDown) {
       console.log('⚠️  Already shutting down, forcing exit...')
       process.exit(1)
     }
-    
+
     isShuttingDown = true
 
     // Set draining mode
     fetch(`http://${hostname}:${port}/drain`, { method: 'POST' })
       .then(() => console.log('🚰 Server is now draining...'))
-      .catch((error) => console.log('⚠️  Could not set drain mode:', error.message))
+      .catch(error => console.log('⚠️  Could not set drain mode:', error.message))
 
     // Set timeout for forced shutdown
     const forceShutdownTimer = setTimeout(() => {
@@ -85,7 +85,7 @@ export async function serveApp(options: ServeOptions = {}) {
 
   // Handle uncaught exceptions and unhandled rejections
   if (!process.listenerCount('uncaughtException')) {
-    process.on('uncaughtException', (error) => {
+    process.on('uncaughtException', error => {
       console.error('💥 Uncaught Exception:', error)
       gracefulShutdown('UNCAUGHT_EXCEPTION')
     })

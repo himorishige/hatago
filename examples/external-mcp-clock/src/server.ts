@@ -29,7 +29,7 @@ server.registerTool(
   {
     title: 'Get Current Time',
     description: 'Returns the current date and time in various formats',
-    inputSchema: {}
+    inputSchema: {},
   },
   async (args, extra) => {
     const { timezone = 'UTC', format = 'iso' } = args as {
@@ -40,13 +40,13 @@ server.registerTool(
     try {
       const now = new Date()
       let formattedTime: string
-      
+
       switch (format) {
         case 'unix':
           formattedTime = Math.floor(now.getTime() / 1000).toString()
           break
         case 'locale':
-          formattedTime = now.toLocaleString('en-US', { 
+          formattedTime = now.toLocaleString('en-US', {
             timeZone: timezone,
             year: 'numeric',
             month: '2-digit',
@@ -54,7 +54,7 @@ server.registerTool(
             hour: '2-digit',
             minute: '2-digit',
             second: '2-digit',
-            timeZoneName: 'short'
+            timeZoneName: 'short',
           })
           break
         case 'iso':
@@ -63,8 +63,7 @@ server.registerTool(
             formattedTime = now.toISOString()
           } else {
             // For non-UTC timezones, we'll show the ISO format with timezone info
-            formattedTime = now.toLocaleString('sv-SE', { timeZone: timezone }) + 
-                           ` (${timezone})`
+            formattedTime = now.toLocaleString('sv-SE', { timeZone: timezone }) + ` (${timezone})`
           }
           break
       }
@@ -73,27 +72,35 @@ server.registerTool(
         content: [
           {
             type: 'text' as const,
-            text: JSON.stringify({
-              currentTime: formattedTime,
-              timezone,
-              format,
-              timestamp: now.getTime(),
-              serverTime: now.toISOString()
-            }, null, 2)
-          }
-        ]
+            text: JSON.stringify(
+              {
+                currentTime: formattedTime,
+                timezone,
+                format,
+                timestamp: now.getTime(),
+                serverTime: now.toISOString(),
+              },
+              null,
+              2
+            ),
+          },
+        ],
       }
     } catch (error) {
       return {
         content: [
           {
             type: 'text' as const,
-            text: JSON.stringify({
-              error: 'Failed to get current time',
-              message: error instanceof Error ? error.message : String(error)
-            }, null, 2)
-          }
-        ]
+            text: JSON.stringify(
+              {
+                error: 'Failed to get current time',
+                message: error instanceof Error ? error.message : String(error),
+              },
+              null,
+              2
+            ),
+          },
+        ],
       }
     }
   }
@@ -104,8 +111,9 @@ server.registerTool(
   'clock.getTimezone',
   {
     title: 'Get Timezone Information',
-    description: 'Returns information about available timezones or details about a specific timezone',
-    inputSchema: {}
+    description:
+      'Returns information about available timezones or details about a specific timezone',
+    inputSchema: {},
   },
   async (args, extra) => {
     const { timezone, list = false } = args as {
@@ -129,20 +137,24 @@ server.registerTool(
           'Asia/Shanghai',
           'Asia/Kolkata',
           'Australia/Sydney',
-          'Pacific/Auckland'
+          'Pacific/Auckland',
         ]
 
         return {
           content: [
             {
               type: 'text' as const,
-              text: JSON.stringify({
-                commonTimezones,
-                total: commonTimezones.length,
-                note: 'These are common timezone identifiers. Use with clock.getTime tool.'
-              }, null, 2)
-            }
-          ]
+              text: JSON.stringify(
+                {
+                  commonTimezones,
+                  total: commonTimezones.length,
+                  note: 'These are common timezone identifiers. Use with clock.getTime tool.',
+                },
+                null,
+                2
+              ),
+            },
+          ],
         }
       }
 
@@ -150,40 +162,48 @@ server.registerTool(
         // Get info about specific timezone
         const now = new Date()
         try {
-          const timeInZone = now.toLocaleString('en-US', { 
+          const timeInZone = now.toLocaleString('en-US', {
             timeZone: timezone,
-            timeZoneName: 'long'
+            timeZoneName: 'long',
           })
-          
+
           const offsetTest = new Date().toLocaleString('sv-SE', { timeZone: timezone })
-          
+
           return {
             content: [
               {
                 type: 'text' as const,
-                text: JSON.stringify({
-                  timezone,
-                  currentTime: timeInZone,
-                  isValid: true,
-                  utcTime: now.toISOString(),
-                  localTime: offsetTest
-                }, null, 2)
-              }
-            ]
+                text: JSON.stringify(
+                  {
+                    timezone,
+                    currentTime: timeInZone,
+                    isValid: true,
+                    utcTime: now.toISOString(),
+                    localTime: offsetTest,
+                  },
+                  null,
+                  2
+                ),
+              },
+            ],
           }
         } catch (tzError) {
           return {
             content: [
               {
                 type: 'text' as const,
-                text: JSON.stringify({
-                  timezone,
-                  isValid: false,
-                  error: 'Invalid timezone identifier',
-                  suggestion: 'Use clock.getTimezone with list=true to see valid options'
-                }, null, 2)
-              }
-            ]
+                text: JSON.stringify(
+                  {
+                    timezone,
+                    isValid: false,
+                    error: 'Invalid timezone identifier',
+                    suggestion: 'Use clock.getTimezone with list=true to see valid options',
+                  },
+                  null,
+                  2
+                ),
+              },
+            ],
           }
         }
       }
@@ -194,32 +214,40 @@ server.registerTool(
       const offsetHours = Math.floor(Math.abs(systemOffset) / 60)
       const offsetMinutes = Math.abs(systemOffset) % 60
       const offsetSign = systemOffset <= 0 ? '+' : '-'
-      
+
       return {
         content: [
           {
             type: 'text' as const,
-            text: JSON.stringify({
-              systemTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-              systemTime: now.toLocaleString(),
-              utcTime: now.toISOString(),
-              utcOffset: `${offsetSign}${offsetHours.toString().padStart(2, '0')}:${offsetMinutes.toString().padStart(2, '0')}`,
-              note: 'Use list=true to see available timezones, or specify a timezone parameter'
-            }, null, 2)
-          }
-        ]
+            text: JSON.stringify(
+              {
+                systemTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                systemTime: now.toLocaleString(),
+                utcTime: now.toISOString(),
+                utcOffset: `${offsetSign}${offsetHours.toString().padStart(2, '0')}:${offsetMinutes.toString().padStart(2, '0')}`,
+                note: 'Use list=true to see available timezones, or specify a timezone parameter',
+              },
+              null,
+              2
+            ),
+          },
+        ],
       }
     } catch (error) {
       return {
         content: [
           {
             type: 'text' as const,
-            text: JSON.stringify({
-              error: 'Failed to get timezone information',
-              message: error instanceof Error ? error.message : String(error)
-            }, null, 2)
-          }
-        ]
+            text: JSON.stringify(
+              {
+                error: 'Failed to get timezone information',
+                message: error instanceof Error ? error.message : String(error),
+              },
+              null,
+              2
+            ),
+          },
+        ],
       }
     }
   }
@@ -233,18 +261,18 @@ app.all('/mcp', async c => {
 })
 
 // Health check endpoint
-app.get('/health', (c) => {
+app.get('/health', c => {
   return c.json({
     status: 'ok',
     server: 'external-mcp-clock',
     version: '1.0.0',
     uptime: process.uptime(),
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   })
 })
 
 // Root endpoint with server info
-app.get('/', (c) => {
+app.get('/', c => {
   return c.json({
     name: 'External MCP Clock Server',
     version: '1.0.0',
@@ -254,13 +282,13 @@ app.get('/', (c) => {
     tools: [
       {
         name: 'clock.getTime',
-        description: 'Get current time in various formats and timezones'
+        description: 'Get current time in various formats and timezones',
       },
       {
-        name: 'clock.getTimezone', 
-        description: 'Get timezone information and list available timezones'
-      }
-    ]
+        name: 'clock.getTimezone',
+        description: 'Get timezone information and list available timezones',
+      },
+    ],
   })
 })
 

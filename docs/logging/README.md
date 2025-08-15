@@ -21,24 +21,31 @@ Hatago's logging system provides:
 import { createLogger, LogLevel } from '@hatago/core'
 
 // Create logger with component name
-const logger = createLogger({
-  level: LogLevel.INFO,
-  format: 'json',
-  includeStackTrace: true,
-  redactFields: ['password', 'token']
-}, 'my-plugin')
+const logger = createLogger(
+  {
+    level: LogLevel.INFO,
+    format: 'json',
+    includeStackTrace: true,
+    redactFields: ['password', 'token'],
+  },
+  'my-plugin'
+)
 
 // Log messages with structured metadata
-logger.info('User authenticated', { 
+logger.info('User authenticated', {
   user_id: '12345',
   method: 'oauth2',
-  ip_address: '192.168.1.100'
+  ip_address: '192.168.1.100',
 })
 
-logger.error('Database connection failed', {
-  database: 'users',
-  retry_count: 3
-}, new Error('Connection timeout'))
+logger.error(
+  'Database connection failed',
+  {
+    database: 'users',
+    retry_count: 3,
+  },
+  new Error('Connection timeout')
+)
 ```
 
 ### Plugin Integration
@@ -53,7 +60,7 @@ export function createMyPlugin(): HatagoPlugin {
     level: LogLevel.INFO,
     format: 'json',
     endpoint: '/logs',
-    bufferSize: 1000
+    bufferSize: 1000,
   })
 }
 ```
@@ -62,24 +69,25 @@ export function createMyPlugin(): HatagoPlugin {
 
 Following RFC 5424 Syslog severity levels:
 
-| Level | Value | Usage |
-|-------|-------|-------|
-| DEBUG | 0 | Detailed debugging information |
-| INFO | 1 | General operational messages |
-| WARN | 2 | Warning conditions |
-| ERROR | 3 | Error conditions |
+| Level | Value | Usage                          |
+| ----- | ----- | ------------------------------ |
+| DEBUG | 0     | Detailed debugging information |
+| INFO  | 1     | General operational messages   |
+| WARN  | 2     | Warning conditions             |
+| ERROR | 3     | Error conditions               |
 
 ## Log Entry Structure
 
 ```typescript
 interface LogEntry {
-  timestamp: string        // ISO 8601 format
-  level: LogLevel         // Numeric log level
-  message: string         // Human-readable message
-  meta?: Record<string, unknown>  // Structured metadata
-  component?: string      // Component/plugin name
-  trace_id?: string       // Request correlation ID
-  error?: {              // Error details (if applicable)
+  timestamp: string // ISO 8601 format
+  level: LogLevel // Numeric log level
+  message: string // Human-readable message
+  meta?: Record<string, unknown> // Structured metadata
+  component?: string // Component/plugin name
+  trace_id?: string // Request correlation ID
+  error?: {
+    // Error details (if applicable)
     name: string
     message: string
     stack?: string
@@ -139,7 +147,7 @@ structuredLogging({
   endpoint: '/logs',
   includeStackTrace: true,
   bufferSize: 1000,
-  redactFields: ['password', 'token', 'secret', 'key', 'authorization']
+  redactFields: ['password', 'token', 'secret', 'key', 'authorization'],
 })
 ```
 
@@ -159,6 +167,7 @@ curl "http://localhost:8787/logs?since=2024-08-15T10:00:00Z"
 ```
 
 Response:
+
 ```json
 {
   "logs": [...],
@@ -213,9 +222,9 @@ Sensitive fields are automatically redacted:
 ```typescript
 logger.info('User login', {
   username: 'alice',
-  password: 'secret123',    // → '[REDACTED]'
-  auth_token: 'abc123',     // → '[REDACTED]'
-  session_id: 'sess_456'
+  password: 'secret123', // → '[REDACTED]'
+  auth_token: 'abc123', // → '[REDACTED]'
+  session_id: 'sess_456',
 })
 ```
 
@@ -223,10 +232,7 @@ logger.info('User login', {
 
 ```typescript
 const config = {
-  redactFields: [
-    'password', 'token', 'secret', 'key', 
-    'authorization', 'cookie', 'credential'
-  ]
+  redactFields: ['password', 'token', 'secret', 'key', 'authorization', 'cookie', 'credential'],
 }
 ```
 
@@ -239,13 +245,13 @@ Automatic request correlation with trace IDs:
 app.use('*', async (c, next) => {
   const traceId = c.req.header('x-trace-id') || generateTraceId()
   c.set('traceId', traceId)
-  
+
   logger.info('Request started', {
     method: c.req.method,
     path: c.req.path,
-    trace_id: traceId
+    trace_id: traceId,
   })
-  
+
   await next()
 })
 ```
@@ -263,7 +269,7 @@ app.use('*', async (c, next) => {
 
 ```typescript
 // Buffer size controls memory usage
-bufferSize: 1000  // ~1MB for typical log entries
+bufferSize: 1000 // ~1MB for typical log entries
 ```
 
 ### Async Safety
@@ -280,29 +286,36 @@ bufferSize: 1000  // ~1MB for typical log entries
 import { createLogger, LogLevel } from '@hatago/core'
 
 export const myPlugin: HatagoPlugin = ({ server }) => {
-  const logger = createLogger({
-    level: LogLevel.INFO,
-    format: 'json',
-    includeStackTrace: true,
-    redactFields: ['password']
-  }, 'my-plugin')
+  const logger = createLogger(
+    {
+      level: LogLevel.INFO,
+      format: 'json',
+      includeStackTrace: true,
+      redactFields: ['password'],
+    },
+    'my-plugin'
+  )
 
-  server.registerTool('my.tool', {
-    title: 'My Tool',
-    description: 'Example tool with logging',
-    inputSchema: {}
-  }, async (args) => {
-    logger.info('Tool called', { args })
-    
-    try {
-      const result = await processRequest(args)
-      logger.info('Tool completed', { result_size: result.length })
-      return { content: [{ type: 'text', text: result }] }
-    } catch (error) {
-      logger.error('Tool failed', { args }, error)
-      throw error
+  server.registerTool(
+    'my.tool',
+    {
+      title: 'My Tool',
+      description: 'Example tool with logging',
+      inputSchema: {},
+    },
+    async args => {
+      logger.info('Tool called', { args })
+
+      try {
+        const result = await processRequest(args)
+        logger.info('Tool completed', { result_size: result.length })
+        return { content: [{ type: 'text', text: result }] }
+      } catch (error) {
+        logger.error('Tool failed', { args }, error)
+        throw error
+      }
     }
-  })
+  )
 }
 ```
 
@@ -312,12 +325,16 @@ export const myPlugin: HatagoPlugin = ({ server }) => {
 try {
   await riskyOperation()
 } catch (error) {
-  logger.error('Operation failed', {
-    operation: 'user_sync',
-    retry_count: 3,
-    error_code: error.code
-  }, error)
-  
+  logger.error(
+    'Operation failed',
+    {
+      operation: 'user_sync',
+      retry_count: 3,
+      error_code: error.code,
+    },
+    error
+  )
+
   // Log includes stack trace in development
   // JSON format in production for log aggregation
 }
@@ -377,7 +394,7 @@ logger.info('Order processed', {
   user_id: '67890',
   amount: 99.99,
   currency: 'USD',
-  processing_time_ms: 150
+  processing_time_ms: 150,
 })
 
 // Bad: Unstructured message
@@ -388,12 +405,16 @@ logger.info('Order 12345 for user 67890 processed in 150ms for $99.99 USD')
 
 ```typescript
 // Good: Rich context with error
-logger.error('Database query failed', {
-  query_type: 'user_lookup',
-  table: 'users',
-  user_id: '12345',
-  retry_count: 3
-}, error)
+logger.error(
+  'Database query failed',
+  {
+    query_type: 'user_lookup',
+    table: 'users',
+    user_id: '12345',
+    retry_count: 3,
+  },
+  error
+)
 
 // Bad: Minimal context
 logger.error('Query failed', {}, error)
@@ -405,7 +426,7 @@ logger.error('Query failed', {}, error)
 // Conditional expensive operations
 if (logger.level <= LogLevel.DEBUG) {
   logger.debug('Complex object state', {
-    object: JSON.parse(JSON.stringify(complexObject))
+    object: JSON.parse(JSON.stringify(complexObject)),
   })
 }
 ```

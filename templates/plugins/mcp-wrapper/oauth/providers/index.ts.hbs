@@ -1,0 +1,183 @@
+/**
+ * OAuth providers for {{titleCase name}} plugin
+ */
+
+export { GitHubOAuthProvider, createGitHubConfig } from './github'
+export type { GitHubOAuthConfig, GitHubToken } from './github'
+
+export { GoogleOAuthProvider, createGoogleConfig } from './google'
+export type { GoogleOAuthConfig, GoogleToken, GoogleUserInfo } from './google'
+
+export { SlackOAuthProvider, createSlackConfig } from './slack'
+export type { SlackOAuthConfig, SlackToken, SlackUserIdentity } from './slack'
+
+import type { OAuthProvider, OAuthConfig, OAuthToken } from '../oauth-types'
+import { TokenManager } from '../token-manager'
+import { GitHubOAuthProvider } from './github'
+import { GoogleOAuthProvider } from './google'
+import { SlackOAuthProvider } from './slack'
+
+/**
+ * OAuth provider factory
+ */
+export class OAuthProviderFactory {
+  /**
+   * Create provider instance based on configuration
+   */
+  static create(config: OAuthConfig): any {
+    switch (config.provider) {
+      case 'github':
+        return new GitHubOAuthProvider(config)
+      
+      case 'google':
+        return new GoogleOAuthProvider(config)
+      
+      case 'slack':
+        return new SlackOAuthProvider(config)
+      
+      case 'azure':
+        throw new Error('Azure provider not yet implemented')
+      
+      case 'custom':
+        throw new Error('Custom provider requires implementation')
+      
+      default:
+        throw new Error(`Unknown OAuth provider: ${config.provider}`)
+    }
+  }
+
+  /**
+   * Create provider from environment variables
+   */
+  static fromEnvironment(provider?: OAuthProvider): any {
+    // Try specific provider first
+    if (provider) {
+      switch (provider) {
+        case 'github':
+          return GitHubOAuthProvider.fromEnvironment()
+        
+        case 'google':
+          return GoogleOAuthProvider.fromEnvironment()
+        
+        case 'slack':
+          return SlackOAuthProvider.fromEnvironment()
+        
+        default:
+          return null
+      }
+    }
+
+    // Try to auto-detect from environment
+    let instance = GitHubOAuthProvider.fromEnvironment()
+    if (instance) {
+      console.log('Detected GitHub OAuth from environment')
+      return instance
+    }
+
+    instance = GoogleOAuthProvider.fromEnvironment()
+    if (instance) {
+      console.log('Detected Google OAuth from environment')
+      return instance
+    }
+
+    instance = SlackOAuthProvider.fromEnvironment()
+    if (instance) {
+      console.log('Detected Slack OAuth from environment')
+      return instance
+    }
+
+    return null
+  }
+
+  /**
+   * Check if any OAuth token is available
+   */
+  static async hasToken(): Promise<boolean> {
+    const tokenManager = new TokenManager()
+    
+    // Check common token locations
+    const providers = ['github', 'google', 'slack']
+    
+    for (const provider of providers) {
+      const token = await tokenManager.getToken(provider)
+      if (token) {
+        return true
+      }
+    }
+
+    // Check environment variables
+    const envVars = [
+      'GITHUB_PERSONAL_ACCESS_TOKEN',
+      'GOOGLE_API_KEY',
+      'GOOGLE_ACCESS_TOKEN',
+      'SLACK_BOT_TOKEN',
+      'SLACK_USER_TOKEN',
+      '{{toUpperCase (snakeCase name)}}_TOKEN',
+      '{{toUpperCase (snakeCase name)}}_API_KEY'
+    ]
+
+    for (const envVar of envVars) {
+      if (process.env[envVar]) {
+        return true
+      }
+    }
+
+    return false
+  }
+
+  /**
+   * Get all available tokens
+   */
+  static async getAvailableTokens(): Promise<Record<string, OAuthToken>> {
+    const tokenManager = new TokenManager()
+    const tokens: Record<string, OAuthToken> = {}
+    
+    const providers = ['github', 'google', 'slack']
+    
+    for (const provider of providers) {
+      const token = await tokenManager.getToken(provider)
+      if (token) {
+        tokens[provider] = token
+      }
+    }
+
+    return tokens
+  }
+}
+
+/**
+ * Provider capabilities
+ */
+export const PROVIDER_CAPABILITIES = {
+  github: {
+    supportsPKCE: true,  // Prepared for future
+    supportsRefresh: false,
+    supportsDeviceFlow: true,
+    supportsScopes: true,
+    requiresClientSecret: true
+  },
+  google: {
+    supportsPKCE: true,
+    supportsRefresh: true,
+    supportsDeviceFlow: true,
+    supportsScopes: true,
+    requiresClientSecret: true,
+    supportsServiceAccount: true
+  },
+  slack: {
+    supportsPKCE: false,
+    supportsRefresh: false,  // Limited support
+    supportsDeviceFlow: false,
+    supportsScopes: true,
+    requiresClientSecret: true,
+    supportsBotTokens: true
+  },
+  azure: {
+    supportsPKCE: true,
+    supportsRefresh: true,
+    supportsDeviceFlow: true,
+    supportsScopes: true,
+    requiresClientSecret: false,  // Can use PKCE instead
+    supportsManagedIdentity: true
+  }
+} as const

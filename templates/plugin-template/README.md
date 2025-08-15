@@ -29,10 +29,10 @@ const { app, server } = await createApp({
 
 ### Configuration
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `enabled` | `boolean` | `true` | Enable/disable the plugin |
-| `customOption` | `string` | `undefined` | Custom configuration option |
+| Option         | Type      | Default     | Description                 |
+| -------------- | --------- | ----------- | --------------------------- |
+| `enabled`      | `boolean` | `true`      | Enable/disable the plugin   |
+| `customOption` | `string`  | `undefined` | Custom configuration option |
 
 ### Available Tools
 
@@ -41,9 +41,11 @@ const { app, server } = await createApp({
 Example tool provided by this plugin.
 
 **Input:**
+
 - `message` (string, optional): Custom message to return
 
 **Output:**
+
 - Text response with the provided message
 
 ## Capabilities

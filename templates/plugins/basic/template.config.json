@@ -1,0 +1,180 @@
+{
+  "name": "basic",
+  "displayName": "Basic Plugin",
+  "description": "A basic Hatago plugin template with customizable tools, resources, and routes",
+  "category": "general",
+  "tags": ["basic", "starter", "general-purpose"],
+  "author": "Hatago Team",
+  "version": "1.0.0",
+  "files": [
+    {
+      "template": "plugin.ts.hbs",
+      "output": "{{kebabCase name}}.ts",
+      "description": "Main plugin file"
+    },
+    {
+      "template": "README.md.hbs",
+      "output": "README.md",
+      "description": "Plugin documentation",
+      "optional": true
+    },
+    {
+      "template": "tests.ts.hbs",
+      "output": "{{kebabCase name}}.test.ts",
+      "description": "Plugin tests",
+      "optional": true
+    }
+  ],
+  "prompts": [
+    {
+      "name": "description",
+      "type": "input",
+      "message": "Plugin description:",
+      "default": "A custom Hatago plugin"
+    },
+    {
+      "name": "author",
+      "type": "input",
+      "message": "Author name:",
+      "default": "Anonymous"
+    },
+    {
+      "name": "hasTools",
+      "type": "confirm",
+      "message": "Include MCP tools?",
+      "default": true
+    },
+    {
+      "name": "tools",
+      "type": "array",
+      "message": "Tools to create:",
+      "when": "hasTools",
+      "itemPrompts": [
+        {
+          "name": "name",
+          "type": "input",
+          "message": "Tool name:",
+          "required": true
+        },
+        {
+          "name": "description",
+          "type": "input",
+          "message": "Tool description:",
+          "default": "A useful tool"
+        },
+        {
+          "name": "isAsync",
+          "type": "confirm",
+          "message": "Async implementation?",
+          "default": false
+        }
+      ]
+    },
+    {
+      "name": "hasResources",
+      "type": "confirm",
+      "message": "Include MCP resources?",
+      "default": false
+    },
+    {
+      "name": "resources",
+      "type": "array",
+      "message": "Resources to create:",
+      "when": "hasResources",
+      "itemPrompts": [
+        {
+          "name": "name",
+          "type": "input",
+          "message": "Resource name:",
+          "required": true
+        },
+        {
+          "name": "uri",
+          "type": "input",
+          "message": "Resource URI:",
+          "default": "resource://{{name}}"
+        },
+        {
+          "name": "mimeType",
+          "type": "select",
+          "message": "MIME type:",
+          "choices": ["text/plain", "application/json", "text/markdown", "text/html"],
+          "default": "text/plain"
+        }
+      ]
+    },
+    {
+      "name": "hasHttpRoutes",
+      "type": "confirm",
+      "message": "Include HTTP routes?",
+      "default": false
+    },
+    {
+      "name": "routes",
+      "type": "array",
+      "message": "HTTP routes to create:",
+      "when": "hasHttpRoutes",
+      "itemPrompts": [
+        {
+          "name": "path",
+          "type": "input",
+          "message": "Route path:",
+          "required": true
+        },
+        {
+          "name": "method",
+          "type": "select",
+          "message": "HTTP method:",
+          "choices": ["get", "post", "put", "delete", "patch"],
+          "default": "get"
+        }
+      ]
+    },
+    {
+      "name": "hasMiddleware",
+      "type": "confirm",
+      "message": "Include middleware?",
+      "default": false
+    },
+    {
+      "name": "hasConfiguration",
+      "type": "confirm",
+      "message": "Include configuration options?",
+      "default": false
+    },
+    {
+      "name": "configOptions",
+      "type": "array",
+      "message": "Configuration options:",
+      "when": "hasConfiguration",
+      "itemPrompts": [
+        {
+          "name": "name",
+          "type": "input",
+          "message": "Config key name:",
+          "required": true
+        },
+        {
+          "name": "envVar",
+          "type": "input",
+          "message": "Environment variable:",
+          "default": "{{toUpperCase name}}"
+        },
+        {
+          "name": "defaultValue",
+          "type": "input",
+          "message": "Default value:",
+          "default": ""
+        },
+        {
+          "name": "required",
+          "type": "confirm",
+          "message": "Required?",
+          "default": false
+        }
+      ]
+    }
+  ],
+  "dependencies": ["@hatago/core"],
+  "devDependencies": ["@types/node"]
+}

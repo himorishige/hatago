@@ -21,7 +21,7 @@
       },
       {
         "name": "kv.set",
-        "title": "Set Value", 
+        "title": "Set Value",
         "description": "Set value in key-value store"
       },
       {

@@ -47,16 +47,16 @@ export class NamespaceManager {
 
     // Get the base tool name (after renaming if configured)
     const baseName = this.getBaseName(serverConfig, tool)
-    
+
     // Apply namespace strategy
     const namespacedName = this.applyNamespaceStrategy(serverConfig, baseName)
-    
+
     // Validate tool name
     this.validateToolName(namespacedName)
-    
+
     // Check for conflicts
     const finalName = this.resolveConflicts(namespacedName, serverConfig, tool)
-    
+
     // Register the mapping
     const mapping: ToolMappingInfo = {
       original: tool.name,
@@ -69,9 +69,9 @@ export class NamespaceManager {
         category: this.inferCategory(tool),
       },
     }
-    
+
     this.mappings.set(finalName, mapping)
-    
+
     console.log(`Namespace: Registered ${tool.name} -> ${finalName} (${serverConfig.id})`)
     return finalName
   }
@@ -173,7 +173,11 @@ export class NamespaceManager {
   /**
    * Resolve naming conflicts
    */
-  private resolveConflicts(proposedName: string, serverConfig: MCPServerConfig, tool: RemoteTool): string {
+  private resolveConflicts(
+    proposedName: string,
+    serverConfig: MCPServerConfig,
+    tool: RemoteTool
+  ): string {
     const normalizedName = this.config.caseSensitive ? proposedName : proposedName.toLowerCase()
     const existingMapping = this.findConflictingMapping(normalizedName)
 
@@ -196,10 +200,14 @@ export class NamespaceManager {
     switch (this.conflictResolution) {
       case 'error':
         this.conflicts.push(conflict)
-        throw new Error(`Tool name conflict: ${proposedName} already exists from ${existingMapping.server}`)
+        throw new Error(
+          `Tool name conflict: ${proposedName} already exists from ${existingMapping.server}`
+        )
 
       case 'skip':
-        console.warn(`Skipping conflicting tool: ${proposedName} (conflicts with ${existingMapping.server})`)
+        console.warn(
+          `Skipping conflicting tool: ${proposedName} (conflicts with ${existingMapping.server})`
+        )
         throw new Error(`Tool skipped due to conflict: ${proposedName}`)
 
       case 'rename':
@@ -265,13 +273,13 @@ export class NamespaceManager {
   private matchesPattern(toolName: string, patterns: string[]): boolean {
     return patterns.some(pattern => {
       if (pattern === '*') return true
-      
+
       // Convert glob pattern to regex
       const regexPattern = pattern
         .replace(/\\./g, '\\\\.')
         .replace(/\\*/g, '.*')
         .replace(/\\?/g, '.')
-      
+
       const regex = new RegExp(`^${regexPattern}$`, this.config.caseSensitive ? '' : 'i')
       return regex.test(toolName)
     })

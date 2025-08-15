@@ -26,47 +26,47 @@ export interface KVStore {
  */
 const kvPlugin: CapabilityAwarePluginFactory = (context: PluginContext) => {
   const config: KVConfig = context.config as KVConfig
-  
+
   return async ({ server, capabilities }) => {
     const { kv, logger } = capabilities
-    
+
     // Create KV store based on runtime and config
     const store = createKVStore(context, config, kv)
-    
+
     // Register KV tools
     server.registerTool(
       'kv.get',
       {
         title: 'Get Value',
         description: 'Get value from key-value store by key',
-        inputSchema: {}
+        inputSchema: {},
       },
       async (args: any) => {
         const { key } = args
         if (!key || typeof key !== 'string') {
           throw new Error('Key is required and must be a string')
         }
-        
+
         logger.info('KV get operation', { key })
         const value = await store.get(key)
-        
+
         return {
           content: [
             {
               type: 'text',
-              text: value !== null ? `Value: ${value}` : 'Key not found'
-            }
-          ]
+              text: value !== null ? `Value: ${value}` : 'Key not found',
+            },
+          ],
         }
       }
     )
-    
+
     server.registerTool(
       'kv.set',
       {
         title: 'Set Value',
         description: 'Set value in key-value store',
-        inputSchema: {}
+        inputSchema: {},
       },
       async (args: any) => {
         const { key, value, ttl } = args
@@ -76,79 +76,78 @@ const kvPlugin: CapabilityAwarePluginFactory = (context: PluginContext) => {
         if (value === undefined) {
           throw new Error('Value is required')
         }
-        
+
         const stringValue = typeof value === 'string' ? value : JSON.stringify(value)
         logger.info('KV set operation', { key, ttl })
         await store.set(key, stringValue, ttl)
-        
+
         return {
           content: [
             {
               type: 'text',
-              text: `Successfully set key: ${key}`
-            }
-          ]
+              text: `Successfully set key: ${key}`,
+            },
+          ],
         }
       }
     )
-    
+
     server.registerTool(
       'kv.delete',
       {
         title: 'Delete Key',
         description: 'Delete key from key-value store',
-        inputSchema: {}
+        inputSchema: {},
       },
       async (args: any) => {
         const { key } = args
         if (!key || typeof key !== 'string') {
           throw new Error('Key is required and must be a string')
         }
-        
+
         logger.info('KV delete operation', { key })
         await store.delete(key)
-        
+
         return {
           content: [
             {
               type: 'text',
-              text: `Successfully deleted key: ${key}`
-            }
-          ]
+              text: `Successfully deleted key: ${key}`,
+            },
+          ],
         }
       }
     )
-    
+
     server.registerTool(
       'kv.list',
       {
         title: 'List Keys',
         description: 'List keys with optional prefix filter',
-        inputSchema: {}
+        inputSchema: {},
       },
       async (args: any) => {
         const { prefix } = args
-        
+
         logger.info('KV list operation', { prefix })
         const keys = await store.list(prefix)
-        
+
         return {
           content: [
             {
               type: 'text',
-              text: keys.length > 0 
-                ? `Found ${keys.length} keys: ${keys.join(', ')}`
-                : 'No keys found'
-            }
-          ]
+              text:
+                keys.length > 0 ? `Found ${keys.length} keys: ${keys.join(', ')}` : 'No keys found',
+            },
+          ],
         }
       }
     )
-    
+
     logger.info('KV plugin initialized', {
       backend: detectBackend(context, config),
       prefix: config.prefix,
-      defaultTtl: config.defaultTtl
+      defaultTtl: config.defaultTtl,
     })
   }
 }
@@ -156,10 +155,10 @@ const kvPlugin: CapabilityAwarePluginFactory = (context: PluginContext) => {
 function createKVStore(context: PluginContext, config: KVConfig, baseKv: any): KVStore {
   const backend = detectBackend(context, config)
   const prefix = config.prefix || ''
-  
-  const addPrefix = (key: string) => prefix ? `${prefix}:${key}` : key
-  const removePrefix = (key: string) => prefix ? key.replace(`${prefix}:`, '') : key
-  
+
+  const addPrefix = (key: string) => (prefix ? `${prefix}:${key}` : key)
+  const removePrefix = (key: string) => (prefix ? key.replace(`${prefix}:`, '') : key)
+
   switch (backend) {
     case 'memory':
       return createMemoryStore(addPrefix, removePrefix)
@@ -178,7 +177,7 @@ function detectBackend(context: PluginContext, config: KVConfig): string {
   if (config.backend) {
     return config.backend
   }
-  
+
   // Auto-detect based on runtime
   if (context.runtime === 'workers') {
     return 'cloudflare-kv'
@@ -192,36 +191,36 @@ function createMemoryStore(
   removePrefix: (key: string) => string
 ): KVStore {
   const storage = new Map<string, { value: string; expires?: number }>()
-  
+
   return {
     async get(key: string): Promise<string | null> {
       const prefixedKey = addPrefix(key)
       const item = storage.get(prefixedKey)
       if (!item) return null
-      
+
       if (item.expires && Date.now() > item.expires) {
         storage.delete(prefixedKey)
         return null
       }
-      
+
       return item.value
     },
-    
+
     async set(key: string, value: string, ttl?: number): Promise<void> {
       const prefixedKey = addPrefix(key)
       const item = ttl ? { value, expires: Date.now() + ttl * 1000 } : { value }
       storage.set(prefixedKey, item)
     },
-    
+
     async delete(key: string): Promise<void> {
       const prefixedKey = addPrefix(key)
       storage.delete(prefixedKey)
     },
-    
+
     async list(prefix?: string): Promise<string[]> {
       const searchPrefix = prefix ? addPrefix(prefix) : addPrefix('')
       const keys: string[] = []
-      
+
       for (const [key, item] of storage.entries()) {
         if (key.startsWith(searchPrefix)) {
           // Check if expired
@@ -232,9 +231,9 @@ function createMemoryStore(
           }
         }
       }
-      
+
       return keys.sort()
-    }
+    },
   }
 }
 
@@ -249,23 +248,23 @@ function createCloudflareKVStore(
       const prefixedKey = addPrefix(key)
       return await kvBinding.get(prefixedKey)
     },
-    
+
     async set(key: string, value: string, ttl?: number): Promise<void> {
       const prefixedKey = addPrefix(key)
       const options = ttl ? { expirationTtl: ttl } : {}
       await kvBinding.put(prefixedKey, value, options)
     },
-    
+
     async delete(key: string): Promise<void> {
       const prefixedKey = addPrefix(key)
       await kvBinding.delete(prefixedKey)
     },
-    
+
     async list(prefix?: string): Promise<string[]> {
       const searchPrefix = prefix ? addPrefix(prefix) : addPrefix('')
       const result = await kvBinding.list({ prefix: searchPrefix })
       return result.keys.map((item: any) => removePrefix(item.name))
-    }
+    },
   }
 }
 

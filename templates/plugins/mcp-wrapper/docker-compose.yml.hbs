@@ -1,0 +1,83 @@
+version: '3.8' services: hatago: build: . ports: - "8787:8787" environment: - NODE_ENV=production
+{{#if (ne authType 'none')}}
+  -
+  {{authToken}}=${{{authToken}}}
+{{/if}}
+-
+{{toUpperCase (snakeCase name)}}_ENDPOINT=http://{{kebabCase mcpServerName}}:{{mcpServerPort}}/mcp -
+{{toUpperCase (snakeCase name)}}_PORT={{mcpServerPort}}
+{{#if namespace}}
+  -
+  {{toUpperCase (snakeCase name)}}_NAMESPACE={{namespace}}
+{{/if}}
+{{#if caching}}
+  -
+  {{toUpperCase (snakeCase name)}}_CACHE_ENABLED=true -
+  {{toUpperCase (snakeCase name)}}_CACHE_TTL=300000
+{{/if}}
+{{#if healthCheck}}
+  -
+  {{toUpperCase (snakeCase name)}}_HEALTH_CHECK=true -
+  {{toUpperCase (snakeCase name)}}_HEALTH_INTERVAL=60000
+{{/if}}
+{{#if autoStart}}
+  -
+  {{toUpperCase (snakeCase name)}}_AUTO_START=false # Managed by Docker Compose
+{{/if}}
+volumes: - ./hatago.config.jsonc:/app/hatago.config.jsonc:ro - ./logs:/app/logs depends_on: -
+{{kebabCase mcpServerName}}
+networks: - hatago-network restart: unless-stopped healthcheck: test: ["CMD", "curl", "-f",
+"http://localhost:8787/{{kebabCase name}}/health"] interval: 30s timeout: 10s retries: 3
+start_period: 60s
+
+{{kebabCase mcpServerName}}: image: node:20-alpine command: > sh -c "npm install -g
+{{mcpServerName}}
+&&
+{{mcpServerName}}
+--port
+{{mcpServerPort}}
+--host 0.0.0.0" environment: - NODE_ENV=production
+{{#if (ne authType 'none')}}
+  -
+  {{authToken}}=${{{authToken}}}
+{{/if}}
+# Add any other environment variables required by
+{{mcpServerName}}
+# - CUSTOM_VAR=${CUSTOM_VAR} ports: - "{{mcpServerPort}}:{{mcpServerPort}}" volumes: # Mount any
+configuration files needed by
+{{mcpServerName}}
+# - ./{{kebabCase mcpServerName}}.config.json:/app/config.json:ro - ./logs/{{kebabCase
+  mcpServerName
+}}:/app/logs networks: - hatago-network restart: unless-stopped healthcheck: test: ["CMD", "wget",
+"--quiet", "--tries=1", "--spider", "http://localhost:{{mcpServerPort}}/health"] interval: 30s
+timeout: 10s retries: 3 start_period: 30s # Optional: Redis for caching (if needed) redis: image:
+redis:7-alpine ports: - "6379:6379" volumes: - redis_data:/data networks: - hatago-network restart:
+unless-stopped profiles: - caching healthcheck: test: ["CMD", "redis-cli", "ping"] interval: 30s
+timeout: 10s retries: 3 # Optional: Monitoring with Prometheus prometheus: image:
+prom/prometheus:latest ports: - "9090:9090" volumes: -
+./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro - prometheus_data:/prometheus
+networks: - hatago-network restart: unless-stopped profiles: - monitoring command: -
+'--config.file=/etc/prometheus/prometheus.yml' - '--storage.tsdb.path=/prometheus' -
+'--web.console.libraries=/etc/prometheus/console_libraries' -
+'--web.console.templates=/etc/prometheus/consoles' # Optional: Grafana for visualization grafana:
+image: grafana/grafana:latest ports: - "3000:3000" environment: -
+GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin} volumes: - grafana_data:/var/lib/grafana -
+./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro -
+./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro networks: - hatago-network
+restart: unless-stopped profiles: - monitoring depends_on: - prometheus networks: hatago-network:
+driver: bridge name: hatago-{{kebabCase name}}-network volumes: redis_data: name: hatago-{{kebabCase
+  name
+}}-redis-data prometheus_data: name: hatago-{{kebabCase name}}-prometheus-data grafana_data: name:
+hatago-{{kebabCase name}}-grafana-data # Development override file # Create
+docker-compose.override.yml for development-specific settings: # # version: '3.8' # services: #
+hatago: # environment: # - NODE_ENV=development # -
+{{toUpperCase (snakeCase name)}}_DEBUG=true # volumes: # - ./src:/app/src:ro # -
+./package.json:/app/package.json:ro # command: npm run dev # #
+{{kebabCase mcpServerName}}: # environment: # - NODE_ENV=development # - DEBUG=* # command: > # sh
+-c "npm install -g
+{{mcpServerName}}
+&& #
+{{mcpServerName}}
+--port
+{{mcpServerPort}}
+--host 0.0.0.0 --debug"

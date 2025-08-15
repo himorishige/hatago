@@ -1,0 +1,518 @@
+/**
+ * Two-stage OAuth authentication flow for {{titleCase name}} plugin
+ * 
+ * Stage 1: Client authenticates with Hatago server
+ * Stage 2: Hatago server authenticates with target MCP server
+ */
+
+import type { OAuthConfig, OAuthToken } from './oauth-types'
+import { TokenManager } from './token-manager'
+import { OAuthMetadataDiscovery, ProtectedResourceMetadataDiscovery } from './metadata-discovery'
+import { DynamicClientRegistration, ClientMetadata } from './dynamic-registration'
+import { performOAuthFlow } from './oauth-flow'
+
+/**
+ * Two-stage authentication configuration
+ */
+export interface TwoStageAuthConfig {
+  // Stage 1: Client to Hatago
+  clientAuth: {
+    enabled: boolean
+    provider?: string
+    clientId?: string
+    clientSecret?: string
+    scope?: string
+    redirectUri?: string
+  }
+  
+  // Stage 2: Hatago to MCP server
+  serverAuth: {
+    enabled: boolean
+    discovery?: boolean  // Use metadata discovery
+    registration?: boolean  // Use dynamic client registration
+    provider?: string
+    clientId?: string
+    clientSecret?: string
+    scope?: string
+    issuer?: string
+    resource?: string
+  }
+  
+  // Token delegation
+  delegation?: {
+    enabled: boolean
+    type: 'token_exchange' | 'impersonation' | 'delegation'
+    audience?: string
+    actorToken?: string
+    actorTokenType?: string
+  }
+}
+
+/**
+ * Two-stage authentication flow manager
+ */
+export class TwoStageAuthFlow {
+  private tokenManager: TokenManager
+  private oauthDiscovery: OAuthMetadataDiscovery
+  private resourceDiscovery: ProtectedResourceMetadataDiscovery
+  private dcr: DynamicClientRegistration
+  
+  constructor() {
+    this.tokenManager = new TokenManager()
+    this.oauthDiscovery = new OAuthMetadataDiscovery()
+    this.resourceDiscovery = new ProtectedResourceMetadataDiscovery()
+    this.dcr = new DynamicClientRegistration()
+  }
+
+  /**
+   * Perform two-stage authentication
+   */
+  async authenticate(config: TwoStageAuthConfig): Promise<{
+    clientToken?: OAuthToken
+    serverToken?: OAuthToken
+    delegatedToken?: OAuthToken
+  }> {
+    const result: {
+      clientToken?: OAuthToken
+      serverToken?: OAuthToken
+      delegatedToken?: OAuthToken
+    } = {}
+
+    // Stage 1: Client authentication with Hatago
+    if (config.clientAuth.enabled) {
+      console.log('[TwoStageAuth] Stage 1: Authenticating client with Hatago...')
+      result.clientToken = await this.authenticateClient(config.clientAuth)
+    }
+
+    // Stage 2: Hatago authentication with MCP server
+    if (config.serverAuth.enabled) {
+      console.log('[TwoStageAuth] Stage 2: Authenticating Hatago with MCP server...')
+      result.serverToken = await this.authenticateServer(config.serverAuth)
+    }
+
+    // Optional: Token delegation/exchange
+    if (config.delegation?.enabled && result.clientToken && result.serverToken) {
+      console.log('[TwoStageAuth] Performing token delegation...')
+      result.delegatedToken = await this.performTokenDelegation(
+        config.delegation,
+        result.clientToken,
+        result.serverToken
+      )
+    }
+
+    return result
+  }
+
+  /**
+   * Stage 1: Authenticate client with Hatago
+   */
+  private async authenticateClient(config: any): Promise<OAuthToken> {
+    // Check for existing token
+    const existingToken = await this.tokenManager.getToken('hatago-client')
+    if (existingToken && !this.tokenManager.isTokenExpired(existingToken)) {
+      console.log('[TwoStageAuth] Using existing client token')
+      return existingToken
+    }
+
+    // Build OAuth configuration
+    const oauthConfig: OAuthConfig = {
+      provider: config.provider || 'custom',
+      clientId: config.clientId!,
+      clientSecret: config.clientSecret!,
+      authorizationUrl: '/oauth/authorize',  // Hatago endpoints
+      tokenUrl: '/oauth/token',
+      scope: config.scope || 'mcp:access',
+      redirectUri: config.redirectUri || 'http://localhost:3000/callback',
+      pkce: true,
+      autoRefresh: true
+    }
+
+    // Perform OAuth flow
+    const token = await performOAuthFlow(oauthConfig)
+    
+    // Store token
+    await this.tokenManager.setToken('hatago-client', token)
+    
+    return token
+  }
+
+  /**
+   * Stage 2: Authenticate Hatago with MCP server
+   */
+  private async authenticateServer(config: any): Promise<OAuthToken> {
+    // Check for existing token
+    const existingToken = await this.tokenManager.getToken('mcp-server')
+    if (existingToken && !this.tokenManager.isTokenExpired(existingToken)) {
+      console.log('[TwoStageAuth] Using existing server token')
+      return existingToken
+    }
+
+    let oauthConfig: OAuthConfig
+
+    // Use metadata discovery if enabled
+    if (config.discovery) {
+      console.log('[TwoStageAuth] Discovering OAuth metadata...')
+      
+      if (config.resource) {
+        // Discover from protected resource
+        const resourceMeta = await this.resourceDiscovery.discover(config.resource)
+        const authServer = resourceMeta.authorization_servers?.[0]
+        
+        if (!authServer) {
+          throw new Error('No authorization server found for resource')
+        }
+        
+        const serverMeta = await this.oauthDiscovery.discover(authServer)
+        
+        oauthConfig = {
+          provider: 'discovered',
+          authorizationUrl: serverMeta.authorization_endpoint,
+          tokenUrl: serverMeta.token_endpoint,
+          userInfoUrl: serverMeta.userinfo_endpoint,
+          revocationUrl: serverMeta.revocation_endpoint,
+          scope: config.scope || serverMeta.scopes_supported?.join(' ') || '',
+          pkce: serverMeta.code_challenge_methods_supported?.includes('S256') || false,
+          autoRefresh: serverMeta.grant_types_supported?.includes('refresh_token') || false,
+          clientId: '',  // Will be set by DCR
+          clientSecret: ''
+        }
+      } else if (config.issuer) {
+        // Discover from issuer
+        const serverMeta = await this.oauthDiscovery.discover(config.issuer)
+        
+        oauthConfig = {
+          provider: 'discovered',
+          authorizationUrl: serverMeta.authorization_endpoint,
+          tokenUrl: serverMeta.token_endpoint,
+          userInfoUrl: serverMeta.userinfo_endpoint,
+          revocationUrl: serverMeta.revocation_endpoint,
+          scope: config.scope || serverMeta.scopes_supported?.join(' ') || '',
+          pkce: serverMeta.code_challenge_methods_supported?.includes('S256') || false,
+          autoRefresh: serverMeta.grant_types_supported?.includes('refresh_token') || false,
+          clientId: '',  // Will be set by DCR
+          clientSecret: ''
+        }
+      } else {
+        throw new Error('Either resource or issuer must be provided for discovery')
+      }
+    } else {
+      // Manual configuration
+      oauthConfig = {
+        provider: config.provider || 'custom',
+        clientId: config.clientId!,
+        clientSecret: config.clientSecret!,
+        authorizationUrl: '',  // Will be set based on provider
+        tokenUrl: '',
+        scope: config.scope || '',
+        pkce: true,
+        autoRefresh: true
+      }
+    }
+
+    // Use Dynamic Client Registration if enabled
+    if (config.registration) {
+      console.log('[TwoStageAuth] Performing dynamic client registration...')
+      
+      const metadata: ClientMetadata = {
+        redirect_uris: ['http://localhost:3000/callback'],
+        client_name: 'Hatago MCP Server',
+        grant_types: ['authorization_code', 'refresh_token'],
+        response_types: ['code'],
+        scope: oauthConfig.scope
+      }
+
+      let registrationEndpoint: string
+      
+      if (config.issuer) {
+        const serverMeta = await this.oauthDiscovery.discover(config.issuer)
+        if (!serverMeta.registration_endpoint) {
+          throw new Error('Server does not support dynamic client registration')
+        }
+        registrationEndpoint = serverMeta.registration_endpoint
+      } else {
+        throw new Error('Issuer required for dynamic client registration')
+      }
+
+      const registration = await this.dcr.register(registrationEndpoint, metadata)
+      
+      // Update OAuth config with registered client
+      oauthConfig.clientId = registration.client_id
+      oauthConfig.clientSecret = registration.client_secret || ''
+    }
+
+    // Perform OAuth flow
+    const token = await performOAuthFlow(oauthConfig)
+    
+    // Store token
+    await this.tokenManager.setToken('mcp-server', token)
+    
+    return token
+  }
+
+  /**
+   * Perform token delegation/exchange
+   * RFC 8693 - OAuth 2.0 Token Exchange
+   */
+  private async performTokenDelegation(
+    config: any,
+    clientToken: OAuthToken,
+    serverToken: OAuthToken
+  ): Promise<OAuthToken> {
+    switch (config.type) {
+      case 'token_exchange':
+        return this.performTokenExchange(config, clientToken, serverToken)
+      
+      case 'impersonation':
+        return this.performImpersonation(config, clientToken, serverToken)
+      
+      case 'delegation':
+        return this.performDelegation(config, clientToken, serverToken)
+      
+      default:
+        throw new Error(`Unknown delegation type: ${config.type}`)
+    }
+  }
+
+  /**
+   * OAuth 2.0 Token Exchange (RFC 8693)
+   */
+  private async performTokenExchange(
+    config: any,
+    subjectToken: OAuthToken,
+    actorToken?: OAuthToken
+  ): Promise<OAuthToken> {
+    const params = new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+      subject_token: subjectToken.access_token,
+      subject_token_type: 'urn:ietf:params:oauth:token-type:access_token',
+      requested_token_type: 'urn:ietf:params:oauth:token-type:access_token'
+    })
+
+    if (config.audience) {
+      params.set('audience', config.audience)
+    }
+
+    if (actorToken) {
+      params.set('actor_token', actorToken.access_token)
+      params.set('actor_token_type', 'urn:ietf:params:oauth:token-type:access_token')
+    }
+
+    const response = await fetch('/oauth/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: params.toString()
+    })
+
+    const data = await response.json()
+
+    if (data.error) {
+      throw new Error(`Token exchange failed: ${data.error_description || data.error}`)
+    }
+
+    return {
+      access_token: data.access_token,
+      token_type: data.token_type,
+      expires_in: data.expires_in,
+      expires_at: Date.now() + (data.expires_in * 1000),
+      refresh_token: data.refresh_token,
+      scope: data.scope
+    }
+  }
+
+  /**
+   * Perform impersonation
+   */
+  private async performImpersonation(
+    config: any,
+    clientToken: OAuthToken,
+    serverToken: OAuthToken
+  ): Promise<OAuthToken> {
+    // Implementation depends on the specific authorization server
+    // This is a placeholder for provider-specific impersonation logic
+    
+    console.log('[TwoStageAuth] Impersonation flow not yet implemented')
+    
+    // For now, return the server token
+    return serverToken
+  }
+
+  /**
+   * Perform delegation
+   */
+  private async performDelegation(
+    config: any,
+    clientToken: OAuthToken,
+    serverToken: OAuthToken
+  ): Promise<OAuthToken> {
+    // Implementation depends on the specific authorization server
+    // This is a placeholder for provider-specific delegation logic
+    
+    console.log('[TwoStageAuth] Delegation flow not yet implemented')
+    
+    // For now, return the server token
+    return serverToken
+  }
+
+  /**
+   * Validate token chain
+   */
+  async validateTokenChain(
+    clientToken?: OAuthToken,
+    serverToken?: OAuthToken,
+    delegatedToken?: OAuthToken
+  ): Promise<boolean> {
+    // Validate client token
+    if (clientToken) {
+      if (this.tokenManager.isTokenExpired(clientToken)) {
+        console.log('[TwoStageAuth] Client token is expired')
+        return false
+      }
+    }
+
+    // Validate server token
+    if (serverToken) {
+      if (this.tokenManager.isTokenExpired(serverToken)) {
+        console.log('[TwoStageAuth] Server token is expired')
+        return false
+      }
+    }
+
+    // Validate delegated token
+    if (delegatedToken) {
+      if (this.tokenManager.isTokenExpired(delegatedToken)) {
+        console.log('[TwoStageAuth] Delegated token is expired')
+        return false
+      }
+    }
+
+    return true
+  }
+
+  /**
+   * Refresh token chain
+   */
+  async refreshTokenChain(config: TwoStageAuthConfig): Promise<{
+    clientToken?: OAuthToken
+    serverToken?: OAuthToken
+    delegatedToken?: OAuthToken
+  }> {
+    const result: {
+      clientToken?: OAuthToken
+      serverToken?: OAuthToken
+      delegatedToken?: OAuthToken
+    } = {}
+
+    // Refresh client token
+    if (config.clientAuth.enabled) {
+      const token = await this.tokenManager.getToken('hatago-client')
+      if (token?.refresh_token) {
+        console.log('[TwoStageAuth] Refreshing client token...')
+        result.clientToken = await this.tokenManager.refreshToken('hatago-client', token)
+      }
+    }
+
+    // Refresh server token
+    if (config.serverAuth.enabled) {
+      const token = await this.tokenManager.getToken('mcp-server')
+      if (token?.refresh_token) {
+        console.log('[TwoStageAuth] Refreshing server token...')
+        result.serverToken = await this.tokenManager.refreshToken('mcp-server', token)
+      }
+    }
+
+    // Re-perform delegation if needed
+    if (config.delegation?.enabled && result.clientToken && result.serverToken) {
+      console.log('[TwoStageAuth] Re-performing token delegation...')
+      result.delegatedToken = await this.performTokenDelegation(
+        config.delegation,
+        result.clientToken,
+        result.serverToken
+      )
+    }
+
+    return result
+  }
+
+  /**
+   * Revoke all tokens
+   */
+  async revokeAllTokens(): Promise<void> {
+    console.log('[TwoStageAuth] Revoking all tokens...')
+    
+    await this.tokenManager.deleteToken('hatago-client')
+    await this.tokenManager.deleteToken('mcp-server')
+    await this.tokenManager.deleteToken('delegated')
+    
+    console.log('[TwoStageAuth] All tokens revoked')
+  }
+}
+
+/**
+ * Two-stage authentication middleware for Hatago
+ */
+export class TwoStageAuthMiddleware {
+  private twoStageAuth: TwoStageAuthFlow
+  private config: TwoStageAuthConfig
+
+  constructor(config: TwoStageAuthConfig) {
+    this.twoStageAuth = new TwoStageAuthFlow()
+    this.config = config
+  }
+
+  /**
+   * Express/Hono middleware
+   */
+  async middleware(req: any, res: any, next: any): Promise<void> {
+    try {
+      // Check for client authentication
+      if (this.config.clientAuth.enabled) {
+        const authHeader = req.headers.authorization
+        
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+          res.status(401).json({ error: 'Client authentication required' })
+          return
+        }
+
+        const token = authHeader.substring(7)
+        
+        // Validate client token
+        // This would typically involve checking the token with the auth server
+        req.clientToken = token
+      }
+
+      // Perform server authentication if needed
+      if (this.config.serverAuth.enabled) {
+        const tokens = await this.twoStageAuth.authenticate(this.config)
+        req.serverToken = tokens.serverToken
+        req.delegatedToken = tokens.delegatedToken
+      }
+
+      next()
+    } catch (error) {
+      console.error('[TwoStageAuth] Authentication failed:', error)
+      res.status(401).json({ error: 'Authentication failed' })
+    }
+  }
+
+  /**
+   * Get authentication headers for upstream requests
+   */
+  async getUpstreamHeaders(req: any): Promise<Record<string, string>> {
+    const headers: Record<string, string> = {}
+
+    if (req.delegatedToken) {
+      headers['Authorization'] = `Bearer ${req.delegatedToken.access_token}`
+    } else if (req.serverToken) {
+      headers['Authorization'] = `Bearer ${req.serverToken.access_token}`
+    }
+
+    // Add client context if available
+    if (req.clientToken) {
+      headers['X-Client-Token'] = req.clientToken
+    }
+
+    return headers
+  }
+}

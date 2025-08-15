@@ -17,21 +17,21 @@ export interface LoggerConfig {
  */
 const structuredLogger: CapabilityAwarePluginFactory = (context: PluginContext) => {
   const config: LoggerConfig = context.config as LoggerConfig
-  
+
   return async ({ server, capabilities }) => {
     const { logger } = capabilities
-    
+
     // Register a tool for testing logger functionality
     server.registerTool(
       'logger.test',
       {
         title: 'Test Logger',
         description: 'Test structured logging functionality',
-        inputSchema: {}
+        inputSchema: {},
       },
       async (args: any) => {
         const { level = 'info', message, metadata } = args
-        
+
         // Use the logger capability
         switch (level) {
           case 'debug':
@@ -47,65 +47,61 @@ const structuredLogger: CapabilityAwarePluginFactory = (context: PluginContext) 
             logger.error(message, metadata)
             break
         }
-        
+
         return {
           content: [
             {
               type: 'text',
-              text: `Logged ${level} message: "${message}"`
-            }
-          ]
+              text: `Logged ${level} message: "${message}"`,
+            },
+          ],
         }
       }
     )
-    
+
     // Enhanced logger implementation
     const originalLogger = logger
     const enhancedLogger = createEnhancedLogger(originalLogger, config, context)
-    
+
     // Replace logger capability (demonstration of capability enhancement)
     Object.assign(capabilities, { logger: enhancedLogger })
-    
+
     logger.info('Structured logger plugin initialized', {
       pluginName: context.manifest.name,
       config: config,
-      runtime: context.runtime
+      runtime: context.runtime,
     })
   }
 }
 
-function createEnhancedLogger(
-  baseLogger: any,
-  config: LoggerConfig,
-  context: PluginContext
-) {
+function createEnhancedLogger(baseLogger: any, config: LoggerConfig, context: PluginContext) {
   const logLevel = getLogLevelNumber(config.level || 'info')
   const pluginName = context.manifest.name
-  
+
   function createLogEntry(level: string, message: string, meta?: object) {
     const entry: Record<string, unknown> = {
       level,
       message,
       plugin: pluginName,
       runtime: context.runtime,
-      ...(config.fields || {})
+      ...(config.fields || {}),
     }
-    
+
     if (config.timestamp !== false) {
       entry.timestamp = new Date().toISOString()
     }
-    
+
     if (meta) {
       entry.meta = meta
     }
-    
+
     return entry
   }
-  
+
   function shouldLog(level: string): boolean {
     return getLogLevelNumber(level) >= logLevel
   }
-  
+
   function outputLog(entry: Record<string, unknown>) {
     if (config.format === 'pretty') {
       // Pretty format for development
@@ -114,14 +110,14 @@ function createEnhancedLogger(
       const plugin = `[${entry.plugin}]`
       const message = entry.message
       const meta = entry.meta ? ` ${JSON.stringify(entry.meta)}` : ''
-      
+
       console.log(`${timestamp}${level} ${plugin} ${message}${meta}`)
     } else {
       // JSON Lines format (default)
       console.log(JSON.stringify(entry))
     }
   }
-  
+
   return {
     debug: (message: string, meta?: object) => {
       if (shouldLog('debug')) {
@@ -146,17 +142,22 @@ function createEnhancedLogger(
         const entry = createLogEntry('error', message, meta)
         outputLog(entry)
       }
-    }
+    },
   }
 }
 
 function getLogLevelNumber(level: string): number {
   switch (level) {
-    case 'debug': return 0
-    case 'info': return 1
-    case 'warn': return 2
-    case 'error': return 3
-    default: return 1
+    case 'debug':
+      return 0
+    case 'info':
+      return 1
+    case 'warn':
+      return 2
+    case 'error':
+      return 3
+    default:
+      return 1
   }
 }
 

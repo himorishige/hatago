@@ -59,7 +59,7 @@
           "description": "Node.js entry point"
         },
         "workers": {
-          "type": "string", 
+          "type": "string",
           "description": "Cloudflare Workers entry point"
         },
         "default": {

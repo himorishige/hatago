@@ -63,9 +63,9 @@ curl -sS http://localhost:8787/mcp -H 'content-type: application/json' -H 'accep
 ```typescript
 interface PluginSignature {
   algorithm: 'ed25519' | 'rsa-pss' | 'ecdsa-p256'
-  signature: string      // Base64-encoded signature
-  keyId: string         // Public key identifier
-  timestamp: string     // ISO 8601 signature timestamp
+  signature: string // Base64-encoded signature
+  keyId: string // Public key identifier
+  timestamp: string // ISO 8601 signature timestamp
   certificates?: string[] // Optional certificate chain
 }
 ```
@@ -84,11 +84,11 @@ interface PluginSignature {
 
 ## Supported Algorithms
 
-| Algorithm | Key Size | Security Level | Use Case |
-|-----------|----------|----------------|----------|
-| **Ed25519** | 256-bit | High | Recommended for new deployments |
-| **RSA-PSS** | 2048-bit | High | Legacy compatibility |
-| **ECDSA-P256** | 256-bit | High | FIPS compliance |
+| Algorithm      | Key Size | Security Level | Use Case                        |
+| -------------- | -------- | -------------- | ------------------------------- |
+| **Ed25519**    | 256-bit  | High           | Recommended for new deployments |
+| **RSA-PSS**    | 2048-bit | High           | Legacy compatibility            |
+| **ECDSA-P256** | 256-bit  | High           | FIPS compliance                 |
 
 ### Algorithm Selection
 
@@ -118,7 +118,7 @@ await keyRegistry.addKey(keyId, publicKey, true, {
   issuer: 'Hatago Plugin Authority',
   subject: 'plugin-signing-key',
   validFrom: '2024-01-01T00:00:00Z',
-  validTo: '2025-01-01T00:00:00Z'
+  validTo: '2025-01-01T00:00:00Z',
 })
 ```
 
@@ -158,7 +158,7 @@ const verifier = new PluginVerifier({
   enabled: true,
   requireSigned: true,
   maxSignatureAge: 24 * 60 * 60 * 1000, // 24 hours
-  allowTestKeys: false
+  allowTestKeys: false,
 })
 
 const result = await verifier.verifyPlugin(pluginData, signature)
@@ -172,13 +172,13 @@ if (result.valid) {
 
 ### Verification Statuses
 
-| Status | Description | Action |
-|--------|-------------|--------|
-| `valid` | Signature verified successfully | Allow plugin |
-| `invalid` | Signature verification failed | Block plugin |
-| `expired` | Signature too old | Require re-signing |
-| `untrusted` | Key not in trusted registry | Review key trust |
-| `error` | Verification error occurred | Investigate issue |
+| Status      | Description                     | Action             |
+| ----------- | ------------------------------- | ------------------ |
+| `valid`     | Signature verified successfully | Allow plugin       |
+| `invalid`   | Signature verification failed   | Block plugin       |
+| `expired`   | Signature too old               | Require re-signing |
+| `untrusted` | Key not in trusted registry     | Review key trust   |
+| `error`     | Verification error occurred     | Investigate issue  |
 
 ## Security Policies
 
@@ -242,7 +242,7 @@ const signature = await verifier.signPlugin(
 const manifest = {
   name: 'my-plugin',
   version: '1.0.0',
-  signature
+  signature,
 }
 ```
 
@@ -341,14 +341,18 @@ import { HatagoPlugin } from '@hatago/core'
 
 export const myPlugin: HatagoPlugin = ({ server, getLogger }) => {
   const logger = getLogger('my-plugin')
-  
-  server.registerTool('my.tool', {
-    title: 'My Secure Tool',
-    description: 'A tool with verified integrity'
-  }, async (args) => {
-    logger.info('Secure tool called', { args })
-    return { content: [{ type: 'text', text: 'Hello from verified plugin!' }] }
-  })
+
+  server.registerTool(
+    'my.tool',
+    {
+      title: 'My Secure Tool',
+      description: 'A tool with verified integrity',
+    },
+    async args => {
+      logger.info('Secure tool called', { args })
+      return { content: [{ type: 'text', text: 'Hello from verified plugin!' }] }
+    }
+  )
 }
 
 // Export signature for verification
@@ -356,7 +360,7 @@ export const PLUGIN_SIGNATURE = {
   algorithm: 'ed25519',
   signature: 'MEUCIQDxQ2...',
   keyId: 'a1b2c3d4e5f6g7h8',
-  timestamp: '2024-08-15T10:30:00.000Z'
+  timestamp: '2024-08-15T10:30:00.000Z',
 }
 ```
 
@@ -368,16 +372,16 @@ import { PluginVerifier } from '@hatago/core'
 
 class SecurePluginLoader {
   constructor(private verifier: PluginVerifier) {}
-  
+
   async loadPlugin(pluginPath: string): Promise<void> {
     const { plugin, signature } = await this.loadPluginWithSignature(pluginPath)
-    
+
     const result = await this.verifier.verifyPlugin(plugin, signature)
-    
+
     if (!result.valid) {
       throw new Error(`Plugin verification failed: ${result.message}`)
     }
-    
+
     // Load verified plugin
     await this.instantiatePlugin(plugin)
   }
@@ -419,16 +423,19 @@ class SecurePluginLoader {
 ### Common Issues
 
 **Signature verification failed**:
+
 - Check signature format and encoding
 - Verify key ID matches trusted registry
 - Confirm algorithm compatibility
 
 **Key not found**:
+
 - Add public key to trusted registry
 - Check key ID generation and storage
 - Verify key export/import process
 
 **Signature expired**:
+
 - Re-sign plugin with current timestamp
 - Adjust signature age policy if appropriate
 - Implement automated re-signing

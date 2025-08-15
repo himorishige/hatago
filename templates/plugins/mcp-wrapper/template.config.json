@@ -1,0 +1,197 @@
+{
+  "name": "mcp-wrapper",
+  "displayName": "MCP Server Wrapper",
+  "description": "Template for creating a plugin that wraps an external MCP server",
+  "category": "plugins",
+  "tags": ["mcp", "integration", "wrapper", "external"],
+  "author": "Hatago Team",
+  "version": "1.0.0",
+  "files": [
+    {
+      "template": "plugin.ts.hbs",
+      "output": "src/plugins/{{kebabCase name}}.ts",
+      "description": "Main plugin implementation file"
+    },
+    {
+      "template": "types.ts.hbs",
+      "output": "src/plugins/{{kebabCase name}}.types.ts",
+      "description": "Type definitions for the plugin"
+    },
+    {
+      "template": "config.ts.hbs",
+      "output": "src/plugins/{{kebabCase name}}.config.ts",
+      "description": "Configuration schema and validation"
+    },
+    {
+      "template": "client.ts.hbs",
+      "output": "src/plugins/{{kebabCase name}}.client.ts",
+      "description": "MCP client implementation"
+    },
+    {
+      "template": "plugin.test.ts.hbs",
+      "output": "tests/plugins/{{kebabCase name}}.test.ts",
+      "description": "Unit tests for the plugin"
+    },
+    {
+      "template": "integration.test.ts.hbs",
+      "output": "tests/integration/{{kebabCase name}}.integration.test.ts",
+      "description": "Integration tests"
+    },
+    {
+      "template": "README.md.hbs",
+      "output": "docs/plugins/{{titleCase name}}.md",
+      "description": "Plugin documentation"
+    },
+    {
+      "template": "docker-compose.yml.hbs",
+      "output": "docker/{{kebabCase name}}-compose.yml",
+      "description": "Docker Compose configuration for running with external MCP server",
+      "optional": true
+    }
+  ],
+  "prompts": [
+    {
+      "name": "name",
+      "type": "input",
+      "message": "Plugin name (e.g., 'github-integration'):",
+      "required": true
+    },
+    {
+      "name": "description",
+      "type": "input",
+      "message": "Plugin description:",
+      "default": "MCP server wrapper plugin"
+    },
+    {
+      "name": "transport",
+      "type": "select",
+      "message": "Transport type:",
+      "choices": ["stdio", "http"],
+      "default": "stdio"
+    },
+    {
+      "name": "mcpServerName",
+      "type": "input",
+      "message": "External MCP server name (e.g., '@modelcontextprotocol/server-sequential-thinking'):",
+      "required": true
+    },
+    {
+      "name": "mcpCommand",
+      "type": "input",
+      "message": "Command to start MCP server (e.g., 'npx'):",
+      "default": "npx",
+      "when": "transport === 'stdio'"
+    },
+    {
+      "name": "mcpArgs",
+      "type": "input",
+      "message": "Command arguments (comma-separated, e.g., '-y, @modelcontextprotocol/server-sequential-thinking'):",
+      "default": "",
+      "when": "transport === 'stdio'"
+    },
+    {
+      "name": "mcpServerEndpoint",
+      "type": "input",
+      "message": "Default MCP server endpoint (for external servers):",
+      "default": "http://localhost:3001/mcp",
+      "when": "transport === 'http'"
+    },
+    {
+      "name": "mcpServerPort",
+      "type": "input",
+      "message": "Preferred port for auto-start:",
+      "default": "3001",
+      "when": "transport === 'http'"
+    },
+    {
+      "name": "portRange",
+      "type": "input",
+      "message": "Port range for auto-start (min-max, e.g., '3001-3020'):",
+      "default": "3001-3020",
+      "when": "transport === 'http'"
+    },
+    {
+      "name": "authType",
+      "type": "select",
+      "message": "Authentication type:",
+      "choices": ["none", "bearer", "basic", "oauth", "custom"],
+      "default": "none",
+      "when": "transport === 'http'"
+    },
+    {
+      "name": "authToken",
+      "type": "input",
+      "message": "Environment variable name for auth token:",
+      "default": "AUTH_TOKEN",
+      "when": "(authType === 'bearer' || authType === 'basic') && transport === 'http'"
+    },
+    {
+      "name": "oauth",
+      "type": "confirm",
+      "message": "Enable OAuth authentication?",
+      "default": false,
+      "when": "authType === 'oauth' && transport === 'http'"
+    },
+    {
+      "name": "oauthProvider",
+      "type": "select",
+      "message": "OAuth provider:",
+      "choices": ["github", "google", "slack", "azure", "custom"],
+      "default": "github",
+      "when": "oauth === true"
+    },
+    {
+      "name": "namespace",
+      "type": "input",
+      "message": "Tool namespace prefix (optional):",
+      "default": ""
+    },
+    {
+      "name": "caching",
+      "type": "confirm",
+      "message": "Enable response caching?",
+      "default": true
+    },
+    {
+      "name": "healthCheck",
+      "type": "confirm",
+      "message": "Enable health checking?",
+      "default": true
+    },
+    {
+      "name": "autoStart",
+      "type": "confirm",
+      "message": "Auto-start external MCP server process?",
+      "default": true,
+      "when": "transport === 'http'"
+    },
+    {
+      "name": "includeDocker",
+      "type": "confirm",
+      "message": "Include Docker Compose configuration?",
+      "default": true,
+      "when": "transport === 'http'"
+    },
+    {
+      "name": "tools",
+      "type": "array",
+      "message": "Expected tool names (comma-separated, optional):",
+      "itemPrompts": [
+        {
+          "name": "name",
+          "type": "input",
+          "message": "Tool name:",
+          "required": true
+        },
+        {
+          "name": "description",
+          "type": "input",
+          "message": "Tool description:",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "dependencies": ["@hatago/types", "zod", "node-fetch"],
+  "devDependencies": ["@types/node", "vitest"]
+}

@@ -10,7 +10,7 @@
     "ignore": ["node_modules/**", "dist/**", "build/**", ".next/**", "coverage/**", "docs/dist/**"]
   },
   "formatter": {
-    "enabled": true,
+    "enabled": false,
     "useEditorconfig": true,
     "formatWithErrors": false,
     "indentStyle": "space",

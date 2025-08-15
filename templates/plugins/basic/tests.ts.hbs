@@ -1,0 +1,136 @@
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { McpServer } from '@hono/mcp'
+import { Hono } from 'hono'
+import { {{camelCase name}}Plugin } from './{{kebabCase name}}.js'
+
+describe('{{titleCase name}} Plugin', () => {
+  let app: Hono
+  let server: McpServer
+  let mockEnv: Record<string, unknown>
+
+  beforeEach(() => {
+    app = new Hono()
+    server = new McpServer({
+      name: 'test-server',
+      version: '1.0.0',
+    })
+    
+    mockEnv = {
+      {{#each configOptions}}
+      {{envVar}}: '{{defaultValue}}',
+      {{/each}}
+    }
+    
+    // Apply plugin
+    {{camelCase name}}Plugin({
+      app,
+      server,
+      env: mockEnv,
+      getBaseUrl: (req) => new URL(`http://localhost:8787`),
+    })
+  })
+
+  afterEach(() => {
+    // Cleanup if needed
+  })
+
+  {{#if hasTools}}
+  describe('Tools', () => {
+    {{#each tools}}
+    it('should register {{name}} tool', () => {
+      const tools = server.getAvailableTools()
+      const {{camelCase name}}Tool = tools.find(tool => tool.name === '{{name}}')
+      
+      expect({{camelCase name}}Tool).toBeDefined()
+      expect({{camelCase name}}Tool?.description).toBe('{{description}}')
+    })
+
+    it('should execute {{name}} tool', async () => {
+      const result = await server.callTool('{{name}}', {
+        // Add test parameters here
+      })
+      
+      expect(result).toBeDefined()
+      expect(result.content).toHaveLength(1)
+      expect(result.content[0].type).toBe('text')
+    })
+    
+    {{/each}}
+  })
+  {{/if}}
+
+  {{#if hasResources}}
+  describe('Resources', () => {
+    {{#each resources}}
+    it('should register {{name}} resource', () => {
+      const resources = server.getAvailableResources()
+      const {{camelCase name}}Resource = resources.find(resource => resource.uri === '{{uri}}')
+      
+      expect({{camelCase name}}Resource).toBeDefined()
+      expect({{camelCase name}}Resource?.name).toBe('{{name}}')
+      expect({{camelCase name}}Resource?.mimeType).toBe('{{mimeType}}')
+    })
+
+    it('should read {{name}} resource', async () => {
+      const result = await server.readResource('{{uri}}')
+      
+      expect(result).toBeDefined()
+      expect(result.content).toHaveLength(1)
+    })
+    
+    {{/each}}
+  })
+  {{/if}}
+
+  {{#if hasHttpRoutes}}
+  describe('HTTP Routes', () => {
+    {{#each routes}}
+    it('should handle {{toUpperCase method}} {{path}}', async () => {
+      const req = new Request('http://localhost:8787{{path}}', {
+        method: '{{toUpperCase method}}',
+      })
+      
+      const res = await app.fetch(req)
+      
+      expect(res.status).toBe(200)
+      const data = await res.json()
+      expect(data.plugin).toBe('{{../name}}')
+    })
+    
+    {{/each}}
+  })
+  {{/if}}
+
+  {{#if hasConfiguration}}
+  describe('Configuration', () => {
+    {{#each configOptions}}
+    {{#if required}}
+    it('should throw error when {{envVar}} is missing', () => {
+      delete mockEnv.{{envVar}}
+      
+      expect(() => {
+        {{../camelCase ../name}}Plugin({
+          app: new Hono(),
+          server: new McpServer({ name: 'test', version: '1.0.0' }),
+          env: mockEnv,
+          getBaseUrl: (req) => new URL(`http://localhost:8787`),
+        })
+      }).toThrow('{{envVar}} environment variable is required')
+    })
+    {{/if}}
+    
+    {{/each}}
+  })
+  {{/if}}
+
+  it('should initialize without errors', () => {
+    expect(() => {
+      {{camelCase name}}Plugin({
+        app,
+        server,
+        env: mockEnv,
+        getBaseUrl: (req) => new URL(`http://localhost:8787`),
+      })
+    }).not.toThrow()
+  })
+})

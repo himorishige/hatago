@@ -1,0 +1,520 @@
+/**
+ * OAuth 2.0 Dynamic Client Registration (DCR)
+ * RFC 7591 compliant implementation for {{titleCase name}} plugin
+ */
+
+import fetch from 'node-fetch'
+import crypto from 'crypto'
+
+/**
+ * Client metadata for registration
+ * RFC 7591 Section 2
+ */
+export interface ClientMetadata {
+  redirect_uris: string[]
+  token_endpoint_auth_method?: string
+  grant_types?: string[]
+  response_types?: string[]
+  client_name?: string
+  client_uri?: string
+  logo_uri?: string
+  scope?: string
+  contacts?: string[]
+  tos_uri?: string
+  policy_uri?: string
+  jwks_uri?: string
+  jwks?: any
+  software_id?: string
+  software_version?: string
+  software_statement?: string
+  
+  // Additional metadata
+  application_type?: 'web' | 'native'
+  sector_identifier_uri?: string
+  subject_type?: string
+  id_token_signed_response_alg?: string
+  id_token_encrypted_response_alg?: string
+  id_token_encrypted_response_enc?: string
+  userinfo_signed_response_alg?: string
+  userinfo_encrypted_response_alg?: string
+  userinfo_encrypted_response_enc?: string
+  request_object_signing_alg?: string
+  request_object_encryption_alg?: string
+  request_object_encryption_enc?: string
+  default_max_age?: number
+  require_auth_time?: boolean
+  default_acr_values?: string[]
+  initiate_login_uri?: string
+  request_uris?: string[]
+  
+  // PKCE
+  code_challenge_method?: string
+  
+  // DPoP
+  dpop_bound_access_tokens?: boolean
+  
+  // mTLS
+  tls_client_auth_subject_dn?: string
+  tls_client_auth_san_dns?: string
+  tls_client_auth_san_uri?: string
+  tls_client_auth_san_ip?: string
+  tls_client_auth_san_email?: string
+  tls_client_certificate_bound_access_tokens?: boolean
+  
+  // Custom provider-specific fields
+  [key: string]: any
+}
+
+/**
+ * Client registration response
+ */
+export interface ClientRegistrationResponse {
+  client_id: string
+  client_secret?: string
+  registration_access_token?: string
+  registration_client_uri?: string
+  client_id_issued_at?: number
+  client_secret_expires_at?: number
+  
+  // All metadata from request is echoed back
+  redirect_uris: string[]
+  token_endpoint_auth_method?: string
+  grant_types?: string[]
+  response_types?: string[]
+  client_name?: string
+  client_uri?: string
+  logo_uri?: string
+  scope?: string
+  contacts?: string[]
+  tos_uri?: string
+  policy_uri?: string
+  jwks_uri?: string
+  jwks?: any
+  software_id?: string
+  software_version?: string
+}
+
+/**
+ * Registration error response
+ */
+export interface RegistrationError {
+  error: string
+  error_description?: string
+  error_uri?: string
+}
+
+/**
+ * Dynamic Client Registration manager
+ */
+export class DynamicClientRegistration {
+  private registeredClients: Map<string, ClientRegistrationResponse> = new Map()
+
+  /**
+   * Register a new OAuth client
+   */
+  async register(
+    registrationEndpoint: string,
+    metadata: ClientMetadata,
+    accessToken?: string
+  ): Promise<ClientRegistrationResponse> {
+    // Validate required fields
+    if (!metadata.redirect_uris || metadata.redirect_uris.length === 0) {
+      throw new Error('redirect_uris is required for client registration')
+    }
+
+    // Set defaults
+    const clientMetadata: ClientMetadata = {
+      token_endpoint_auth_method: 'client_secret_basic',
+      grant_types: ['authorization_code'],
+      response_types: ['code'],
+      application_type: 'web',
+      ...metadata
+    }
+
+    // Build request
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    }
+
+    // Add bearer token if provided (for protected registration endpoints)
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`
+    }
+
+    try {
+      const response = await fetch(registrationEndpoint, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(clientMetadata)
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        const error = data as RegistrationError
+        throw new Error(
+          `Registration failed: ${error.error} - ${error.error_description || 'Unknown error'}`
+        )
+      }
+
+      const registration = data as ClientRegistrationResponse
+
+      // Validate response
+      if (!registration.client_id) {
+        throw new Error('Invalid registration response: missing client_id')
+      }
+
+      // Store registration
+      this.registeredClients.set(registration.client_id, registration)
+
+      return registration
+    } catch (error) {
+      throw new Error(`Dynamic client registration failed: ${error.message}`)
+    }
+  }
+
+  /**
+   * Update client registration
+   */
+  async update(
+    clientUri: string,
+    metadata: Partial<ClientMetadata>,
+    accessToken: string
+  ): Promise<ClientRegistrationResponse> {
+    const response = await fetch(clientUri, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${accessToken}`
+      },
+      body: JSON.stringify(metadata)
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = data as RegistrationError
+      throw new Error(
+        `Update failed: ${error.error} - ${error.error_description || 'Unknown error'}`
+      )
+    }
+
+    const registration = data as ClientRegistrationResponse
+    
+    // Update stored registration
+    if (registration.client_id) {
+      this.registeredClients.set(registration.client_id, registration)
+    }
+
+    return registration
+  }
+
+  /**
+   * Read client registration
+   */
+  async read(
+    clientUri: string,
+    accessToken: string
+  ): Promise<ClientRegistrationResponse> {
+    const response = await fetch(clientUri, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${accessToken}`
+      }
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const error = data as RegistrationError
+      throw new Error(
+        `Read failed: ${error.error} - ${error.error_description || 'Unknown error'}`
+      )
+    }
+
+    return data as ClientRegistrationResponse
+  }
+
+  /**
+   * Delete client registration
+   */
+  async delete(
+    clientUri: string,
+    accessToken: string
+  ): Promise<void> {
+    const response = await fetch(clientUri, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
+    })
+
+    if (!response.ok && response.status !== 204) {
+      const data = await response.json()
+      const error = data as RegistrationError
+      throw new Error(
+        `Delete failed: ${error.error} - ${error.error_description || 'Unknown error'}`
+      )
+    }
+  }
+
+  /**
+   * Get stored client registration
+   */
+  getStoredRegistration(clientId: string): ClientRegistrationResponse | undefined {
+    return this.registeredClients.get(clientId)
+  }
+
+  /**
+   * Generate software statement (JWT)
+   */
+  generateSoftwareStatement(
+    claims: Record<string, any>,
+    signingKey: string
+  ): string {
+    // Simple JWT generation (for demo purposes)
+    // In production, use a proper JWT library
+    const header = {
+      alg: 'HS256',
+      typ: 'JWT'
+    }
+
+    const payload = {
+      iss: '{{kebabCase name}}-plugin',
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 3600,
+      ...claims
+    }
+
+    const encodedHeader = Buffer.from(JSON.stringify(header)).toString('base64url')
+    const encodedPayload = Buffer.from(JSON.stringify(payload)).toString('base64url')
+    
+    const signature = crypto
+      .createHmac('sha256', signingKey)
+      .update(`${encodedHeader}.${encodedPayload}`)
+      .digest('base64url')
+
+    return `${encodedHeader}.${encodedPayload}.${signature}`
+  }
+
+  /**
+   * Build client metadata for common providers
+   */
+  buildProviderMetadata(
+    provider: string,
+    redirectUri: string,
+    options: Partial<ClientMetadata> = {}
+  ): ClientMetadata {
+    const baseMetadata: ClientMetadata = {
+      redirect_uris: [redirectUri],
+      client_name: '{{titleCase name}} Plugin',
+      ...options
+    }
+
+    switch (provider.toLowerCase()) {
+      case 'google':
+        return {
+          ...baseMetadata,
+          token_endpoint_auth_method: 'client_secret_post',
+          grant_types: ['authorization_code', 'refresh_token'],
+          response_types: ['code'],
+          scope: 'openid profile email'
+        }
+
+      case 'microsoft':
+      case 'azure':
+        return {
+          ...baseMetadata,
+          token_endpoint_auth_method: 'client_secret_post',
+          grant_types: ['authorization_code', 'refresh_token'],
+          response_types: ['code'],
+          scope: 'openid profile email offline_access'
+        }
+
+      case 'okta':
+        return {
+          ...baseMetadata,
+          token_endpoint_auth_method: 'client_secret_basic',
+          grant_types: ['authorization_code', 'refresh_token'],
+          response_types: ['code'],
+          application_type: 'web',
+          scope: 'openid profile email'
+        }
+
+      case 'auth0':
+        return {
+          ...baseMetadata,
+          token_endpoint_auth_method: 'client_secret_post',
+          grant_types: ['authorization_code', 'refresh_token'],
+          response_types: ['code'],
+          scope: 'openid profile email offline_access'
+        }
+
+      case 'keycloak':
+        return {
+          ...baseMetadata,
+          token_endpoint_auth_method: 'client_secret_basic',
+          grant_types: ['authorization_code', 'refresh_token'],
+          response_types: ['code'],
+          scope: 'openid profile email'
+        }
+
+      default:
+        return baseMetadata
+    }
+  }
+
+  /**
+   * Register with auto-discovery
+   */
+  async registerWithDiscovery(
+    issuer: string,
+    metadata: ClientMetadata,
+    accessToken?: string
+  ): Promise<ClientRegistrationResponse> {
+    // Import discovery module
+    const { OAuthMetadataDiscovery } = await import('./metadata-discovery')
+    const discovery = new OAuthMetadataDiscovery()
+
+    // Discover metadata
+    const serverMetadata = await discovery.discover(issuer)
+
+    if (!serverMetadata.registration_endpoint) {
+      throw new Error('Server does not support dynamic client registration')
+    }
+
+    // Update metadata based on server capabilities
+    const clientMetadata = this.updateMetadataForServer(metadata, serverMetadata)
+
+    // Register client
+    return this.register(
+      serverMetadata.registration_endpoint,
+      clientMetadata,
+      accessToken
+    )
+  }
+
+  /**
+   * Update metadata based on server capabilities
+   */
+  private updateMetadataForServer(
+    metadata: ClientMetadata,
+    serverMetadata: any
+  ): ClientMetadata {
+    const updated = { ...metadata }
+
+    // Filter grant types to only supported ones
+    if (serverMetadata.grant_types_supported && updated.grant_types) {
+      updated.grant_types = updated.grant_types.filter(
+        (type: string) => serverMetadata.grant_types_supported.includes(type)
+      )
+    }
+
+    // Filter response types to only supported ones
+    if (serverMetadata.response_types_supported && updated.response_types) {
+      updated.response_types = updated.response_types.filter(
+        (type: string) => serverMetadata.response_types_supported.includes(type)
+      )
+    }
+
+    // Set auth method to a supported one
+    if (serverMetadata.token_endpoint_auth_methods_supported) {
+      const supportedMethods = serverMetadata.token_endpoint_auth_methods_supported
+      if (!supportedMethods.includes(updated.token_endpoint_auth_method)) {
+        // Use first supported method
+        updated.token_endpoint_auth_method = supportedMethods[0]
+      }
+    }
+
+    // Add PKCE if supported and not already set
+    if (serverMetadata.code_challenge_methods_supported?.includes('S256')) {
+      updated.code_challenge_method = 'S256'
+    }
+
+    return updated
+  }
+}
+
+/**
+ * Client credentials manager for DCR
+ */
+export class ClientCredentialsManager {
+  private storageKey = '{{kebabCase name}}_dcr_clients'
+
+  /**
+   * Save client credentials securely
+   */
+  async saveCredentials(
+    issuer: string,
+    registration: ClientRegistrationResponse
+  ): Promise<void> {
+    // In production, use secure storage (e.g., system keychain)
+    // This is a simple file-based storage for demo
+    const fs = await import('fs/promises')
+    const path = await import('path')
+    const os = await import('os')
+    
+    const configDir = path.join(os.homedir(), '.{{kebabCase name}}')
+    const filePath = path.join(configDir, 'dcr_clients.json')
+    
+    // Ensure directory exists
+    await fs.mkdir(configDir, { recursive: true })
+    
+    // Load existing clients
+    let clients: Record<string, ClientRegistrationResponse> = {}
+    try {
+      const data = await fs.readFile(filePath, 'utf-8')
+      clients = JSON.parse(data)
+    } catch {
+      // File doesn't exist yet
+    }
+    
+    // Add new registration
+    clients[issuer] = registration
+    
+    // Save updated clients
+    await fs.writeFile(filePath, JSON.stringify(clients, null, 2), 'utf-8')
+  }
+
+  /**
+   * Load client credentials
+   */
+  async loadCredentials(issuer: string): Promise<ClientRegistrationResponse | null> {
+    const fs = await import('fs/promises')
+    const path = await import('path')
+    const os = await import('os')
+    
+    const filePath = path.join(os.homedir(), '.{{kebabCase name}}', 'dcr_clients.json')
+    
+    try {
+      const data = await fs.readFile(filePath, 'utf-8')
+      const clients = JSON.parse(data)
+      return clients[issuer] || null
+    } catch {
+      return null
+    }
+  }
+
+  /**
+   * Delete client credentials
+   */
+  async deleteCredentials(issuer: string): Promise<void> {
+    const fs = await import('fs/promises')
+    const path = await import('path')
+    const os = await import('os')
+    
+    const filePath = path.join(os.homedir(), '.{{kebabCase name}}', 'dcr_clients.json')
+    
+    try {
+      const data = await fs.readFile(filePath, 'utf-8')
+      const clients = JSON.parse(data)
+      delete clients[issuer]
+      await fs.writeFile(filePath, JSON.stringify(clients, null, 2), 'utf-8')
+    } catch {
+      // File doesn't exist, nothing to delete
+    }
+  }
+}

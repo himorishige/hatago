@@ -63,11 +63,14 @@ export const healthEndpoints: HatagoPluginFactory<HealthEndpointsConfig> =
     // /health/live - Liveness probe (no dependencies, just process health)
     app.get('/health/live', c => {
       if (draining) {
-        return c.json({
-          status: 'fail',
-          timestamp: new Date().toISOString(),
-          reason: 'draining'
-        }, 503)
+        return c.json(
+          {
+            status: 'fail',
+            timestamp: new Date().toISOString(),
+            reason: 'draining',
+          },
+          503
+        )
       }
 
       return c.json({
@@ -80,35 +83,41 @@ export const healthEndpoints: HatagoPluginFactory<HealthEndpointsConfig> =
               pid: process.pid,
               uptime: process.uptime?.() || 0,
               platform: process.platform,
-              version: process.version
-            }
-          }
-        }
+              version: process.version,
+            },
+          },
+        },
       })
     })
 
     // /health/ready - Readiness probe (dependencies and readiness)
     app.get('/health/ready', async c => {
       const correlationId = c.req.header('x-correlation-id') || crypto.randomUUID()
-      
+
       if (draining) {
-        return c.json({
-          status: 'fail',
-          timestamp: new Date().toISOString(),
-          correlationId,
-          reason: 'draining'
-        }, 503)
+        return c.json(
+          {
+            status: 'fail',
+            timestamp: new Date().toISOString(),
+            correlationId,
+            reason: 'draining',
+          },
+          503
+        )
       }
 
       if (!startupComplete) {
-        return c.json({
-          status: 'fail',
-          timestamp: new Date().toISOString(),
-          correlationId,
-          reason: 'startup_incomplete'
-        }, 503)
+        return c.json(
+          {
+            status: 'fail',
+            timestamp: new Date().toISOString(),
+            correlationId,
+            reason: 'startup_incomplete',
+          },
+          503
+        )
       }
-      
+
       try {
         const checks: Record<string, any> = {}
         let overallStatus: 'pass' | 'fail' = 'pass'
@@ -125,7 +134,7 @@ export const healthEndpoints: HatagoPluginFactory<HealthEndpointsConfig> =
             } catch (error) {
               checks[healthCheck.name] = {
                 status: 'fail',
-                details: { error: error instanceof Error ? error.message : 'Unknown error' }
+                details: { error: error instanceof Error ? error.message : 'Unknown error' },
               }
               overallStatus = 'fail'
             }
@@ -136,7 +145,7 @@ export const healthEndpoints: HatagoPluginFactory<HealthEndpointsConfig> =
         const memUsage = process.memoryUsage?.()
         checks.memory = {
           status: 'pass',
-          details: memUsage || { rss: 0, heapUsed: 0, heapTotal: 0 }
+          details: memUsage || { rss: 0, heapUsed: 0, heapTotal: 0 },
         }
 
         // Check memory pressure (warn if heap > 80% of total)
@@ -146,20 +155,26 @@ export const healthEndpoints: HatagoPluginFactory<HealthEndpointsConfig> =
         }
 
         const status = overallStatus === 'pass' ? 200 : 503
-        
-        return c.json({
-          status: overallStatus,
-          timestamp: new Date().toISOString(),
-          correlationId,
-          checks
-        }, status)
+
+        return c.json(
+          {
+            status: overallStatus,
+            timestamp: new Date().toISOString(),
+            correlationId,
+            checks,
+          },
+          status
+        )
       } catch (error) {
-        return c.json({
-          status: 'fail',
-          timestamp: new Date().toISOString(),
-          correlationId,
-          error: error instanceof Error ? error.message : 'Health check failed'
-        }, 503)
+        return c.json(
+          {
+            status: 'fail',
+            timestamp: new Date().toISOString(),
+            correlationId,
+            error: error instanceof Error ? error.message : 'Health check failed',
+          },
+          503
+        )
       }
     })
 
@@ -168,12 +183,15 @@ export const healthEndpoints: HatagoPluginFactory<HealthEndpointsConfig> =
       const correlationId = c.req.header('x-correlation-id') || crypto.randomUUID()
 
       if (!startupComplete) {
-        return c.json({
-          status: 'fail',
-          timestamp: new Date().toISOString(),
-          correlationId,
-          reason: 'initialization_in_progress'
-        }, 503)
+        return c.json(
+          {
+            status: 'fail',
+            timestamp: new Date().toISOString(),
+            correlationId,
+            reason: 'initialization_in_progress',
+          },
+          503
+        )
       }
 
       return c.json({
@@ -185,10 +203,10 @@ export const healthEndpoints: HatagoPluginFactory<HealthEndpointsConfig> =
             status: 'pass',
             details: {
               initialized: true,
-              startup_checks_passed: config.startupChecks?.length || 0
-            }
-          }
-        }
+              startup_checks_passed: config.startupChecks?.length || 0,
+            },
+          },
+        },
       })
     })
 
@@ -202,7 +220,7 @@ export const healthEndpoints: HatagoPluginFactory<HealthEndpointsConfig> =
       return c.json({
         status: 'draining',
         timestamp: new Date().toISOString(),
-        message: 'Server is draining, will stop accepting new requests'
+        message: 'Server is draining, will stop accepting new requests',
       })
     })
 

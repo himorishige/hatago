@@ -10,9 +10,9 @@ datasources:
     isDefault: true
     editable: true
     jsonData:
-      timeInterval: "5s"
-      queryTimeout: "60s"
-      httpMethod: "GET"
+      timeInterval: '5s'
+      queryTimeout: '60s'
+      httpMethod: 'GET'
       exemplarTraceIdDestinations:
         - name: trace_id
           datasourceUid: tempo

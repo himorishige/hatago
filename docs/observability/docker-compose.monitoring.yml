@@ -10,7 +10,7 @@ services:
       context: ../..
       dockerfile: packages/adapter-node/Dockerfile
     ports:
-      - "8787:8787"
+      - '8787:8787'
     environment:
       - PORT=8787
       - HOSTNAME=0.0.0.0
@@ -18,15 +18,15 @@ services:
     networks:
       - monitoring
     labels:
-      - "prometheus.io/scrape=true"
-      - "prometheus.io/port=8787"
-      - "prometheus.io/path=/metrics"
+      - 'prometheus.io/scrape=true'
+      - 'prometheus.io/port=8787'
+      - 'prometheus.io/path=/metrics'
 
   # Prometheus server
   prometheus:
     image: prom/prometheus:v2.47.0
     ports:
-      - "9090:9090"
+      - '9090:9090'
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./prometheus-rules.yml:/etc/prometheus/rules/hatago.yml:ro
@@ -48,7 +48,7 @@ services:
   grafana:
     image: grafana/grafana:10.1.0
     ports:
-      - "3000:3000"
+      - '3000:3000'
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana-dashboard.json:/etc/grafana/provisioning/dashboards/hatago.json:ro
@@ -66,7 +66,7 @@ services:
   alertmanager:
     image: prom/alertmanager:v0.25.0
     ports:
-      - "9093:9093"
+      - '9093:9093'
     volumes:
       - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
       - alertmanager_data:/alertmanager
@@ -81,7 +81,7 @@ services:
   node-exporter:
     image: prom/node-exporter:v1.6.1
     ports:
-      - "9100:9100"
+      - '9100:9100'
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro

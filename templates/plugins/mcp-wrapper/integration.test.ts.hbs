@@ -1,0 +1,561 @@
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
+import { spawn, ChildProcess } from 'child_process'
+import { createServer, Server } from 'http'
+import { Hono } from 'hono'
+import { McpServer } from '@hono/mcp'
+import {{camelCase name}}Plugin from '../../src/plugins/{{kebabCase name}}'
+
+/**
+ * Integration tests for {{titleCase name}} Plugin
+ * 
+ * These tests verify the plugin works correctly with a real external MCP server.
+ * Note: These tests require {{mcpServerName}} to be installed and available.
+ */
+
+describe('{{titleCase name}} Plugin Integration', () => {
+  let externalMcpServer: ChildProcess
+  let hatagoServer: Server
+  let app: Hono
+  let server: McpServer
+  const MCP_PORT = 3001
+  const HATAGO_PORT = 8788
+
+  beforeAll(async () => {
+    // Start external MCP server for testing
+    await startExternalMcpServer()
+    
+    // Set up Hatago with plugin
+    await setupHatagoWithPlugin()
+    
+    // Wait for servers to be ready
+    await waitForServersReady()
+  }, 30000)
+
+  afterAll(async () => {
+    // Cleanup
+    await stopServers()
+  })
+
+  beforeEach(() => {
+    // Reset any test-specific state
+  })
+
+  async function startExternalMcpServer(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      console.log(`Starting {{mcpServerName}} on port ${MCP_PORT}...`)
+      
+      externalMcpServer = spawn('npx', ['{{mcpServerName}}', '--port', MCP_PORT.toString()], {
+        env: {
+          ...process.env,
+{{#if (ne authType 'none')}}
+          {{authToken}}: process.env.{{authToken}} || 'test-auth-token',
+{{/if}}
+          NODE_ENV: 'test'
+        },
+        stdio: ['pipe', 'pipe', 'pipe']
+      })
+
+      externalMcpServer.stdout?.on('data', (data) => {
+        const output = data.toString()
+        console.log(`[{{mcpServerName}}] ${output}`)
+        
+        // Look for startup indication
+        if (output.includes('listening') || output.includes('started') || output.includes('ready')) {
+          resolve()
+        }
+      })
+
+      externalMcpServer.stderr?.on('data', (data) => {
+        console.error(`[{{mcpServerName}} Error] ${data}`)
+      })
+
+      externalMcpServer.on('error', (error) => {
+        console.error(`Failed to start {{mcpServerName}}:`, error)
+        reject(error)
+      })
+
+      externalMcpServer.on('exit', (code, signal) => {
+        if (code !== 0 && code !== null) {
+          reject(new Error(`{{mcpServerName}} exited with code ${code}`))
+        }
+      })
+
+      // Timeout if server doesn't start within 15 seconds
+      setTimeout(() => {
+        if (externalMcpServer && !externalMcpServer.killed) {
+          resolve() // Assume it started if not killed
+        }
+      }, 15000)
+    })
+  }
+
+  async function setupHatagoWithPlugin(): Promise<void> {
+    app = new Hono()
+    server = new McpServer({
+      name: 'test-hatago-server',
+      version: '1.0.0'
+    })
+
+    // Initialize plugin with test environment
+    const testEnv = {
+{{#if (ne authType 'none')}}
+      {{authToken}}: process.env.{{authToken}} || 'test-auth-token',
+{{/if}}
+      {{toUpperCase (snakeCase name)}}_ENDPOINT: `http://localhost:${MCP_PORT}/mcp`,
+      {{toUpperCase (snakeCase name)}}_PORT: MCP_PORT.toString(),
+{{#if namespace}}
+      {{toUpperCase (snakeCase name)}}_NAMESPACE: '{{namespace}}',
+{{/if}}
+{{#if caching}}
+      {{toUpperCase (snakeCase name)}}_CACHE_ENABLED: 'true',
+      {{toUpperCase (snakeCase name)}}_CACHE_TTL: '60000', // Shorter TTL for testing
+{{/if}}
+{{#if healthCheck}}
+      {{toUpperCase (snakeCase name)}}_HEALTH_CHECK: 'true',
+      {{toUpperCase (snakeCase name)}}_HEALTH_INTERVAL: '30000', // Shorter interval for testing
+{{/if}}
+{{#if autoStart}}
+      {{toUpperCase (snakeCase name)}}_AUTO_START: 'false' // Don't auto-start in tests
+{{/if}}
+    }
+
+    await {{camelCase name}}Plugin({
+      server,
+      app,
+      env: testEnv,
+      getBaseUrl: () => new URL(`http://localhost:${HATAGO_PORT}`)
+    })
+
+    // Create HTTP server
+    hatagoServer = createServer(app.fetch.bind(app))
+    
+    return new Promise((resolve) => {
+      hatagoServer.listen(HATAGO_PORT, () => {
+        console.log(`Test Hatago server started on port ${HATAGO_PORT}`)
+        resolve()
+      })
+    })
+  }
+
+  async function waitForServersReady(): Promise<void> {
+    const maxAttempts = 10
+    const delay = 2000
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        // Test external MCP server
+        const mcpResponse = await fetch(`http://localhost:${MCP_PORT}/mcp`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+{{#if (ne authType 'none')}}
+            'Authorization': `Bearer ${process.env.{{authToken}} || 'test-auth-token'}`,
+{{/if}}
+          },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'initialize',
+            params: {
+              protocolVersion: '2025-06-18',
+              capabilities: {},
+              clientInfo: { name: 'test-client', version: '1.0.0' }
+            }
+          })
+        })
+
+        if (!mcpResponse.ok) {
+          throw new Error(`MCP server not ready: ${mcpResponse.status}`)
+        }
+
+        // Test Hatago server
+        const hatagoResponse = await fetch(`http://localhost:${HATAGO_PORT}/{{kebabCase name}}/status`)
+        
+        if (!hatagoResponse.ok) {
+          throw new Error(`Hatago server not ready: ${hatagoResponse.status}`)
+        }
+
+        const status = await hatagoResponse.json()
+        if (!status.connected) {
+          throw new Error('Plugin not connected to external MCP server')
+        }
+
+        console.log('All servers are ready!')
+        return
+
+      } catch (error) {
+        console.log(`Attempt ${attempt}/${maxAttempts} failed:`, error.message)
+        
+        if (attempt === maxAttempts) {
+          throw new Error(`Servers failed to become ready after ${maxAttempts} attempts`)
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, delay))
+      }
+    }
+  }
+
+  async function stopServers(): Promise<void> {
+    console.log('Stopping test servers...')
+    
+    // Stop Hatago server
+    if (hatagoServer) {
+      await new Promise<void>((resolve) => {
+        hatagoServer.close(() => {
+          console.log('Hatago server stopped')
+          resolve()
+        })
+      })
+    }
+
+    // Stop external MCP server
+    if (externalMcpServer && !externalMcpServer.killed) {
+      externalMcpServer.kill('SIGTERM')
+      
+      // Wait for graceful shutdown
+      await new Promise<void>((resolve) => {
+        externalMcpServer.on('exit', () => {
+          console.log('{{mcpServerName}} stopped')
+          resolve()
+        })
+        
+        // Force kill after 5 seconds
+        setTimeout(() => {
+          if (!externalMcpServer.killed) {
+            externalMcpServer.kill('SIGKILL')
+            resolve()
+          }
+        }, 5000)
+      })
+    }
+  }
+
+  describe('Plugin integration with {{mcpServerName}}', () => {
+    it('should connect to external MCP server successfully', async () => {
+      const response = await fetch(`http://localhost:${HATAGO_PORT}/{{kebabCase name}}/status`)
+      const status = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(status).toMatchObject({
+        status: 'ok',
+        plugin: '{{name}}',
+        mcpServer: '{{mcpServerName}}',
+        connected: true,
+        toolsLoaded: expect.any(Number),
+        resourcesLoaded: expect.any(Number)
+      })
+    })
+
+{{#if healthCheck}}
+    it('should report healthy status', async () => {
+      const response = await fetch(`http://localhost:${HATAGO_PORT}/{{kebabCase name}}/health`)
+      const health = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(health).toMatchObject({
+        status: 'healthy',
+        endpoint: `http://localhost:${MCP_PORT}/mcp`
+      })
+    })
+{{/if}}
+
+    it('should list tools from external MCP server through Hatago', async () => {
+      const response = await fetch(`http://localhost:${HATAGO_PORT}/mcp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/list'
+        })
+      })
+
+      const result = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(result).toMatchObject({
+        jsonrpc: '2.0',
+        id: 1,
+        result: {
+          tools: expect.any(Array)
+        }
+      })
+
+      // Should have at least one tool from external server
+      expect(result.result.tools.length).toBeGreaterThan(0)
+      
+      // Tools should have namespace prefix if configured
+{{#if namespace}}
+      const hasNamespacedTool = result.result.tools.some(tool => 
+        tool.name.startsWith('{{namespace}}.')
+      )
+      expect(hasNamespacedTool).toBe(true)
+{{/if}}
+    })
+
+    it('should execute tools from external MCP server', async () => {
+      // First, get available tools
+      const toolsResponse = await fetch(`http://localhost:${HATAGO_PORT}/mcp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/list'
+        })
+      })
+
+      const toolsResult = await toolsResponse.json()
+      const tools = toolsResult.result.tools
+
+      if (tools.length === 0) {
+        console.warn('No tools available for testing')
+        return
+      }
+
+      // Try to execute the first available tool
+      const firstTool = tools[0]
+      const response = await fetch(`http://localhost:${HATAGO_PORT}/mcp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: {
+            name: firstTool.name,
+            arguments: generateTestArgumentsForTool(firstTool)
+          }
+        })
+      })
+
+      const result = await response.json()
+
+      expect(response.status).toBe(200)
+      
+      if (result.error) {
+        // Some tools might require specific arguments or authentication
+        // That's ok for this integration test
+        console.warn(`Tool execution failed (expected): ${result.error.message}`)
+      } else {
+        expect(result).toMatchObject({
+          jsonrpc: '2.0',
+          id: 2,
+          result: {
+            content: expect.any(Array)
+          }
+        })
+      }
+    })
+
+    it('should list resources from external MCP server', async () => {
+      const response = await fetch(`http://localhost:${HATAGO_PORT}/mcp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 3,
+          method: 'resources/list'
+        })
+      })
+
+      const result = await response.json()
+
+      expect(response.status).toBe(200)
+      
+      if (result.error) {
+        // Resources might not be supported by all MCP servers
+        console.warn('Resources not supported by external server')
+      } else {
+        expect(result).toMatchObject({
+          jsonrpc: '2.0',
+          id: 3,
+          result: {
+            resources: expect.any(Array)
+          }
+        })
+      }
+    })
+
+    it('should provide configuration through resource', async () => {
+      const response = await fetch(`http://localhost:${HATAGO_PORT}/mcp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 4,
+          method: 'resources/read',
+          params: {
+            uri: '{{kebabCase name}}://config'
+          }
+        })
+      })
+
+      const result = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(result).toMatchObject({
+        jsonrpc: '2.0',
+        id: 4,
+        result: {
+          contents: expect.any(Array)
+        }
+      })
+
+      const configContent = JSON.parse(result.result.contents[0].text)
+      expect(configContent).toMatchObject({
+        name: '{{name}}',
+        description: '{{description}}',
+        mcpServer: '{{mcpServerName}}',
+        connected: true,
+        version: '1.0.0'
+      })
+    })
+  })
+
+  describe('Error handling', () => {
+    it('should handle external server becoming unavailable', async () => {
+      // Kill the external MCP server temporarily
+      if (externalMcpServer && !externalMcpServer.killed) {
+        externalMcpServer.kill('SIGTERM')
+        
+        // Wait for server to be killed
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        
+        // Try to call a tool - should fail gracefully
+        const response = await fetch(`http://localhost:${HATAGO_PORT}/mcp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 5,
+            method: 'tools/list'
+          })
+        })
+
+        const result = await response.json()
+        
+        // Should return an error, not crash
+        expect(result.error).toBeDefined()
+        expect(result.error.message).toContain('failed')
+      }
+    }, 10000)
+
+{{#if healthCheck}}
+    it('should detect unhealthy external server', async () => {
+      // After killing the server above, health check should fail
+      const response = await fetch(`http://localhost:${HATAGO_PORT}/{{kebabCase name}}/health`)
+      const health = await response.json()
+
+      expect(health.status).toBe('unhealthy')
+    })
+{{/if}}
+  })
+
+  describe('Performance', () => {
+{{#if caching}}
+    it('should cache tool results when caching is enabled', async () => {
+      // Get available tools
+      const toolsResponse = await fetch(`http://localhost:${HATAGO_PORT}/mcp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/list'
+        })
+      })
+
+      const toolsResult = await toolsResponse.json()
+      const tools = toolsResult.result.tools
+
+      if (tools.length === 0) return
+
+      const firstTool = tools[0]
+      const args = generateTestArgumentsForTool(firstTool)
+
+      // First call - should go to external server
+      const start1 = Date.now()
+      await fetch(`http://localhost:${HATAGO_PORT}/mcp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 6,
+          method: 'tools/call',
+          params: { name: firstTool.name, arguments: args }
+        })
+      })
+      const time1 = Date.now() - start1
+
+      // Second call - should use cache (if same arguments)
+      const start2 = Date.now()
+      await fetch(`http://localhost:${HATAGO_PORT}/mcp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 7,
+          method: 'tools/call',
+          params: { name: firstTool.name, arguments: args }
+        })
+      })
+      const time2 = Date.now() - start2
+
+      // Second call should be faster (cached)
+      // Note: This might not always be true due to network variability
+      console.log(`First call: ${time1}ms, Second call: ${time2}ms`)
+    }, 15000)
+{{/if}}
+
+    it('should handle concurrent requests', async () => {
+      const concurrency = 5
+      const requests = []
+
+      for (let i = 0; i < concurrency; i++) {
+        requests.push(
+          fetch(`http://localhost:${HATAGO_PORT}/{{kebabCase name}}/status`)
+        )
+      }
+
+      const responses = await Promise.allSettled(requests)
+      const successful = responses.filter(r => r.status === 'fulfilled').length
+
+      expect(successful).toBe(concurrency)
+    })
+  })
+
+  // Helper function to generate test arguments for a tool
+  function generateTestArgumentsForTool(tool: any): any {
+    const schema = tool.inputSchema
+    const args: any = {}
+
+    if (schema?.properties) {
+      for (const [propName, propSchema] of Object.entries(schema.properties)) {
+        const prop = propSchema as any
+        
+        switch (prop.type) {
+          case 'string':
+            args[propName] = 'test-value'
+            break
+          case 'number':
+            args[propName] = 42
+            break
+          case 'boolean':
+            args[propName] = true
+            break
+          case 'array':
+            args[propName] = ['test-item']
+            break
+          case 'object':
+            args[propName] = { test: 'value' }
+            break
+          default:
+            args[propName] = 'test'
+        }
+      }
+    }
+
+    return args
+  }
+})

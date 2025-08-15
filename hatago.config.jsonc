@@ -1,0 +1,59 @@
+{
+  // JSON Schema reference for IDE support
+  "$schema": "https://hatago.dev/schema/config.json",
+
+  // Proxy configuration for external MCP servers
+  "proxy": {
+    "servers": [
+      {
+        "id": "example-server",
+        "endpoint": "http://localhost:8080",
+        "namespace": "example",
+        "description": "Example MCP server",
+        "tools": {
+          "rename": {
+            // "original.name": "newName"
+          },
+          "include": ["*"],
+          "exclude": [
+            // "debug.*"
+          ],
+        },
+        "timeout": 30000,
+        "healthCheck": {
+          "enabled": true,
+          "interval": 30000,
+          "timeout": 5000,
+        },
+      },
+    ],
+    "namespaceStrategy": "prefix",
+    "conflictResolution": "error",
+    "namespace": {
+      "separator": ":",
+      "caseSensitive": false,
+      "maxLength": 64,
+    },
+  },
+
+  // Server configuration
+  "server": {
+    "port": 8787,
+    "hostname": "localhost",
+    "cors": true,
+    "timeout": 30000,
+  },
+
+  // Logging configuration
+  "logging": {
+    "level": "info",
+    "format": "pretty",
+    "output": "console",
+  },
+
+  // Security configuration
+  "security": {
+    "requireAuth": false,
+    "allowedOrigins": ["*"],
+  },
+}

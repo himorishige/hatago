@@ -23,7 +23,7 @@ async function testMultiProxy() {
               timeout: 10000,
             },
             {
-              id: 'server-b', 
+              id: 'server-b',
               endpoint: 'http://localhost:8789',
               timeout: 10000,
             },

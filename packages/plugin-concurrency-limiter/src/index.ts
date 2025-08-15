@@ -1,4 +1,9 @@
-import type { CapabilityAwarePluginFactory, PluginContext, CapabilityAwarePlugin, CapabilityRegistry } from '@hatago/core'
+import type {
+  CapabilityAwarePluginFactory,
+  PluginContext,
+  CapabilityAwarePlugin,
+  CapabilityRegistry,
+} from '@hatago/core'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { Context } from 'hono'
 
@@ -29,14 +34,16 @@ interface RequestEntry {
 enum CircuitState {
   CLOSED = 'closed',
   OPEN = 'open',
-  HALF_OPEN = 'half_open'
+  HALF_OPEN = 'half_open',
 }
 
 /**
  * Concurrency limiting plugin with circuit breaker and queue management
  * Protects against overload with graceful degradation
  */
-const concurrencyLimiterPlugin: CapabilityAwarePluginFactory = (context: PluginContext): CapabilityAwarePlugin => {
+const concurrencyLimiterPlugin: CapabilityAwarePluginFactory = (
+  context: PluginContext
+): CapabilityAwarePlugin => {
   const config: ConcurrencyLimiterConfig = {
     enabled: true,
     maxConcurrency: 1000,
@@ -45,16 +52,22 @@ const concurrencyLimiterPlugin: CapabilityAwarePluginFactory = (context: PluginC
     circuitBreakerThreshold: 10,
     circuitBreakerResetMs: 60000,
     excludePaths: ['/health', '/metrics', '/drain'],
-    ...context.config as ConcurrencyLimiterConfig
+    ...(context.config as ConcurrencyLimiterConfig),
   }
-  
-  return async ({ server, capabilities }: { server: McpServer; capabilities: CapabilityRegistry }) => {
+
+  return async ({
+    server,
+    capabilities,
+  }: {
+    server: McpServer
+    capabilities: CapabilityRegistry
+  }) => {
     if (!config.enabled) {
       return
     }
 
     const { logger } = capabilities
-    
+
     // State tracking
     let activeRequests = 0
     const requestQueue: RequestEntry[] = []
@@ -97,19 +110,17 @@ const concurrencyLimiterPlugin: CapabilityAwarePluginFactory = (context: PluginC
       if (consecutiveFailures >= config.circuitBreakerThreshold!) {
         circuitState = CircuitState.OPEN
         lastCircuitOpenTime = Date.now()
-        logger.warn('Circuit breaker opened', { 
+        logger.warn('Circuit breaker opened', {
           plugin: context.manifest.name,
           consecutiveFailures,
-          threshold: config.circuitBreakerThreshold
+          threshold: config.circuitBreakerThreshold,
         })
       }
     }
 
     // Request processing functions
     const shouldBypassLimiting = (path: string): boolean => {
-      return config.excludePaths!.some(excludePath => 
-        path.startsWith(excludePath)
-      )
+      return config.excludePaths!.some(excludePath => path.startsWith(excludePath))
     }
 
     const processQueue = () => {
@@ -158,7 +169,7 @@ const concurrencyLimiterPlugin: CapabilityAwarePluginFactory = (context: PluginC
           resolve,
           reject,
           timestamp: Date.now(),
-          timeout
+          timeout,
         })
       })
     }
@@ -178,29 +189,29 @@ const concurrencyLimiterPlugin: CapabilityAwarePluginFactory = (context: PluginC
       {
         title: 'Test Concurrency Limiter',
         description: 'Test the concurrency limiter circuit breaker functionality',
-        inputSchema: {}
+        inputSchema: {},
       },
       async (args: any) => {
         const { action, count = 1 } = args
-        
+
         switch (action) {
           case 'trigger_failure':
             for (let i = 0; i < count; i++) {
               recordFailure()
             }
             break
-            
+
           case 'trigger_success':
             for (let i = 0; i < count; i++) {
               recordSuccess()
             }
             break
-            
+
           case 'reset_circuit':
             circuitState = CircuitState.CLOSED
             consecutiveFailures = 0
             break
-            
+
           case 'simulate_load':
             // Simulate concurrent requests
             for (let i = 0; i < count; i++) {
@@ -218,14 +229,14 @@ const concurrencyLimiterPlugin: CapabilityAwarePluginFactory = (context: PluginC
             }
             break
         }
-        
+
         return {
           content: [
             {
               type: 'text',
-              text: `Action '${action}' executed. Current state: ${circuitState}, Active requests: ${activeRequests}, Consecutive failures: ${consecutiveFailures}`
-            }
-          ]
+              text: `Action '${action}' executed. Current state: ${circuitState}, Active requests: ${activeRequests}, Consecutive failures: ${consecutiveFailures}`,
+            },
+          ],
         }
       }
     )
@@ -236,34 +247,41 @@ const concurrencyLimiterPlugin: CapabilityAwarePluginFactory = (context: PluginC
       {
         title: 'Concurrency Status',
         description: 'Get current concurrency limiter status and metrics',
-        inputSchema: {}
+        inputSchema: {},
       },
       async () => {
         return {
           content: [
             {
               type: 'text',
-              text: JSON.stringify({
-                active_requests: activeRequests,
-                queue_length: requestQueue.length,
-                circuit_state: circuitState,
-                consecutive_failures: consecutiveFailures,
-                config: {
-                  max_concurrency: config.maxConcurrency,
-                  max_queue_size: config.maxQueueSize,
-                  timeout_ms: config.timeoutMs,
-                  circuit_breaker_threshold: config.circuitBreakerThreshold
+              text: JSON.stringify(
+                {
+                  active_requests: activeRequests,
+                  queue_length: requestQueue.length,
+                  circuit_state: circuitState,
+                  consecutive_failures: consecutiveFailures,
+                  config: {
+                    max_concurrency: config.maxConcurrency,
+                    max_queue_size: config.maxQueueSize,
+                    timeout_ms: config.timeoutMs,
+                    circuit_breaker_threshold: config.circuitBreakerThreshold,
+                  },
+                  metrics: {
+                    total_requests: totalRequests,
+                    rejected_requests: rejectedRequests,
+                    queued_requests: queuedRequests,
+                    timeout_requests: timeoutRequests,
+                    rejection_rate:
+                      totalRequests > 0
+                        ? ((rejectedRequests / totalRequests) * 100).toFixed(2) + '%'
+                        : '0%',
+                  },
                 },
-                metrics: {
-                  total_requests: totalRequests,
-                  rejected_requests: rejectedRequests,
-                  queued_requests: queuedRequests,
-                  timeout_requests: timeoutRequests,
-                  rejection_rate: totalRequests > 0 ? (rejectedRequests / totalRequests * 100).toFixed(2) + '%' : '0%'
-                }
-              }, null, 2)
-            }
-          ]
+                null,
+                2
+              ),
+            },
+          ],
         }
       }
     )
@@ -273,7 +291,7 @@ const concurrencyLimiterPlugin: CapabilityAwarePluginFactory = (context: PluginC
       maxConcurrency: config.maxConcurrency,
       maxQueueSize: config.maxQueueSize,
       timeoutMs: config.timeoutMs,
-      circuitBreakerThreshold: config.circuitBreakerThreshold
+      circuitBreakerThreshold: config.circuitBreakerThreshold,
     })
 
     // Cleanup function - but CapabilityAwarePlugin should return void
@@ -286,7 +304,7 @@ const concurrencyLimiterPlugin: CapabilityAwarePluginFactory = (context: PluginC
       }
       requestQueue.length = 0
     }
-    
+
     // TODO: Implement proper cleanup mechanism in plugin lifecycle
   }
 }

@@ -1,0 +1,441 @@
+/**
+ * OAuth CLI interaction helper for {{titleCase name}} plugin
+ */
+
+import { createInterface } from 'readline'
+import { TokenManager } from './token-manager'
+import { OAuthProviderFactory } from './providers'
+import { performOAuthFlow } from './oauth-flow'
+import type { OAuthConfig, OAuthToken, OAuthProvider } from './oauth-types'
+
+/**
+ * CLI prompt helper
+ */
+export class CLIPrompt {
+  private rl = createInterface({
+    input: process.stdin,
+    output: process.stdout
+  })
+
+  /**
+   * Ask a question
+   */
+  async question(prompt: string): Promise<string> {
+    return new Promise((resolve) => {
+      this.rl.question(prompt, (answer) => {
+        resolve(answer.trim())
+      })
+    })
+  }
+
+  /**
+   * Ask for confirmation
+   */
+  async confirm(prompt: string, defaultValue: boolean = false): Promise<boolean> {
+    const suffix = defaultValue ? ' (Y/n): ' : ' (y/N): '
+    const answer = await this.question(prompt + suffix)
+    
+    if (!answer) {
+      return defaultValue
+    }
+    
+    return answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes'
+  }
+
+  /**
+   * Select from options
+   */
+  async select(prompt: string, options: string[]): Promise<string> {
+    console.log(prompt)
+    options.forEach((option, index) => {
+      console.log(`  ${index + 1}. ${option}`)
+    })
+    
+    while (true) {
+      const answer = await this.question('Select (1-' + options.length + '): ')
+      const index = parseInt(answer) - 1
+      
+      if (index >= 0 && index < options.length) {
+        return options[index]
+      }
+      
+      console.log('Invalid selection. Please try again.')
+    }
+  }
+
+  /**
+   * Close readline interface
+   */
+  close(): void {
+    this.rl.close()
+  }
+}
+
+/**
+ * OAuth CLI manager
+ */
+export class OAuthCLI {
+  private tokenManager: TokenManager
+  private prompt: CLIPrompt
+
+  constructor() {
+    this.tokenManager = new TokenManager()
+    this.prompt = new CLIPrompt()
+  }
+
+  /**
+   * Interactive OAuth setup
+   */
+  async setup(): Promise<OAuthToken> {
+    console.log('\n=== OAuth Authentication Setup ===\n')
+
+    // Check for existing tokens
+    const existingToken = await this.checkExistingTokens()
+    if (existingToken) {
+      return existingToken
+    }
+
+    // Select provider
+    const provider = await this.selectProvider()
+    
+    // Get configuration
+    const config = await this.getProviderConfig(provider)
+    
+    // Perform OAuth flow
+    console.log('\nStarting OAuth authentication flow...')
+    const token = await performOAuthFlow(config)
+    
+    // Save token
+    await this.tokenManager.setToken(provider, token)
+    console.log('\n✓ Authentication successful! Token saved.\n')
+    
+    this.prompt.close()
+    return token
+  }
+
+  /**
+   * Check for existing tokens
+   */
+  private async checkExistingTokens(): Promise<OAuthToken | null> {
+    // Check environment variables first
+    const envProvider = OAuthProviderFactory.fromEnvironment()
+    if (envProvider) {
+      console.log('✓ Found authentication token in environment variables')
+      
+      const useExisting = await this.prompt.confirm(
+        'Use existing token from environment?', 
+        true
+      )
+      
+      if (useExisting) {
+        this.prompt.close()
+        
+        // Get token from the provider
+        if (envProvider.getStoredToken) {
+          return await envProvider.getStoredToken()
+        }
+        
+        return null
+      }
+    }
+
+    // Check stored tokens
+    const availableTokens = await OAuthProviderFactory.getAvailableTokens()
+    const providers = Object.keys(availableTokens)
+    
+    if (providers.length > 0) {
+      console.log('\nFound existing tokens for:')
+      providers.forEach(p => console.log(`  - ${p}`))
+      
+      const useExisting = await this.prompt.confirm(
+        '\nUse existing token?',
+        true
+      )
+      
+      if (useExisting) {
+        let provider: string
+        
+        if (providers.length === 1) {
+          provider = providers[0]
+        } else {
+          provider = await this.prompt.select(
+            'Select provider:',
+            providers
+          )
+        }
+        
+        this.prompt.close()
+        return availableTokens[provider]
+      }
+    }
+
+    return null
+  }
+
+  /**
+   * Select OAuth provider
+   */
+  private async selectProvider(): Promise<OAuthProvider> {
+    const providers: OAuthProvider[] = ['github', 'google', 'slack']
+    
+    const selected = await this.prompt.select(
+      'Select OAuth provider:',
+      providers
+    )
+    
+    return selected as OAuthProvider
+  }
+
+  /**
+   * Get provider configuration
+   */
+  private async getProviderConfig(provider: OAuthProvider): Promise<OAuthConfig> {
+    console.log(`\nConfiguring ${provider} OAuth...`)
+    
+    // Get client credentials
+    const clientId = await this.prompt.question('Client ID: ')
+    const clientSecret = await this.prompt.question('Client Secret: ')
+    
+    // Provider-specific configuration
+    let config: OAuthConfig = {
+      provider,
+      clientId,
+      clientSecret,
+      pkce: true,
+      autoRefresh: true
+    }
+
+    switch (provider) {
+      case 'github':
+        config = {
+          ...config,
+          authorizationUrl: 'https://github.com/login/oauth/authorize',
+          tokenUrl: 'https://github.com/login/oauth/access_token',
+          scope: await this.prompt.question(
+            'Scopes (default: repo read:org read:user): '
+          ) || 'repo read:org read:user'
+        }
+        break
+
+      case 'google':
+        config = {
+          ...config,
+          authorizationUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+          tokenUrl: 'https://oauth2.googleapis.com/token',
+          scope: await this.prompt.question(
+            'Scopes (default: openid profile email): '
+          ) || 'openid profile email',
+          accessType: 'offline',
+          prompt: 'consent'
+        }
+        break
+
+      case 'slack':
+        config = {
+          ...config,
+          authorizationUrl: 'https://slack.com/oauth/v2/authorize',
+          tokenUrl: 'https://slack.com/api/oauth.v2.access',
+          scope: await this.prompt.question(
+            'Scopes (default: channels:read chat:write): '
+          ) || 'channels:read chat:write',
+          pkce: false  // Slack doesn't support PKCE
+        }
+        break
+    }
+
+    return config
+  }
+
+  /**
+   * Revoke token
+   */
+  async revoke(provider?: OAuthProvider): Promise<void> {
+    console.log('\n=== OAuth Token Revocation ===\n')
+
+    // Get available tokens
+    const availableTokens = await OAuthProviderFactory.getAvailableTokens()
+    const providers = Object.keys(availableTokens) as OAuthProvider[]
+    
+    if (providers.length === 0) {
+      console.log('No tokens found to revoke.')
+      this.prompt.close()
+      return
+    }
+
+    // Select provider if not specified
+    if (!provider) {
+      if (providers.length === 1) {
+        provider = providers[0]
+      } else {
+        provider = await this.prompt.select(
+          'Select provider to revoke:',
+          providers
+        ) as OAuthProvider
+      }
+    }
+
+    // Confirm revocation
+    const confirmed = await this.prompt.confirm(
+      `Are you sure you want to revoke the ${provider} token?`,
+      false
+    )
+    
+    if (!confirmed) {
+      console.log('Revocation cancelled.')
+      this.prompt.close()
+      return
+    }
+
+    // Revoke token
+    try {
+      const providerInstance = OAuthProviderFactory.create({
+        provider,
+        clientId: '',  // Will be loaded from storage
+        clientSecret: ''
+      })
+      
+      const token = availableTokens[provider]
+      if (providerInstance.revokeToken) {
+        await providerInstance.revokeToken(token.access_token)
+      }
+      
+      await this.tokenManager.deleteToken(provider)
+      console.log(`✓ ${provider} token revoked successfully.`)
+    } catch (error) {
+      console.error(`Failed to revoke token: ${error.message}`)
+    }
+    
+    this.prompt.close()
+  }
+
+  /**
+   * List tokens
+   */
+  async list(): Promise<void> {
+    console.log('\n=== Stored OAuth Tokens ===\n')
+    
+    const availableTokens = await OAuthProviderFactory.getAvailableTokens()
+    const providers = Object.keys(availableTokens)
+    
+    if (providers.length === 0) {
+      console.log('No tokens found.')
+    } else {
+      for (const provider of providers) {
+        const token = availableTokens[provider]
+        console.log(`${provider}:`)
+        console.log(`  Type: ${token.token_type}`)
+        console.log(`  Scope: ${token.scope || 'N/A'}`)
+        
+        if (token.expires_at) {
+          const expiresIn = Math.floor((token.expires_at - Date.now()) / 1000)
+          if (expiresIn > 0) {
+            console.log(`  Expires in: ${Math.floor(expiresIn / 60)} minutes`)
+          } else {
+            console.log(`  Status: EXPIRED`)
+          }
+        } else {
+          console.log(`  Expires: Never`)
+        }
+        
+        console.log('')
+      }
+    }
+    
+    this.prompt.close()
+  }
+
+  /**
+   * Refresh token
+   */
+  async refresh(provider?: OAuthProvider): Promise<void> {
+    console.log('\n=== OAuth Token Refresh ===\n')
+
+    // Get available tokens
+    const availableTokens = await OAuthProviderFactory.getAvailableTokens()
+    const providers = Object.keys(availableTokens) as OAuthProvider[]
+    
+    if (providers.length === 0) {
+      console.log('No tokens found to refresh.')
+      this.prompt.close()
+      return
+    }
+
+    // Select provider if not specified
+    if (!provider) {
+      if (providers.length === 1) {
+        provider = providers[0]
+      } else {
+        provider = await this.prompt.select(
+          'Select provider to refresh:',
+          providers
+        ) as OAuthProvider
+      }
+    }
+
+    // Check if provider supports refresh
+    const token = availableTokens[provider]
+    if (!token.refresh_token) {
+      console.log(`${provider} token does not support refresh.`)
+      this.prompt.close()
+      return
+    }
+
+    // Refresh token
+    try {
+      console.log(`Refreshing ${provider} token...`)
+      
+      const providerInstance = OAuthProviderFactory.create({
+        provider,
+        clientId: '',  // Will be loaded from config
+        clientSecret: ''
+      })
+      
+      if (providerInstance.refreshAccessToken) {
+        const newToken = await providerInstance.refreshAccessToken(token)
+        await this.tokenManager.setToken(provider, newToken)
+        console.log(`✓ ${provider} token refreshed successfully.`)
+      } else {
+        console.log(`${provider} provider does not support token refresh.`)
+      }
+    } catch (error) {
+      console.error(`Failed to refresh token: ${error.message}`)
+    }
+    
+    this.prompt.close()
+  }
+}
+
+/**
+ * CLI command handler
+ */
+export async function handleOAuthCommand(
+  command: string,
+  provider?: OAuthProvider
+): Promise<void> {
+  const cli = new OAuthCLI()
+  
+  switch (command) {
+    case 'setup':
+    case 'login':
+      await cli.setup()
+      break
+      
+    case 'revoke':
+    case 'logout':
+      await cli.revoke(provider)
+      break
+      
+    case 'list':
+    case 'status':
+      await cli.list()
+      break
+      
+    case 'refresh':
+      await cli.refresh(provider)
+      break
+      
+    default:
+      console.log(`Unknown OAuth command: ${command}`)
+      console.log('Available commands: setup, revoke, list, refresh')
+  }
+}

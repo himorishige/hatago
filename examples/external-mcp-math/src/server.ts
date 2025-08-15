@@ -29,7 +29,7 @@ server.registerTool(
   {
     title: 'Math Calculator',
     description: 'Perform basic mathematical calculations',
-    inputSchema: {}
+    inputSchema: {},
   },
   async (args, extra) => {
     const { expression = '1+1' } = args as {
@@ -39,14 +39,16 @@ server.registerTool(
     try {
       // Simple expression evaluator (only basic operations for security)
       const sanitized = expression.replace(/[^0-9+\-*/().\s]/g, '')
-      
+
       if (!sanitized || sanitized !== expression) {
-        throw new Error('Invalid characters in expression. Only numbers and +, -, *, /, (), . are allowed.')
+        throw new Error(
+          'Invalid characters in expression. Only numbers and +, -, *, /, (), . are allowed.'
+        )
       }
 
       // Use Function constructor for safe evaluation
       const result = new Function(`"use strict"; return (${sanitized})`)()
-      
+
       if (typeof result !== 'number' || !isFinite(result)) {
         throw new Error('Expression did not evaluate to a valid number')
       }
@@ -55,28 +57,36 @@ server.registerTool(
         content: [
           {
             type: 'text' as const,
-            text: JSON.stringify({
-              expression: expression,
-              result: result,
-              type: 'calculation',
-              timestamp: new Date().toISOString()
-            }, null, 2)
-          }
-        ]
+            text: JSON.stringify(
+              {
+                expression: expression,
+                result: result,
+                type: 'calculation',
+                timestamp: new Date().toISOString(),
+              },
+              null,
+              2
+            ),
+          },
+        ],
       }
     } catch (error) {
       return {
         content: [
           {
             type: 'text' as const,
-            text: JSON.stringify({
-              expression: expression,
-              error: 'Calculation failed',
-              message: error instanceof Error ? error.message : String(error),
-              type: 'error'
-            }, null, 2)
-          }
-        ]
+            text: JSON.stringify(
+              {
+                expression: expression,
+                error: 'Calculation failed',
+                message: error instanceof Error ? error.message : String(error),
+                type: 'error',
+              },
+              null,
+              2
+            ),
+          },
+        ],
       }
     }
   }
@@ -88,10 +98,14 @@ server.registerTool(
   {
     title: 'Random Number Generator',
     description: 'Generate random numbers within specified range',
-    inputSchema: {}
+    inputSchema: {},
   },
   async (args, extra) => {
-    const { min = 1, max = 100, count = 1 } = args as {
+    const {
+      min = 1,
+      max = 100,
+      count = 1,
+    } = args as {
       min?: number
       max?: number
       count?: number
@@ -112,31 +126,39 @@ server.registerTool(
         content: [
           {
             type: 'text' as const,
-            text: JSON.stringify({
-              numbers: numbers,
-              min: actualMin,
-              max: actualMax,
-              count: actualCount,
-              sum: numbers.reduce((a, b) => a + b, 0),
-              average: numbers.reduce((a, b) => a + b, 0) / numbers.length,
-              type: 'random_generation',
-              timestamp: new Date().toISOString()
-            }, null, 2)
-          }
-        ]
+            text: JSON.stringify(
+              {
+                numbers: numbers,
+                min: actualMin,
+                max: actualMax,
+                count: actualCount,
+                sum: numbers.reduce((a, b) => a + b, 0),
+                average: numbers.reduce((a, b) => a + b, 0) / numbers.length,
+                type: 'random_generation',
+                timestamp: new Date().toISOString(),
+              },
+              null,
+              2
+            ),
+          },
+        ],
       }
     } catch (error) {
       return {
         content: [
           {
             type: 'text' as const,
-            text: JSON.stringify({
-              error: 'Random generation failed',
-              message: error instanceof Error ? error.message : String(error),
-              type: 'error'
-            }, null, 2)
-          }
-        ]
+            text: JSON.stringify(
+              {
+                error: 'Random generation failed',
+                message: error instanceof Error ? error.message : String(error),
+                type: 'error',
+              },
+              null,
+              2
+            ),
+          },
+        ],
       }
     }
   }
@@ -148,25 +170,29 @@ server.registerTool(
   {
     title: 'Math Timezone Offset',
     description: 'Calculate timezone offset in minutes (for math demonstrations)',
-    inputSchema: {}
+    inputSchema: {},
   },
   async (args, extra) => {
     const offset = new Date().getTimezoneOffset()
-    
+
     return {
       content: [
         {
           type: 'text' as const,
-          text: JSON.stringify({
-            timezoneOffsetMinutes: offset,
-            timezoneOffsetHours: offset / 60,
-            isNegative: offset < 0,
-            description: 'Timezone offset in minutes (negative means ahead of UTC)',
-            type: 'timezone_math',
-            timestamp: new Date().toISOString()
-          }, null, 2)
-        }
-      ]
+          text: JSON.stringify(
+            {
+              timezoneOffsetMinutes: offset,
+              timezoneOffsetHours: offset / 60,
+              isNegative: offset < 0,
+              description: 'Timezone offset in minutes (negative means ahead of UTC)',
+              type: 'timezone_math',
+              timestamp: new Date().toISOString(),
+            },
+            null,
+            2
+          ),
+        },
+      ],
     }
   }
 )
@@ -179,18 +205,18 @@ app.all('/mcp', async c => {
 })
 
 // Health check endpoint
-app.get('/health', (c) => {
+app.get('/health', c => {
   return c.json({
     status: 'ok',
     server: 'external-mcp-math',
     version: '1.0.0',
     uptime: process.uptime(),
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   })
 })
 
 // Root endpoint with server info
-app.get('/', (c) => {
+app.get('/', c => {
   return c.json({
     name: 'External MCP Math Server',
     version: '1.0.0',
@@ -200,17 +226,17 @@ app.get('/', (c) => {
     tools: [
       {
         name: 'math.calculate',
-        description: 'Perform basic mathematical calculations'
+        description: 'Perform basic mathematical calculations',
       },
       {
         name: 'math.random',
-        description: 'Generate random numbers within specified range'
+        description: 'Generate random numbers within specified range',
       },
       {
         name: 'getTimezone',
-        description: 'Calculate timezone offset in minutes (conflicts with clock server)'
-      }
-    ]
+        description: 'Calculate timezone offset in minutes (conflicts with clock server)',
+      },
+    ],
   })
 })
 

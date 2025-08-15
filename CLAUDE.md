@@ -49,18 +49,20 @@ pnpm start
 ### Plugin System
 
 Plugins follow the `HatagoPlugin` type pattern:
+
 ```typescript
 export type HatagoPlugin = (ctx: HatagoContext) => void | Promise<void>
 
 export type HatagoContext = {
-  app: Hono              // Hono app instance for HTTP routes
-  server: McpServer      // MCP server instance for tools/resources
-  env?: Record<string, unknown>  // Environment variables
-  getBaseUrl: (req: Request) => URL  // Base URL helper
+  app: Hono // Hono app instance for HTTP routes
+  server: McpServer // MCP server instance for tools/resources
+  env?: Record<string, unknown> // Environment variables
+  getBaseUrl: (req: Request) => URL // Base URL helper
 }
 ```
 
 To add new plugins:
+
 1. Create plugin in `src/plugins/`
 2. Register in `src/plugins/index.ts`
 3. Use `server.registerTool()` for MCP tools or `app.get()`/`app.post()` for HTTP endpoints
@@ -84,6 +86,7 @@ To add new plugins:
 Use curl to test MCP endpoints:
 
 1. Initialize:
+
 ```bash
 curl -sS http://localhost:8787/mcp -H 'content-type: application/json' -d '{
   "jsonrpc":"2.0","id":1,"method":"initialize",
@@ -92,6 +95,7 @@ curl -sS http://localhost:8787/mcp -H 'content-type: application/json' -d '{
 ```
 
 2. List tools:
+
 ```bash
 curl -sS http://localhost:8787/mcp -H 'content-type: application/json' -d '{
   "jsonrpc":"2.0","id":2,"method":"tools/list"
@@ -99,6 +103,7 @@ curl -sS http://localhost:8787/mcp -H 'content-type: application/json' -d '{
 ```
 
 3. Call tool with progress:
+
 ```bash
 curl -sS http://localhost:8787/mcp -H 'content-type: application/json' -d '{
   "jsonrpc":"2.0","id":3,"method":"tools/call",

@@ -1,0 +1,234 @@
+/**
+ * OAuth types for {{titleCase name}} plugin
+ */
+
+/**
+ * Supported OAuth providers
+ */
+export type OAuthProvider = 'github' | 'google' | 'slack' | 'azure' | 'custom'
+
+/**
+ * OAuth token types
+ */
+export interface OAuthToken {
+  access_token: string
+  token_type: string
+  expires_in?: number
+  refresh_token?: string
+  scope?: string
+  id_token?: string  // For OIDC
+  expires_at?: number  // Calculated expiration timestamp
+}
+
+/**
+ * OAuth configuration
+ */
+export interface OAuthConfig {
+  // Provider selection
+  provider: OAuthProvider
+  
+  // Client credentials
+  clientId?: string
+  clientSecret?: string
+  
+  // OAuth endpoints (for custom provider)
+  authorizationUrl?: string
+  tokenUrl?: string
+  revokeUrl?: string
+  userInfoUrl?: string
+  
+  // OAuth parameters
+  scope?: string
+  redirectUri?: string
+  audience?: string  // For Auth0 and similar
+  resource?: string  // MCP resource indicator (RFC 8707)
+  
+  // Advanced options
+  pkce?: boolean  // Enable PKCE (default: true)
+  autoRefresh?: boolean  // Auto-refresh tokens (default: true)
+  prompt?: 'none' | 'consent' | 'select_account'
+  accessType?: 'online' | 'offline'  // For Google
+  
+  // Token storage
+  tokenStorage?: 'memory' | 'file' | 'keychain'
+  tokenFilePath?: string
+}
+
+/**
+ * OAuth provider presets
+ */
+export const OAUTH_PROVIDER_PRESETS: Record<OAuthProvider, Partial<OAuthConfig>> = {
+  github: {
+    authorizationUrl: 'https://github.com/login/oauth/authorize',
+    tokenUrl: 'https://github.com/login/oauth/access_token',
+    userInfoUrl: 'https://api.github.com/user',
+    scope: 'repo read:org read:user',
+    pkce: true
+  },
+  google: {
+    authorizationUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+    tokenUrl: 'https://oauth2.googleapis.com/token',
+    userInfoUrl: 'https://www.googleapis.com/oauth2/v2/userinfo',
+    revokeUrl: 'https://oauth2.googleapis.com/revoke',
+    scope: 'openid profile email',
+    accessType: 'offline',
+    prompt: 'consent',
+    pkce: true
+  },
+  slack: {
+    authorizationUrl: 'https://slack.com/oauth/v2/authorize',
+    tokenUrl: 'https://slack.com/api/oauth.v2.access',
+    userInfoUrl: 'https://slack.com/api/users.identity',
+    scope: 'channels:read chat:write users:read',
+    pkce: false  // Slack doesn't support PKCE yet
+  },
+  azure: {
+    // URLs are tenant-specific, must be configured
+    scope: 'openid profile email offline_access',
+    pkce: true,
+    prompt: 'select_account'
+  },
+  custom: {
+    pkce: true,
+    autoRefresh: true
+  }
+}
+
+/**
+ * OAuth error types
+ */
+export class OAuthError extends Error {
+  constructor(
+    message: string,
+    public code?: string,
+    public originalError?: Error
+  ) {
+    super(message)
+    this.name = 'OAuthError'
+  }
+}
+
+export class OAuthTokenError extends OAuthError {
+  constructor(message: string, originalError?: Error) {
+    super(message, 'TOKEN_ERROR', originalError)
+    this.name = 'OAuthTokenError'
+  }
+}
+
+export class OAuthRefreshError extends OAuthError {
+  constructor(message: string, originalError?: Error) {
+    super(message, 'REFRESH_ERROR', originalError)
+    this.name = 'OAuthRefreshError'
+  }
+}
+
+export class OAuthConfigError extends OAuthError {
+  constructor(message: string, originalError?: Error) {
+    super(message, 'CONFIG_ERROR', originalError)
+    this.name = 'OAuthConfigError'
+  }
+}
+
+/**
+ * Token storage interface
+ */
+export interface TokenStorage {
+  get(key: string): Promise<OAuthToken | null>
+  set(key: string, token: OAuthToken): Promise<void>
+  delete(key: string): Promise<void>
+  has(key: string): Promise<boolean>
+}
+
+/**
+ * OAuth state for CSRF protection
+ */
+export interface OAuthState {
+  state: string
+  codeVerifier?: string  // For PKCE
+  redirectUri: string
+  timestamp: number
+}
+
+/**
+ * OAuth authorization response
+ */
+export interface OAuthAuthorizationResponse {
+  code: string
+  state: string
+  error?: string
+  error_description?: string
+}
+
+/**
+ * OAuth token response
+ */
+export interface OAuthTokenResponse {
+  access_token: string
+  token_type: string
+  expires_in?: number
+  refresh_token?: string
+  scope?: string
+  id_token?: string
+  error?: string
+  error_description?: string
+}
+
+/**
+ * MCP OAuth metadata (RFC 9728)
+ */
+export interface MCPOAuthMetadata {
+  // Resource server metadata
+  resource: string
+  authorization_servers?: string[]
+  bearer_methods?: string[]
+  scopes_supported?: string[]
+  
+  // Authorization server metadata (RFC 8414)
+  issuer?: string
+  authorization_endpoint?: string
+  token_endpoint?: string
+  jwks_uri?: string
+  registration_endpoint?: string  // For DCR
+  scopes_supported?: string[]
+  response_types_supported?: string[]
+  grant_types_supported?: string[]
+  code_challenge_methods_supported?: string[]  // For PKCE
+}
+
+/**
+ * Environment variable mappings for OAuth
+ */
+export const OAUTH_ENV_MAPPINGS = {
+  // Provider selection
+  provider: '{{toUpperCase (snakeCase name)}}_OAUTH_PROVIDER',
+  
+  // Client credentials
+  clientId: '{{toUpperCase (snakeCase name)}}_OAUTH_CLIENT_ID',
+  clientSecret: '{{toUpperCase (snakeCase name)}}_OAUTH_CLIENT_SECRET',
+  
+  // Token (for simple token auth)
+  token: '{{toUpperCase (snakeCase name)}}_TOKEN',
+  apiKey: '{{toUpperCase (snakeCase name)}}_API_KEY',
+  
+  // Provider-specific
+  githubToken: 'GITHUB_PERSONAL_ACCESS_TOKEN',
+  googleToken: 'GOOGLE_API_KEY',
+  slackToken: 'SLACK_BOT_TOKEN',
+  azureToken: 'AZURE_ACCESS_TOKEN'
+} as const
+
+/**
+ * OAuth flow types
+ */
+export type OAuthFlow = 'authorization_code' | 'client_credentials' | 'device_code' | 'refresh_token'
+
+/**
+ * OAuth client capabilities
+ */
+export interface OAuthClientCapabilities {
+  supportsPKCE: boolean
+  supportsRefresh: boolean
+  supportsDCR: boolean  // Dynamic Client Registration
+  supportsDeviceFlow: boolean
+  supportsResourceIndicators: boolean  // RFC 8707
+}

@@ -7,10 +7,8 @@ import type { Context, Next } from 'hono'
 export function correlationId() {
   return async (c: Context, next: Next) => {
     // Get existing correlation ID or generate new one
-    const correlationId = 
-      c.req.header('x-correlation-id') ||
-      c.req.header('x-request-id') ||
-      crypto.randomUUID()
+    const correlationId =
+      c.req.header('x-correlation-id') || c.req.header('x-request-id') || crypto.randomUUID()
 
     // Set correlation ID in response headers
     c.res.headers.set('x-correlation-id', correlationId)
@@ -24,7 +22,7 @@ export function correlationId() {
       info: console.info,
       warn: console.warn,
       error: console.error,
-      debug: console.debug
+      debug: console.debug,
     }
 
     // Wrap console methods to include correlation ID

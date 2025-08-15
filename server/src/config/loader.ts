@@ -54,16 +54,16 @@ export class ConfigLoader {
     try {
       // Expand environment variables
       const expandedConfig = this.expandEnvironmentVariables(rawConfig)
-      
+
       // Parse JSON
       const parsedConfig = JSON.parse(expandedConfig) as HatagoConfig
-      
+
       // Validate and merge with defaults
       const config = this.mergeWithDefaults(parsedConfig)
-      
+
       this.config = config
       this.configPath = foundConfigPath
-      
+
       console.log(`Loaded configuration from: ${foundConfigPath}`)
       return config
     } catch (error) {
@@ -106,15 +106,15 @@ export class ConfigLoader {
     return configStr.replace(/\\$\\{([^}]+)\\}/g, (match, varExp) => {
       const [varName, defaultValue] = varExp.split(':')
       const envValue = process.env[varName.trim()]
-      
+
       if (envValue !== undefined) {
         return envValue
       }
-      
+
       if (defaultValue !== undefined) {
         return defaultValue.trim()
       }
-      
+
       // Variable not found and no default - keep original
       console.warn(`Environment variable ${varName} not found, keeping placeholder`)
       return match
@@ -126,20 +126,27 @@ export class ConfigLoader {
    */
   private mergeWithDefaults(userConfig: Partial<HatagoConfig>): HatagoConfig {
     const defaults = this.getDefaultConfig()
-    
+
     return {
       proxy: {
         servers: userConfig.proxy?.servers || [],
         namespaceStrategy: userConfig.proxy?.namespaceStrategy || defaults.proxy!.namespaceStrategy,
-        conflictResolution: userConfig.proxy?.conflictResolution || defaults.proxy!.conflictResolution,
+        conflictResolution:
+          userConfig.proxy?.conflictResolution || defaults.proxy!.conflictResolution,
         namespace: {
           ...defaults.proxy?.namespace,
           ...userConfig.proxy?.namespace,
         },
         connectionPool: {
-          maxConnections: userConfig.proxy?.connectionPool?.maxConnections || defaults.proxy!.connectionPool!.maxConnections,
-          idleTimeout: userConfig.proxy?.connectionPool?.idleTimeout || defaults.proxy!.connectionPool!.idleTimeout,
-          keepAlive: userConfig.proxy?.connectionPool?.keepAlive ?? defaults.proxy!.connectionPool!.keepAlive,
+          maxConnections:
+            userConfig.proxy?.connectionPool?.maxConnections ||
+            defaults.proxy!.connectionPool!.maxConnections,
+          idleTimeout:
+            userConfig.proxy?.connectionPool?.idleTimeout ||
+            defaults.proxy!.connectionPool!.idleTimeout,
+          keepAlive:
+            userConfig.proxy?.connectionPool?.keepAlive ??
+            defaults.proxy!.connectionPool!.keepAlive,
         },
       },
       server: {
@@ -221,7 +228,7 @@ export class ConfigLoader {
         if (!server.id || !server.endpoint) {
           throw new Error(`Invalid server config: id and endpoint are required`)
         }
-        
+
         try {
           new URL(server.endpoint)
         } catch {

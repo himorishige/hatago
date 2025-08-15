@@ -1,0 +1,408 @@
+/**
+ * OAuth 2.0 Authorization Server Metadata Discovery
+ * RFC 8414 compliant implementation for {{titleCase name}} plugin
+ */
+
+import fetch from 'node-fetch'
+
+/**
+ * OAuth 2.0 Authorization Server Metadata
+ * https://www.rfc-editor.org/rfc/rfc8414.html
+ */
+export interface OAuthMetadata {
+  issuer: string
+  authorization_endpoint: string
+  token_endpoint: string
+  userinfo_endpoint?: string
+  jwks_uri?: string
+  registration_endpoint?: string  // For Dynamic Client Registration
+  scopes_supported?: string[]
+  response_types_supported: string[]
+  response_modes_supported?: string[]
+  grant_types_supported?: string[]
+  acr_values_supported?: string[]
+  subject_types_supported?: string[]
+  id_token_signing_alg_values_supported?: string[]
+  id_token_encryption_alg_values_supported?: string[]
+  id_token_encryption_enc_values_supported?: string[]
+  userinfo_signing_alg_values_supported?: string[]
+  userinfo_encryption_alg_values_supported?: string[]
+  userinfo_encryption_enc_values_supported?: string[]
+  request_object_signing_alg_values_supported?: string[]
+  request_object_encryption_alg_values_supported?: string[]
+  request_object_encryption_enc_values_supported?: string[]
+  token_endpoint_auth_methods_supported?: string[]
+  token_endpoint_auth_signing_alg_values_supported?: string[]
+  display_values_supported?: string[]
+  claim_types_supported?: string[]
+  claims_supported?: string[]
+  service_documentation?: string
+  claims_locales_supported?: string[]
+  ui_locales_supported?: string[]
+  claims_parameter_supported?: boolean
+  request_parameter_supported?: boolean
+  request_uri_parameter_supported?: boolean
+  require_request_uri_registration?: boolean
+  op_policy_uri?: string
+  op_tos_uri?: string
+  code_challenge_methods_supported?: string[]  // PKCE support
+  revocation_endpoint?: string
+  revocation_endpoint_auth_methods_supported?: string[]
+  introspection_endpoint?: string
+  introspection_endpoint_auth_methods_supported?: string[]
+  device_authorization_endpoint?: string
+  mtls_endpoint_aliases?: Record<string, string>
+  tls_client_certificate_bound_access_tokens?: boolean
+  dpop_signing_alg_values_supported?: string[]
+  authorization_signing_alg_values_supported?: string[]
+  authorization_encryption_alg_values_supported?: string[]
+  authorization_encryption_enc_values_supported?: string[]
+  pushed_authorization_request_endpoint?: string
+  require_pushed_authorization_requests?: boolean
+  
+  // RFC 9728 - OAuth 2.0 Protected Resource Metadata
+  resource?: string
+  authorization_servers?: string[]
+  bearer_methods_supported?: string[]
+  resource_documentation?: string
+  resource_policy_uri?: string
+  resource_tos_uri?: string
+}
+
+/**
+ * Known OAuth metadata endpoints
+ */
+export const KNOWN_METADATA_ENDPOINTS: Record<string, string> = {
+  google: 'https://accounts.google.com/.well-known/openid-configuration',
+  microsoft: 'https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration',
+  okta: 'https://{domain}/.well-known/openid-configuration',
+  auth0: 'https://{domain}/.well-known/openid-configuration',
+  keycloak: 'https://{host}/realms/{realm}/.well-known/openid-configuration',
+  aws_cognito: 'https://cognito-idp.{region}.amazonaws.com/{userPoolId}/.well-known/openid-configuration',
+  github: null,  // GitHub doesn't support metadata discovery
+  slack: null,   // Slack doesn't support metadata discovery
+  gitlab: 'https://gitlab.com/.well-known/openid-configuration',
+  salesforce: 'https://login.salesforce.com/.well-known/openid-configuration',
+  apple: 'https://appleid.apple.com/.well-known/openid-configuration'
+}
+
+/**
+ * OAuth metadata discovery class
+ */
+export class OAuthMetadataDiscovery {
+  private cache: Map<string, { metadata: OAuthMetadata; timestamp: number }> = new Map()
+  private cacheTimeout: number = 3600000 // 1 hour
+
+  /**
+   * Discover OAuth metadata from issuer URL
+   */
+  async discover(issuer: string): Promise<OAuthMetadata> {
+    // Check cache first
+    const cached = this.cache.get(issuer)
+    if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
+      return cached.metadata
+    }
+
+    // Build metadata URL
+    const metadataUrl = this.buildMetadataUrl(issuer)
+    
+    try {
+      const response = await fetch(metadataUrl, {
+        headers: {
+          'Accept': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch metadata: ${response.status} ${response.statusText}`)
+      }
+
+      const metadata = await response.json() as OAuthMetadata
+
+      // Validate required fields
+      this.validateMetadata(metadata)
+
+      // Cache the metadata
+      this.cache.set(issuer, {
+        metadata,
+        timestamp: Date.now()
+      })
+
+      return metadata
+    } catch (error) {
+      throw new Error(`OAuth metadata discovery failed for ${issuer}: ${error.message}`)
+    }
+  }
+
+  /**
+   * Discover OAuth metadata for well-known providers
+   */
+  async discoverKnownProvider(provider: string, options: Record<string, string> = {}): Promise<OAuthMetadata | null> {
+    const endpointTemplate = KNOWN_METADATA_ENDPOINTS[provider.toLowerCase()]
+    
+    if (!endpointTemplate) {
+      return null
+    }
+
+    // Replace placeholders in template
+    let endpoint = endpointTemplate
+    for (const [key, value] of Object.entries(options)) {
+      endpoint = endpoint.replace(`{${key}}`, value)
+    }
+
+    // Check for remaining placeholders
+    if (endpoint.includes('{')) {
+      throw new Error(`Missing required parameters for ${provider} metadata discovery`)
+    }
+
+    return this.discover(endpoint.replace('/.well-known/openid-configuration', ''))
+  }
+
+  /**
+   * Build metadata URL from issuer
+   */
+  private buildMetadataUrl(issuer: string): string {
+    // Remove trailing slash
+    const baseUrl = issuer.replace(/\/$/, '')
+    
+    // Check if it's already a metadata URL
+    if (baseUrl.endsWith('/.well-known/openid-configuration') || 
+        baseUrl.endsWith('/.well-known/oauth-authorization-server')) {
+      return baseUrl
+    }
+
+    // Try OpenID Connect discovery first
+    return `${baseUrl}/.well-known/openid-configuration`
+  }
+
+  /**
+   * Validate metadata contains required fields
+   */
+  private validateMetadata(metadata: OAuthMetadata): void {
+    const required = ['issuer', 'authorization_endpoint', 'token_endpoint', 'response_types_supported']
+    
+    for (const field of required) {
+      if (!metadata[field]) {
+        throw new Error(`Missing required field in metadata: ${field}`)
+      }
+    }
+
+    // Validate issuer format
+    if (!metadata.issuer.startsWith('https://')) {
+      throw new Error('Issuer must use HTTPS')
+    }
+  }
+
+  /**
+   * Check if PKCE is supported
+   */
+  isPKCESupported(metadata: OAuthMetadata): boolean {
+    return metadata.code_challenge_methods_supported?.includes('S256') || false
+  }
+
+  /**
+   * Check if refresh tokens are supported
+   */
+  isRefreshTokenSupported(metadata: OAuthMetadata): boolean {
+    return metadata.grant_types_supported?.includes('refresh_token') || false
+  }
+
+  /**
+   * Check if Dynamic Client Registration is supported
+   */
+  isDCRSupported(metadata: OAuthMetadata): boolean {
+    return !!metadata.registration_endpoint
+  }
+
+  /**
+   * Get supported scopes
+   */
+  getSupportedScopes(metadata: OAuthMetadata): string[] {
+    return metadata.scopes_supported || []
+  }
+
+  /**
+   * Clear metadata cache
+   */
+  clearCache(): void {
+    this.cache.clear()
+  }
+}
+
+/**
+ * RFC 9728 - OAuth 2.0 Protected Resource Metadata
+ */
+export interface ProtectedResourceMetadata {
+  resource: string
+  authorization_servers?: string[]
+  bearer_methods_supported?: string[]
+  resource_documentation?: string
+  resource_policy_uri?: string
+  resource_tos_uri?: string
+  jwks_uri?: string
+  scopes_supported?: string[]
+  resource_signing_alg_values_supported?: string[]
+  resource_encryption_alg_values_supported?: string[]
+  resource_encryption_enc_values_supported?: string[]
+}
+
+/**
+ * Protected Resource Metadata Discovery
+ * RFC 9728 compliant
+ */
+export class ProtectedResourceMetadataDiscovery {
+  private cache: Map<string, { metadata: ProtectedResourceMetadata; timestamp: number }> = new Map()
+  private cacheTimeout: number = 3600000 // 1 hour
+
+  /**
+   * Discover protected resource metadata
+   */
+  async discover(resourceUrl: string): Promise<ProtectedResourceMetadata> {
+    // Check cache first
+    const cached = this.cache.get(resourceUrl)
+    if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
+      return cached.metadata
+    }
+
+    // Build metadata URL
+    const metadataUrl = this.buildMetadataUrl(resourceUrl)
+    
+    try {
+      const response = await fetch(metadataUrl, {
+        headers: {
+          'Accept': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch resource metadata: ${response.status} ${response.statusText}`)
+      }
+
+      const metadata = await response.json() as ProtectedResourceMetadata
+
+      // Validate required fields
+      if (!metadata.resource) {
+        throw new Error('Missing required field: resource')
+      }
+
+      // Cache the metadata
+      this.cache.set(resourceUrl, {
+        metadata,
+        timestamp: Date.now()
+      })
+
+      return metadata
+    } catch (error) {
+      throw new Error(`Protected resource metadata discovery failed for ${resourceUrl}: ${error.message}`)
+    }
+  }
+
+  /**
+   * Build metadata URL from resource URL
+   */
+  private buildMetadataUrl(resourceUrl: string): string {
+    const url = new URL(resourceUrl)
+    return `${url.origin}/.well-known/oauth-protected-resource`
+  }
+
+  /**
+   * Get authorization servers for resource
+   */
+  getAuthorizationServers(metadata: ProtectedResourceMetadata): string[] {
+    return metadata.authorization_servers || []
+  }
+
+  /**
+   * Clear metadata cache
+   */
+  clearCache(): void {
+    this.cache.clear()
+  }
+}
+
+/**
+ * Combined metadata discovery helper
+ */
+export class MetadataDiscovery {
+  private oauthDiscovery: OAuthMetadataDiscovery
+  private resourceDiscovery: ProtectedResourceMetadataDiscovery
+
+  constructor() {
+    this.oauthDiscovery = new OAuthMetadataDiscovery()
+    this.resourceDiscovery = new ProtectedResourceMetadataDiscovery()
+  }
+
+  /**
+   * Discover all metadata for a protected resource
+   */
+  async discoverAll(resourceUrl: string): Promise<{
+    resource: ProtectedResourceMetadata
+    authServers: OAuthMetadata[]
+  }> {
+    // Discover resource metadata
+    const resourceMetadata = await this.resourceDiscovery.discover(resourceUrl)
+    
+    // Discover auth server metadata
+    const authServers: OAuthMetadata[] = []
+    for (const server of resourceMetadata.authorization_servers || []) {
+      try {
+        const serverMetadata = await this.oauthDiscovery.discover(server)
+        authServers.push(serverMetadata)
+      } catch (error) {
+        console.warn(`Failed to discover auth server metadata for ${server}:`, error)
+      }
+    }
+
+    return {
+      resource: resourceMetadata,
+      authServers
+    }
+  }
+
+  /**
+   * Auto-configure OAuth from discovery
+   */
+  async autoConfigureOAuth(issuerOrResource: string): Promise<{
+    authorizationUrl: string
+    tokenUrl: string
+    userInfoUrl?: string
+    revocationUrl?: string
+    scopes?: string[]
+    pkce: boolean
+    refreshToken: boolean
+  }> {
+    let metadata: OAuthMetadata
+    
+    // Try OAuth server discovery first
+    try {
+      metadata = await this.oauthDiscovery.discover(issuerOrResource)
+    } catch {
+      // Try resource discovery
+      const resourceMetadata = await this.resourceDiscovery.discover(issuerOrResource)
+      if (!resourceMetadata.authorization_servers?.length) {
+        throw new Error('No authorization servers found for resource')
+      }
+      
+      // Use first auth server
+      metadata = await this.oauthDiscovery.discover(resourceMetadata.authorization_servers[0])
+    }
+
+    return {
+      authorizationUrl: metadata.authorization_endpoint,
+      tokenUrl: metadata.token_endpoint,
+      userInfoUrl: metadata.userinfo_endpoint,
+      revocationUrl: metadata.revocation_endpoint,
+      scopes: metadata.scopes_supported,
+      pkce: this.oauthDiscovery.isPKCESupported(metadata),
+      refreshToken: this.oauthDiscovery.isRefreshTokenSupported(metadata)
+    }
+  }
+
+  /**
+   * Clear all caches
+   */
+  clearCache(): void {
+    this.oauthDiscovery.clearCache()
+    this.resourceDiscovery.clearCache()
+  }
+}

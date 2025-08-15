@@ -53,10 +53,12 @@ curl -X POST http://localhost:8788/mcp \
 Get current time in various formats and timezones.
 
 **Parameters:**
+
 - `timezone` (string, optional): Timezone identifier (default: "UTC")
 - `format` (string, optional): Output format - "iso", "locale", "unix" (default: "iso")
 
 **Example:**
+
 ```bash
 curl -X POST http://localhost:8788/mcp \
   -H "Content-Type: application/json" \
@@ -77,10 +79,12 @@ curl -X POST http://localhost:8788/mcp \
 Get timezone information and list available timezones.
 
 **Parameters:**
+
 - `timezone` (string, optional): Specific timezone to get info about
 - `list` (boolean, optional): Return list of common timezones (default: false)
 
 **Example:**
+
 ```bash
 curl -X POST http://localhost:8788/mcp \
   -H "Content-Type: application/json" \
@@ -125,6 +129,7 @@ Create or update `hatago.config.json`:
 ### 2. Use from Hatago
 
 Once connected, the tools will be available as:
+
 - `clock.getTime` → `clock.clock.getTime`
 - `clock.getTimezone` → `clock.clock.getTimezone`
 
@@ -158,6 +163,7 @@ To add new tools:
 4. Return results in MCP format
 
 Example:
+
 ```typescript
 server.registerTool(
   'clock.newTool',
@@ -168,18 +174,18 @@ server.registerTool(
       type: 'object',
       properties: {
         // Define parameters
-      }
-    }
+      },
+    },
   },
-  async (args) => {
+  async args => {
     // Tool implementation
     return {
       content: [
         {
           type: 'text',
-          text: 'Tool result'
-        }
-      ]
+          text: 'Tool result',
+        },
+      ],
     }
   }
 )

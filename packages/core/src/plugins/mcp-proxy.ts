@@ -193,15 +193,15 @@ export const mcpProxy: HatagoPluginFactory<MCPProxyPluginOptions> =
   async ({ server }) => {
     // Get list of servers to connect to
     const serversToConnect: MCPServerConfig[] = []
-    
+
     if (options.server) {
       serversToConnect.push(options.server)
     }
-    
+
     if (options.config?.servers?.length) {
       serversToConnect.push(...options.config.servers)
     }
-    
+
     if (serversToConnect.length === 0) {
       console.warn('MCP Proxy: No servers configured, skipping')
       return
@@ -262,10 +262,7 @@ async function connectToServer(server: any, serverConfig: MCPServerConfig) {
 
             return response.result || response
           } catch (error) {
-            console.error(
-              `MCP Proxy: Error calling ${serverConfig.id}:${remoteTool.name}:`,
-              error
-            )
+            console.error(`MCP Proxy: Error calling ${serverConfig.id}:${remoteTool.name}:`, error)
             throw error
           }
         }
@@ -274,7 +271,10 @@ async function connectToServer(server: any, serverConfig: MCPServerConfig) {
       console.log(`MCP Proxy: Registered tool ${proxyToolName}`)
     }
   } catch (error) {
-    console.error(`MCP Proxy: Failed to connect to ${serverConfig.id} (${serverConfig.endpoint}):`, error)
+    console.error(
+      `MCP Proxy: Failed to connect to ${serverConfig.id} (${serverConfig.endpoint}):`,
+      error
+    )
     // Continue with other servers instead of failing completely
   }
 }

@@ -1,0 +1,333 @@
+import { z } from 'zod'
+import type { {{titleCase name}}Config } from './{{kebabCase name}}.types'
+
+/**
+ * Configuration schema for {{name}} plugin using Zod validation
+ */
+
+{{#if (ne authType 'none')}}
+const AuthConfigSchema = z.object({
+  type: z.literal('{{authType}}'),
+{{#if (eq authType 'bearer')}}
+  token: z.string().min(1, 'Auth token is required')
+{{/if}}
+{{#if (eq authType 'basic')}}
+  username: z.string().min(1, 'Username is required'),
+  password: z.string().min(1, 'Password is required')
+{{/if}}
+{{#if (eq authType 'custom')}}
+  headers: z.record(z.string(), z.string())
+{{/if}}
+})
+{{/if}}
+
+{{#if caching}}
+const CacheConfigSchema = z.object({
+  enabled: z.boolean().default(true),
+  ttl: z.number().min(1000).max(3600000).default(300000), // 5 minutes default
+  maxSize: z.number().min(1).max(10000).optional()
+})
+{{/if}}
+
+{{#if healthCheck}}
+const HealthCheckConfigSchema = z.object({
+  enabled: z.boolean().default(true),
+  interval: z.number().min(10000).max(3600000).default(60000), // 1 minute default
+  timeout: z.number().min(1000).max(30000).default(5000).optional(),
+  retries: z.number().min(1).max(10).default(3).optional()
+})
+{{/if}}
+
+/**
+ * Main configuration schema for {{name}} plugin
+ */
+export const {{camelCase name}}ConfigSchema = z.object({
+  name: z.string().default('{{name}}'),
+  
+  endpoint: z.string()
+    .url('Endpoint must be a valid URL')
+    .default('{{mcpServerEndpoint}}'),
+    
+  port: z.number()
+    .min(1024, 'Port must be >= 1024')
+    .max(65535, 'Port must be <= 65535')
+    .default({{mcpServerPort}}),
+
+{{#if (ne authType 'none')}}
+  authToken: z.string()
+    .min(1, '{{authToken}} is required')
+    .describe('Authentication token for {{mcpServerName}}'),
+{{/if}}
+
+{{#if namespace}}
+  namespace: z.string()
+    .regex(/^[a-zA-Z][a-zA-Z0-9-_]*$/, 'Namespace must be alphanumeric with hyphens/underscores')
+    .optional()
+    .describe('Namespace prefix for tools'),
+{{/if}}
+
+{{#if caching}}
+  cache: CacheConfigSchema.optional()
+    .describe('Response caching configuration'),
+{{/if}}
+
+{{#if healthCheck}}
+  healthCheck: HealthCheckConfigSchema.optional()
+    .describe('Health check configuration'),
+{{/if}}
+
+{{#if autoStart}}
+  autoStart: z.boolean().default(false)
+    .describe('Auto-start the external MCP server process'),
+{{/if}}
+})
+
+/**
+ * Inferred type from schema
+ */
+export type {{titleCase name}}ConfigType = z.infer<typeof {{camelCase name}}ConfigSchema>
+
+/**
+ * Configuration defaults
+ */
+export const DEFAULT_CONFIG: Partial<{{titleCase name}}Config> = {
+  name: '{{name}}',
+  endpoint: '{{mcpServerEndpoint}}',
+  port: {{mcpServerPort}},
+{{#if namespace}}
+  namespace: '{{namespace}}',
+{{/if}}
+{{#if caching}}
+  cache: {
+    enabled: true,
+    ttl: 300000, // 5 minutes
+    maxSize: 1000
+  },
+{{/if}}
+{{#if healthCheck}}
+  healthCheck: {
+    enabled: true,
+    interval: 60000, // 1 minute
+    timeout: 5000,   // 5 seconds
+    retries: 3
+  },
+{{/if}}
+{{#if autoStart}}
+  autoStart: false
+{{/if}}
+}
+
+/**
+ * Environment variable mappings
+ */
+export const ENV_MAPPINGS = {
+  endpoint: '{{toUpperCase (snakeCase name)}}_ENDPOINT',
+  port: '{{toUpperCase (snakeCase name)}}_PORT',
+{{#if (ne authType 'none')}}
+  authToken: '{{authToken}}',
+{{/if}}
+{{#if namespace}}
+  namespace: '{{toUpperCase (snakeCase name)}}_NAMESPACE',
+{{/if}}
+{{#if caching}}
+  'cache.enabled': '{{toUpperCase (snakeCase name)}}_CACHE_ENABLED',
+  'cache.ttl': '{{toUpperCase (snakeCase name)}}_CACHE_TTL',
+{{/if}}
+{{#if healthCheck}}
+  'healthCheck.enabled': '{{toUpperCase (snakeCase name)}}_HEALTH_CHECK',
+  'healthCheck.interval': '{{toUpperCase (snakeCase name)}}_HEALTH_INTERVAL',
+{{/if}}
+{{#if autoStart}}
+  autoStart: '{{toUpperCase (snakeCase name)}}_AUTO_START'
+{{/if}}
+} as const
+
+/**
+ * Validate configuration and provide helpful error messages
+ */
+export function validateConfig(config: any): {{titleCase name}}Config {
+  try {
+    return {{camelCase name}}ConfigSchema.parse(config)
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const issues = error.issues.map(issue => 
+        `${issue.path.join('.')}: ${issue.message}`
+      ).join('\n')
+      
+      throw new Error(`{{titleCase name}} configuration validation failed:\n${issues}`)
+    }
+    throw error
+  }
+}
+
+/**
+ * Load configuration from environment variables
+ */
+export function loadConfigFromEnv(): Partial<{{titleCase name}}Config> {
+  const config: any = {}
+  
+  // Map environment variables to config properties
+  for (const [configPath, envVar] of Object.entries(ENV_MAPPINGS)) {
+    const value = process.env[envVar]
+    if (value !== undefined) {
+      // Handle nested paths like 'cache.enabled'
+      const keys = configPath.split('.')
+      let current = config
+      
+      for (let i = 0; i < keys.length - 1; i++) {
+        const key = keys[i]
+        if (!current[key]) {
+          current[key] = {}
+        }
+        current = current[key]
+      }
+      
+      const finalKey = keys[keys.length - 1]
+      
+      // Type conversion based on the final key
+      if (finalKey === 'port' || finalKey === 'ttl' || finalKey === 'interval' || finalKey === 'timeout' || finalKey === 'retries') {
+        current[finalKey] = parseInt(value, 10)
+      } else if (finalKey === 'enabled' || finalKey === 'autoStart') {
+        current[finalKey] = value.toLowerCase() === 'true'
+      } else {
+        current[finalKey] = value
+      }
+    }
+  }
+  
+  return config
+}
+
+/**
+ * Merge configuration with defaults
+ */
+export function mergeWithDefaults(config: Partial<{{titleCase name}}Config>): {{titleCase name}}Config {
+  return {
+    ...DEFAULT_CONFIG,
+    ...config,
+{{#if caching}}
+    cache: {
+      ...DEFAULT_CONFIG.cache,
+      ...config.cache
+    },
+{{/if}}
+{{#if healthCheck}}
+    healthCheck: {
+      ...DEFAULT_CONFIG.healthCheck,
+      ...config.healthCheck
+    }
+{{/if}}
+  } as {{titleCase name}}Config
+}
+
+/**
+ * Generate a complete configuration by merging environment variables and defaults
+ */
+export function generateConfig(overrides: Partial<{{titleCase name}}Config> = {}): {{titleCase name}}Config {
+  const envConfig = loadConfigFromEnv()
+  const mergedConfig = mergeWithDefaults({ ...envConfig, ...overrides })
+  
+  return validateConfig(mergedConfig)
+}
+
+/**
+ * Configuration validation helpers
+ */
+export const configValidators = {
+  /**
+   * Validate endpoint URL
+   */
+  endpoint: (url: string): boolean => {
+    try {
+      new URL(url)
+      return true
+    } catch {
+      return false
+    }
+  },
+
+  /**
+   * Validate port number
+   */
+  port: (port: number): boolean => {
+    return Number.isInteger(port) && port >= 1024 && port <= 65535
+  },
+
+{{#if (ne authType 'none')}}
+  /**
+   * Validate auth token format
+   */
+  authToken: (token: string): boolean => {
+    return typeof token === 'string' && token.length > 0
+  },
+{{/if}}
+
+{{#if namespace}}
+  /**
+   * Validate namespace format
+   */
+  namespace: (namespace: string): boolean => {
+    return /^[a-zA-Z][a-zA-Z0-9-_]*$/.test(namespace)
+  },
+{{/if}}
+
+{{#if caching}}
+  /**
+   * Validate cache TTL
+   */
+  cacheTtl: (ttl: number): boolean => {
+    return Number.isInteger(ttl) && ttl >= 1000 && ttl <= 3600000
+  },
+{{/if}}
+
+{{#if healthCheck}}
+  /**
+   * Validate health check interval
+   */
+  healthCheckInterval: (interval: number): boolean => {
+    return Number.isInteger(interval) && interval >= 10000 && interval <= 3600000
+  }
+{{/if}}
+}
+
+/**
+ * Get configuration documentation
+ */
+export function getConfigDocumentation(): string {
+  return `
+{{titleCase name}} Plugin Configuration:
+
+Environment Variables:
+{{#each (entries ENV_MAPPINGS)}}
+  - {{this.[1]}}: {{this.[0]}}
+{{/each}}
+
+Example configuration:
+{
+  "name": "{{name}}",
+  "endpoint": "{{mcpServerEndpoint}}",
+  "port": {{mcpServerPort}},
+{{#if (ne authType 'none')}}
+  "authToken": "your-auth-token-here",
+{{/if}}
+{{#if namespace}}
+  "namespace": "{{namespace}}",
+{{/if}}
+{{#if caching}}
+  "cache": {
+    "enabled": true,
+    "ttl": 300000
+  },
+{{/if}}
+{{#if healthCheck}}
+  "healthCheck": {
+    "enabled": true,
+    "interval": 60000
+  }{{#if autoStart}},{{/if}}
+{{/if}}
+{{#if autoStart}}
+  "autoStart": false
+{{/if}}
+}
+`.trim()
+}

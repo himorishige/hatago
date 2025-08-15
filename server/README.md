@@ -43,7 +43,7 @@ pnpm dev:cf
 > 注: progress のストリームは MCP クライアントが `params._meta.progressToken` を付けた時のみ送られる。  
 > 以下は最小例。クライアント実装（Cursor, Claude Desktop, Copilot Chat など）だと進捗が UI に出る。
 
-1) initialize
+1. initialize
 
 ```bash
 curl -sS http://localhost:8787/mcp -H 'content-type: application/json' -d '{
@@ -58,7 +58,7 @@ curl -sS http://localhost:8787/mcp -H 'content-type: application/json' -d '{
 }'
 ```
 
-2) tools/list
+2. tools/list
 
 ```bash
 curl -sS http://localhost:8787/mcp -H 'content-type: application/json' -d '{
@@ -68,7 +68,7 @@ curl -sS http://localhost:8787/mcp -H 'content-type: application/json' -d '{
 }'
 ```
 
-3) tools/call で progress 有効化（トークンを付ける）
+3. tools/call で progress 有効化（トークンを付ける）
 
 ```bash
 curl -sS http://localhost:8787/mcp -H 'content-type: application/json' -d '{

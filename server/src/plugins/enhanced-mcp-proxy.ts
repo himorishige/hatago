@@ -1,5 +1,5 @@
 import type { HatagoPlugin } from '../system/types.js'
-import type { 
+import type {
   MCPServerConfig as CoreMCPServerConfig,
   ProxyConfig,
   HatagoConfig,
@@ -216,7 +216,8 @@ export interface EnhancedMCPProxyOptions {
  * Enhanced MCP Proxy Plugin with namespace management
  * Supports configuration files and advanced namespace handling
  */
-export const enhancedMcpProxy = (options: EnhancedMCPProxyOptions = {}): HatagoPlugin =>
+export const enhancedMcpProxy =
+  (options: EnhancedMCPProxyOptions = {}): HatagoPlugin =>
   async ({ server }) => {
     let proxyConfig: ProxyConfig
     let namespaceManager: NamespaceManager
@@ -225,7 +226,11 @@ export const enhancedMcpProxy = (options: EnhancedMCPProxyOptions = {}): HatagoP
     if (options.useConfig !== false) {
       try {
         const hatagoConfig = await loadConfig(options.configPath)
-        proxyConfig = hatagoConfig.proxy || { servers: [], namespaceStrategy: 'prefix', conflictResolution: 'error' }
+        proxyConfig = hatagoConfig.proxy || {
+          servers: [],
+          namespaceStrategy: 'prefix',
+          conflictResolution: 'error',
+        }
         console.log('Enhanced MCP Proxy: Using configuration file')
       } catch (error) {
         console.warn('Enhanced MCP Proxy: Failed to load config file, falling back to options')
@@ -255,14 +260,18 @@ export const enhancedMcpProxy = (options: EnhancedMCPProxyOptions = {}): HatagoP
 
     // Log namespace statistics
     const stats = namespaceManager.getStatistics()
-    console.log(`Enhanced MCP Proxy: Registered ${stats.totalTools} tools with ${stats.totalConflicts} conflicts`)
+    console.log(
+      `Enhanced MCP Proxy: Registered ${stats.totalTools} tools with ${stats.totalConflicts} conflicts`
+    )
 
     // Log conflicts if any
     const conflicts = namespaceManager.getConflicts()
     if (conflicts.length > 0) {
       console.warn('Enhanced MCP Proxy: Tool name conflicts detected:')
       conflicts.forEach(conflict => {
-        console.warn(`  - ${conflict.toolName}: ${conflict.existing.server} vs ${conflict.attempted.server}`)
+        console.warn(
+          `  - ${conflict.toolName}: ${conflict.existing.server} vs ${conflict.attempted.server}`
+        )
         if (conflict.suggestion) {
           console.warn(`    Resolved as: ${conflict.suggestion}`)
         }
@@ -287,7 +296,10 @@ async function connectToEnhancedServer(
     // Initialize connection
     console.log(`Enhanced MCP Proxy: Connecting to ${serverConfig.id} at ${serverConfig.endpoint}`)
     const initResult = await client.initialize()
-    console.log(`Enhanced MCP Proxy: Connected to ${serverConfig.id}:`, initResult?.result?.serverInfo || initResult)
+    console.log(
+      `Enhanced MCP Proxy: Connected to ${serverConfig.id}:`,
+      initResult?.result?.serverInfo || initResult
+    )
 
     // List available tools
     const toolsResult = await client.listTools()
@@ -345,7 +357,10 @@ async function connectToEnhancedServer(
       }
     }
   } catch (error) {
-    console.error(`Enhanced MCP Proxy: Failed to connect to ${serverConfig.id} (${serverConfig.endpoint}):`, error)
+    console.error(
+      `Enhanced MCP Proxy: Failed to connect to ${serverConfig.id} (${serverConfig.endpoint}):`,
+      error
+    )
   }
 }
 
@@ -365,12 +380,14 @@ function createLegacyConfig(options: EnhancedMCPProxyOptions): ProxyConfig {
   }
 
   if (options.config?.servers) {
-    servers.push(...options.config.servers.map(s => ({
-      id: s.id,
-      endpoint: s.endpoint,
-      description: s.description,
-      timeout: s.timeout,
-    })))
+    servers.push(
+      ...options.config.servers.map(s => ({
+        id: s.id,
+        endpoint: s.endpoint,
+        description: s.description,
+        timeout: s.timeout,
+      }))
+    )
   }
 
   return {

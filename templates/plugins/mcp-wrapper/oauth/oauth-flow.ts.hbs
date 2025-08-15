@@ -1,0 +1,433 @@
+/**
+ * OAuth 2.0 Authorization Code Flow with PKCE for {{titleCase name}} plugin
+ */
+
+import { createServer, Server, IncomingMessage, ServerResponse } from 'http'
+import { URL } from 'url'
+import crypto from 'crypto'
+import { spawn } from 'child_process'
+import type { 
+  OAuthConfig, 
+  OAuthToken, 
+  OAuthState,
+  OAuthAuthorizationResponse,
+  OAuthTokenResponse 
+} from './oauth-types'
+
+/**
+ * PKCE (Proof Key for Code Exchange) helper
+ */
+export class PKCEChallenge {
+  public verifier: string
+  public challenge: string
+  public method: 'S256' = 'S256'
+
+  constructor() {
+    this.verifier = this.generateVerifier()
+    this.challenge = this.generateChallenge(this.verifier)
+  }
+
+  /**
+   * Generate random code verifier
+   */
+  private generateVerifier(): string {
+    // RFC 7636 requires 43-128 characters
+    const length = 128
+    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~'
+    let verifier = ''
+    
+    for (let i = 0; i < length; i++) {
+      verifier += possible.charAt(Math.floor(Math.random() * possible.length))
+    }
+    
+    return verifier
+  }
+
+  /**
+   * Generate code challenge from verifier
+   */
+  private generateChallenge(verifier: string): string {
+    // S256 = BASE64URL(SHA256(verifier))
+    const hash = crypto.createHash('sha256').update(verifier).digest()
+    return hash.toString('base64url')
+  }
+
+  /**
+   * Create new PKCE challenge
+   */
+  static create(): PKCEChallenge {
+    return new PKCEChallenge()
+  }
+}
+
+/**
+ * Local redirect server for OAuth callback
+ */
+export class OAuthRedirectServer {
+  private server?: Server
+  private port: number
+  private hostname: string = 'localhost'
+  private path: string = '/callback'
+  private resolvePromise?: (response: OAuthAuthorizationResponse) => void
+  private rejectPromise?: (error: Error) => void
+
+  constructor(port: number = 0) {
+    this.port = port
+  }
+
+  /**
+   * Get redirect URI
+   */
+  getRedirectUri(): string {
+    const actualPort = this.port || 8080
+    return `http://${this.hostname}:${actualPort}${this.path}`
+  }
+
+  /**
+   * Start server and wait for callback
+   */
+  async waitForCallback(timeout: number = 300000): Promise<OAuthAuthorizationResponse> {
+    return new Promise((resolve, reject) => {
+      this.resolvePromise = resolve
+      this.rejectPromise = reject
+
+      // Create HTTP server
+      this.server = createServer(this.handleRequest.bind(this))
+
+      // Start listening
+      this.server.listen(this.port, this.hostname, () => {
+        const address = this.server!.address()
+        if (typeof address === 'object' && address) {
+          this.port = address.port
+          console.log(`[OAuth] Redirect server listening on http://${this.hostname}:${this.port}${this.path}`)
+        }
+      })
+
+      // Set timeout
+      setTimeout(() => {
+        this.stop()
+        reject(new Error('OAuth callback timeout'))
+      }, timeout)
+    })
+  }
+
+  /**
+   * Handle HTTP request
+   */
+  private handleRequest(req: IncomingMessage, res: ServerResponse): void {
+    const url = new URL(req.url!, `http://${req.headers.host}`)
+    
+    if (url.pathname !== this.path) {
+      res.writeHead(404)
+      res.end('Not found')
+      return
+    }
+
+    // Extract OAuth response parameters
+    const code = url.searchParams.get('code')
+    const state = url.searchParams.get('state')
+    const error = url.searchParams.get('error')
+    const errorDescription = url.searchParams.get('error_description')
+
+    // Send response to browser
+    res.writeHead(200, { 'Content-Type': 'text/html' })
+    
+    if (error) {
+      res.end(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>OAuth Error</title>
+          <style>
+            body { font-family: sans-serif; padding: 40px; text-align: center; }
+            .error { color: #d32f2f; }
+          </style>
+        </head>
+        <body>
+          <h1 class="error">Authentication Failed</h1>
+          <p>${error}: ${errorDescription || 'Unknown error'}</p>
+          <p>You can close this window.</p>
+          <script>setTimeout(() => window.close(), 3000)</script>
+        </body>
+        </html>
+      `)
+      
+      this.rejectPromise?.(new Error(`OAuth error: ${error} - ${errorDescription}`))
+    } else if (code) {
+      res.end(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>OAuth Success</title>
+          <style>
+            body { font-family: sans-serif; padding: 40px; text-align: center; }
+            .success { color: #388e3c; }
+          </style>
+        </head>
+        <body>
+          <h1 class="success">✓ Authentication Successful</h1>
+          <p>You can close this window and return to the terminal.</p>
+          <script>setTimeout(() => window.close(), 3000)</script>
+        </body>
+        </html>
+      `)
+      
+      this.resolvePromise?.({
+        code,
+        state: state || '',
+        error,
+        error_description: errorDescription
+      })
+    } else {
+      res.end(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>OAuth Callback</title>
+        </head>
+        <body>
+          <h1>Invalid OAuth Callback</h1>
+          <p>Missing required parameters.</p>
+        </body>
+        </html>
+      `)
+      
+      this.rejectPromise?.(new Error('Invalid OAuth callback: missing code'))
+    }
+
+    // Stop server after handling callback
+    setTimeout(() => this.stop(), 100)
+  }
+
+  /**
+   * Stop server
+   */
+  stop(): void {
+    if (this.server) {
+      this.server.close()
+      this.server = undefined
+    }
+  }
+
+  /**
+   * Get actual port (after server starts)
+   */
+  getPort(): number {
+    return this.port
+  }
+}
+
+/**
+ * OAuth flow orchestrator
+ */
+export class OAuthFlow {
+  private config: OAuthConfig
+  private state: string
+  private pkce?: PKCEChallenge
+  private redirectServer?: OAuthRedirectServer
+
+  constructor(config: OAuthConfig) {
+    this.config = config
+    this.state = this.generateState()
+    
+    if (config.pkce !== false) {
+      this.pkce = PKCEChallenge.create()
+    }
+  }
+
+  /**
+   * Generate random state for CSRF protection
+   */
+  private generateState(): string {
+    return crypto.randomBytes(32).toString('base64url')
+  }
+
+  /**
+   * Start OAuth flow
+   */
+  async authenticate(): Promise<OAuthToken> {
+    console.log('\n[OAuth] Starting authentication flow...')
+    
+    // 1. Start redirect server
+    this.redirectServer = new OAuthRedirectServer()
+    const redirectUri = this.redirectServer.getRedirectUri()
+    
+    // 2. Build authorization URL
+    const authUrl = this.buildAuthorizationUrl(redirectUri)
+    
+    // 3. Open browser
+    console.log('[OAuth] Opening browser for authentication...')
+    console.log('[OAuth] If browser doesn\'t open, visit this URL:')
+    console.log(`\n${authUrl}\n`)
+    
+    await this.openBrowser(authUrl)
+    
+    // 4. Wait for callback
+    console.log('[OAuth] Waiting for authentication...')
+    const callbackPromise = this.redirectServer.waitForCallback()
+    
+    let response: OAuthAuthorizationResponse
+    try {
+      response = await callbackPromise
+    } catch (error) {
+      throw new Error(`OAuth callback failed: ${error.message}`)
+    }
+    
+    // 5. Validate state
+    if (response.state !== this.state) {
+      throw new Error('OAuth state mismatch - possible CSRF attack')
+    }
+    
+    // 6. Exchange code for token
+    console.log('[OAuth] Exchanging authorization code for token...')
+    const token = await this.exchangeCodeForToken(response.code, redirectUri)
+    
+    console.log('[OAuth] Authentication successful!')
+    return token
+  }
+
+  /**
+   * Build authorization URL
+   */
+  private buildAuthorizationUrl(redirectUri: string): string {
+    if (!this.config.authorizationUrl) {
+      throw new Error('Authorization URL not configured')
+    }
+
+    const params = new URLSearchParams({
+      client_id: this.config.clientId!,
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      state: this.state
+    })
+
+    if (this.config.scope) {
+      params.set('scope', this.config.scope)
+    }
+
+    if (this.config.audience) {
+      params.set('audience', this.config.audience)
+    }
+
+    if (this.config.prompt) {
+      params.set('prompt', this.config.prompt)
+    }
+
+    if (this.config.accessType) {
+      params.set('access_type', this.config.accessType)
+    }
+
+    // Add PKCE challenge
+    if (this.pkce && this.config.pkce !== false) {
+      params.set('code_challenge', this.pkce.challenge)
+      params.set('code_challenge_method', this.pkce.method)
+    }
+
+    return `${this.config.authorizationUrl}?${params.toString()}`
+  }
+
+  /**
+   * Exchange authorization code for token
+   */
+  private async exchangeCodeForToken(
+    code: string, 
+    redirectUri: string
+  ): Promise<OAuthToken> {
+    if (!this.config.tokenUrl) {
+      throw new Error('Token URL not configured')
+    }
+
+    const params = new URLSearchParams({
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: redirectUri,
+      client_id: this.config.clientId!
+    })
+
+    // Add client secret if available
+    if (this.config.clientSecret) {
+      params.set('client_secret', this.config.clientSecret)
+    }
+
+    // Add PKCE verifier
+    if (this.pkce && this.config.pkce !== false) {
+      params.set('code_verifier', this.pkce.verifier)
+    }
+
+    const response = await fetch(this.config.tokenUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json'
+      },
+      body: params.toString()
+    })
+
+    const data = await response.json() as OAuthTokenResponse
+
+    if (data.error) {
+      throw new Error(`Token exchange failed: ${data.error} - ${data.error_description}`)
+    }
+
+    const token: OAuthToken = {
+      access_token: data.access_token,
+      token_type: data.token_type || 'Bearer',
+      expires_in: data.expires_in,
+      expires_at: data.expires_in ? Date.now() + (data.expires_in * 1000) : undefined,
+      refresh_token: data.refresh_token,
+      scope: data.scope,
+      id_token: data.id_token
+    }
+
+    return token
+  }
+
+  /**
+   * Open browser
+   */
+  private async openBrowser(url: string): Promise<void> {
+    const platform = process.platform
+    let command: string
+
+    switch (platform) {
+      case 'darwin':
+        command = 'open'
+        break
+      case 'win32':
+        command = 'start'
+        break
+      default:
+        command = 'xdg-open'
+    }
+
+    try {
+      spawn(command, [url], { 
+        detached: true, 
+        stdio: 'ignore' 
+      }).unref()
+    } catch (error) {
+      // Browser open failed, user will need to open manually
+      console.warn('[OAuth] Could not open browser automatically')
+    }
+  }
+
+  /**
+   * Stop flow (cleanup)
+   */
+  stop(): void {
+    this.redirectServer?.stop()
+  }
+}
+
+/**
+ * OAuth flow helper
+ */
+export async function performOAuthFlow(config: OAuthConfig): Promise<OAuthToken> {
+  const flow = new OAuthFlow(config)
+  
+  try {
+    return await flow.authenticate()
+  } finally {
+    flow.stop()
+  }
+}

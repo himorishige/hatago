@@ -7,7 +7,7 @@ export enum LogLevel {
   DEBUG = 0,
   INFO = 1,
   WARN = 2,
-  ERROR = 3
+  ERROR = 3,
 }
 
 export interface LogEntry {
@@ -76,7 +76,7 @@ export function createLogger(config: LoggerConfig, component?: string): Logger {
     const entry: LogEntry = {
       timestamp: new Date().toISOString(),
       level,
-      message
+      message,
     }
 
     if (component) {
@@ -91,7 +91,7 @@ export function createLogger(config: LoggerConfig, component?: string): Logger {
       entry.error = {
         name: error.name,
         message: error.message,
-        ...(error.stack && { stack: error.stack })
+        ...(error.stack && { stack: error.stack }),
       }
     }
 
@@ -108,13 +108,13 @@ export function createLogger(config: LoggerConfig, component?: string): Logger {
     const timestamp = entry.timestamp.split('T')[1]?.split('.')[0] || ''
     const comp = entry.component ? `[${entry.component}]` : ''
     const meta = entry.meta ? ` ${JSON.stringify(entry.meta)}` : ''
-    
+
     return `${timestamp} ${levelName} ${comp} ${entry.message}${meta}`
   }
 
   const writeLog = (entry: LogEntry): void => {
     const formatted = formatLogEntry(entry)
-    
+
     // Use appropriate console method based on level
     switch (entry.level) {
       case LogLevel.DEBUG:
@@ -155,7 +155,7 @@ export function createLogger(config: LoggerConfig, component?: string): Logger {
       if (!shouldLog(LogLevel.ERROR)) return
       const entry = createLogEntry(LogLevel.ERROR, message, meta, error)
       writeLog(entry)
-    }
+    },
   }
 }
 
@@ -166,7 +166,7 @@ export const DEFAULT_LOGGER_CONFIG: LoggerConfig = {
   level: LogLevel.INFO,
   format: 'compact',
   includeStackTrace: true,
-  redactFields: ['password', 'token', 'secret', 'key', 'authorization']
+  redactFields: ['password', 'token', 'secret', 'key', 'authorization'],
 }
 
 /**
@@ -174,12 +174,12 @@ export const DEFAULT_LOGGER_CONFIG: LoggerConfig = {
  */
 export function createDefaultLogger(component?: string): Logger {
   const isProduction = typeof process !== 'undefined' && process.env?.NODE_ENV === 'production'
-  
+
   const config: LoggerConfig = {
     ...DEFAULT_LOGGER_CONFIG,
     level: isProduction ? LogLevel.INFO : LogLevel.DEBUG,
     format: isProduction ? 'json' : 'compact',
-    includeStackTrace: !isProduction
+    includeStackTrace: !isProduction,
   }
 
   return createLogger(config, component)

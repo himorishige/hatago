@@ -1,0 +1,465 @@
+/**
+ * Slack OAuth provider for {{titleCase name}} plugin
+ */
+
+import type { OAuthConfig, OAuthToken } from '../oauth-types'
+import { TokenManager } from '../token-manager'
+import { performOAuthFlow } from '../oauth-flow'
+
+/**
+ * Slack OAuth configuration
+ */
+export interface SlackOAuthConfig extends OAuthConfig {
+  provider: 'slack'
+  clientId?: string
+  clientSecret?: string
+  scope?: string
+  userScope?: string  // User token scopes
+  teamId?: string  // Restrict to specific workspace
+  redirectUri?: string
+}
+
+/**
+ * Slack-specific token
+ */
+export interface SlackToken extends OAuthToken {
+  token_type: 'bearer'
+  scope: string
+  bot_user_id?: string
+  app_id?: string
+  team?: {
+    id: string
+    name: string
+  }
+  enterprise?: {
+    id: string
+    name: string
+  }
+  authed_user?: {
+    id: string
+    scope?: string
+    access_token?: string
+    token_type?: string
+  }
+  is_enterprise_install?: boolean
+  incoming_webhook?: {
+    channel: string
+    channel_id: string
+    configuration_url: string
+    url: string
+  }
+}
+
+/**
+ * Slack user identity
+ */
+export interface SlackUserIdentity {
+  ok: boolean
+  user?: {
+    id: string
+    name: string
+    email: string
+    image_24?: string
+    image_32?: string
+    image_48?: string
+    image_72?: string
+    image_192?: string
+    image_512?: string
+  }
+  team?: {
+    id: string
+    name: string
+    domain: string
+    image_34?: string
+    image_44?: string
+    image_68?: string
+    image_88?: string
+    image_102?: string
+    image_132?: string
+    image_230?: string
+  }
+}
+
+/**
+ * Slack OAuth helper
+ */
+export class SlackOAuthProvider {
+  private config: SlackOAuthConfig
+  private tokenManager: TokenManager
+
+  constructor(config: Partial<SlackOAuthConfig> = {}) {
+    this.config = {
+      provider: 'slack',
+      authorizationUrl: 'https://slack.com/oauth/v2/authorize',
+      tokenUrl: 'https://slack.com/api/oauth.v2.access',
+      userInfoUrl: 'https://slack.com/api/users.identity',
+      scope: config.scope || 'channels:read chat:write users:read',
+      pkce: false,  // Slack doesn't support PKCE yet
+      autoRefresh: true,
+      ...config
+    }
+
+    this.tokenManager = new TokenManager()
+    
+    // Register refresh callback
+    if (this.config.autoRefresh) {
+      this.tokenManager.registerRefreshCallback(
+        'slack',
+        this.refreshAccessToken.bind(this)
+      )
+    }
+  }
+
+  /**
+   * Get authorization URL
+   */
+  getAuthorizationUrl(state: string): string {
+    const params = new URLSearchParams({
+      client_id: this.config.clientId!,
+      redirect_uri: this.config.redirectUri!,
+      state,
+      scope: this.config.scope!
+    })
+
+    // Add user scopes if specified
+    if (this.config.userScope) {
+      params.set('user_scope', this.config.userScope)
+    }
+
+    // Restrict to specific team
+    if (this.config.teamId) {
+      params.set('team', this.config.teamId)
+    }
+
+    return `${this.config.authorizationUrl}?${params.toString()}`
+  }
+
+  /**
+   * Exchange authorization code for token
+   */
+  async exchangeCodeForToken(code: string): Promise<SlackToken> {
+    const params = new URLSearchParams({
+      client_id: this.config.clientId!,
+      client_secret: this.config.clientSecret!,
+      code,
+      redirect_uri: this.config.redirectUri!
+    })
+
+    const response = await fetch(this.config.tokenUrl!, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: params.toString()
+    })
+
+    const data = await response.json()
+
+    if (!data.ok) {
+      throw new Error(`Slack OAuth error: ${data.error || 'Unknown error'}`)
+    }
+
+    const token: SlackToken = {
+      access_token: data.access_token,
+      token_type: data.token_type || 'bearer',
+      scope: data.scope,
+      bot_user_id: data.bot_user_id,
+      app_id: data.app_id,
+      team: data.team,
+      enterprise: data.enterprise,
+      authed_user: data.authed_user,
+      is_enterprise_install: data.is_enterprise_install,
+      incoming_webhook: data.incoming_webhook,
+      // Slack tokens don't expire but can be revoked
+      expires_at: undefined,
+      refresh_token: data.refresh_token
+    }
+
+    // Store token
+    await this.tokenManager.setToken('slack', token)
+
+    return token
+  }
+
+  /**
+   * Refresh access token
+   * Note: Slack refresh tokens are only available for certain app types
+   */
+  async refreshAccessToken(oldToken: OAuthToken): Promise<SlackToken> {
+    if (!oldToken.refresh_token) {
+      throw new Error('Slack refresh tokens are not available for this app type')
+    }
+
+    const params = new URLSearchParams({
+      client_id: this.config.clientId!,
+      client_secret: this.config.clientSecret!,
+      refresh_token: oldToken.refresh_token,
+      grant_type: 'refresh_token'
+    })
+
+    const response = await fetch('https://slack.com/api/oauth.v2.access', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: params.toString()
+    })
+
+    const data = await response.json()
+
+    if (!data.ok) {
+      throw new Error(`Failed to refresh token: ${data.error || 'Unknown error'}`)
+    }
+
+    const token: SlackToken = {
+      ...oldToken,
+      access_token: data.access_token,
+      refresh_token: data.refresh_token || oldToken.refresh_token
+    } as SlackToken
+
+    return token
+  }
+
+  /**
+   * Get user identity
+   */
+  async getUserIdentity(accessToken: string): Promise<SlackUserIdentity> {
+    const response = await fetch('https://slack.com/api/users.identity', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
+    })
+
+    const data = await response.json()
+
+    if (!data.ok) {
+      throw new Error(`Failed to get user identity: ${data.error || 'Unknown error'}`)
+    }
+
+    return data
+  }
+
+  /**
+   * Test authentication
+   */
+  async testAuth(accessToken: string): Promise<boolean> {
+    try {
+      const response = await fetch('https://slack.com/api/auth.test', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      const data = await response.json()
+      return data.ok === true
+    } catch {
+      return false
+    }
+  }
+
+  /**
+   * Revoke token
+   */
+  async revokeToken(accessToken: string): Promise<void> {
+    const response = await fetch('https://slack.com/api/auth.revoke', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      }
+    })
+
+    const data = await response.json()
+
+    if (!data.ok && data.error !== 'token_revoked') {
+      throw new Error(`Failed to revoke token: ${data.error || 'Unknown error'}`)
+    }
+
+    // Remove from storage
+    await this.tokenManager.deleteToken('slack')
+  }
+
+  /**
+   * Get stored token
+   */
+  async getStoredToken(): Promise<SlackToken | null> {
+    return await this.tokenManager.getToken('slack') as SlackToken | null
+  }
+
+  /**
+   * Create provider from environment
+   */
+  static fromEnvironment(): SlackOAuthProvider | null {
+    // Check for bot token
+    const botToken = process.env['SLACK_BOT_TOKEN'] || 
+                     process.env['{{toUpperCase (snakeCase name)}}_SLACK_BOT_TOKEN']
+    
+    if (botToken) {
+      const provider = new SlackOAuthProvider()
+      
+      const token: SlackToken = {
+        access_token: botToken,
+        token_type: 'bearer',
+        scope: 'bot',
+        // Bot tokens don't expire
+        expires_at: undefined
+      }
+      
+      provider.tokenManager.setToken('slack', token)
+      return provider
+    }
+
+    // Check for user token
+    const userToken = process.env['SLACK_USER_TOKEN'] || 
+                      process.env['{{toUpperCase (snakeCase name)}}_SLACK_USER_TOKEN']
+    
+    if (userToken) {
+      const provider = new SlackOAuthProvider({
+        clientId: process.env['{{toUpperCase (snakeCase name)}}_SLACK_CLIENT_ID'],
+        clientSecret: process.env['{{toUpperCase (snakeCase name)}}_SLACK_CLIENT_SECRET']
+      })
+
+      const token: SlackToken = {
+        access_token: userToken,
+        token_type: 'bearer',
+        scope: process.env['SLACK_OAUTH_SCOPE'] || 'users:read channels:read',
+        expires_at: undefined
+      }
+
+      provider.tokenManager.setToken('slack', token)
+      return provider
+    }
+
+    // Check for app-level token
+    const appToken = process.env['SLACK_APP_TOKEN'] || 
+                     process.env['{{toUpperCase (snakeCase name)}}_SLACK_APP_TOKEN']
+    
+    if (appToken) {
+      const provider = new SlackOAuthProvider()
+      
+      const token: SlackToken = {
+        access_token: appToken,
+        token_type: 'bearer',
+        scope: 'connections:write',
+        expires_at: undefined
+      }
+      
+      provider.tokenManager.setToken('slack', token)
+      return provider
+    }
+
+    return null
+  }
+
+  /**
+   * Get headers for API requests
+   */
+  async getAuthHeaders(): Promise<Record<string, string>> {
+    const token = await this.getStoredToken()
+    
+    if (!token) {
+      throw new Error('No Slack token available')
+    }
+
+    return {
+      'Authorization': `Bearer ${token.access_token}`
+    }
+  }
+
+  /**
+   * Test API access
+   */
+  async testAccess(): Promise<boolean> {
+    try {
+      const token = await this.getStoredToken()
+      if (!token) {
+        return false
+      }
+
+      return await this.testAuth(token.access_token)
+    } catch {
+      return false
+    }
+  }
+
+  /**
+   * Send a message (utility method)
+   */
+  async sendMessage(channel: string, text: string, accessToken?: string): Promise<any> {
+    const token = accessToken || (await this.getStoredToken())?.access_token
+    
+    if (!token) {
+      throw new Error('No Slack token available')
+    }
+
+    const response = await fetch('https://slack.com/api/chat.postMessage', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        channel,
+        text
+      })
+    })
+
+    const data = await response.json()
+
+    if (!data.ok) {
+      throw new Error(`Failed to send message: ${data.error || 'Unknown error'}`)
+    }
+
+    return data
+  }
+
+  /**
+   * Perform full OAuth flow
+   */
+  async performAuthFlow(): Promise<SlackToken> {
+    if (!this.config.clientId || !this.config.clientSecret) {
+      throw new Error('Client ID and secret required for OAuth flow')
+    }
+
+    const token = await performOAuthFlow(this.config)
+    
+    // Store token
+    await this.tokenManager.setToken('slack', token as SlackToken)
+    
+    return token as SlackToken
+  }
+
+  /**
+   * Check if authentication is needed
+   */
+  async needsAuthentication(): Promise<boolean> {
+    const token = await this.getStoredToken()
+    
+    if (!token) {
+      return true
+    }
+
+    // Check if token is valid
+    const isValid = await this.testAuth(token.access_token)
+    return !isValid
+  }
+}
+
+/**
+ * Slack OAuth configuration helper
+ */
+export function createSlackConfig(overrides: Partial<SlackOAuthConfig> = {}): SlackOAuthConfig {
+  return {
+    provider: 'slack',
+    authorizationUrl: 'https://slack.com/oauth/v2/authorize',
+    tokenUrl: 'https://slack.com/api/oauth.v2.access',
+    userInfoUrl: 'https://slack.com/api/users.identity',
+    scope: 'channels:read chat:write users:read',
+    pkce: false,
+    autoRefresh: true,
+    ...overrides
+  }
+}
