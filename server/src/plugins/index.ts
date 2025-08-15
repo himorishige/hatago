@@ -1,5 +1,6 @@
 import helloHatago from './hello-hatago.js'
 import oauthMetadata from './oauth-metadata.js'
+import mcpProxy from '../../../packages/core/src/plugins/mcp-proxy.js'
 
 // Environment variables with defaults
 const REQUIRE_AUTH = process.env.REQUIRE_AUTH === 'true'
@@ -14,5 +15,14 @@ export const defaultPlugins = [
     issuer: AUTH_ISSUER,
     resource: RESOURCE,
     requireAuth: REQUIRE_AUTH,
+  }),
+  // MCP Proxy - connect to external MCP servers
+  mcpProxy({
+    server: {
+      id: 'clock',
+      endpoint: 'http://localhost:8788',
+      description: 'External MCP Clock Server providing time and timezone tools',
+      // No authentication required for local testing
+    }
   }),
 ]
