@@ -1,0 +1,81 @@
+{
+  "proxy": {
+    "servers": [
+      {
+        "id": "clock",
+        "endpoint": "http://localhost:8788",
+        "namespace": "time",
+        "description": "External MCP Clock Server providing time and timezone tools",
+        "tools": {
+          "rename": {
+            "clock.getTime": "getCurrentTime",
+            "clock.getTimezone": "getTimezone"
+          },
+          "include": ["*"]
+        },
+        "timeout": 10000,
+        "healthCheck": {
+          "enabled": true,
+          "interval": 30000,
+          "timeout": 5000
+        }
+      },
+      {
+        "id": "math",
+        "endpoint": "http://localhost:8789",
+        "namespace": "calc",
+        "description": "External MCP Math Server providing calculation tools",
+        "tools": {
+          "rename": {
+            "math.calculate": "compute",
+            "math.random": "randomize"
+          },
+          "exclude": ["getTimezone"],
+          "include": ["*"]
+        },
+        "timeout": 10000,
+        "healthCheck": {
+          "enabled": true,
+          "interval": 45000,
+          "timeout": 5000
+        }
+      }
+    ],
+    "namespaceStrategy": "prefix",
+    "conflictResolution": "rename",
+    "namespace": {
+      "separator": ":",
+      "caseSensitive": false,
+      "maxLength": 64,
+      "autoPrefix": {
+        "enabled": true,
+        "format": "{server}_{index}"
+      }
+    },
+    "connectionPool": {
+      "maxConnections": 10,
+      "idleTimeout": 30000,
+      "keepAlive": true
+    }
+  },
+  "server": {
+    "port": 8787,
+    "hostname": "localhost",
+    "cors": true,
+    "timeout": 30000
+  },
+  "logging": {
+    "level": "info",
+    "format": "pretty",
+    "output": "console"
+  },
+  "security": {
+    "requireAuth": false,
+    "allowedOrigins": ["*"],
+    "rateLimit": {
+      "enabled": false,
+      "windowMs": 60000,
+      "maxRequests": 100
+    }
+  }
+}
