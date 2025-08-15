@@ -1,0 +1,15 @@
+{
+  "$schema": "../../docs/schemas/plugin.json",
+  "name": "@hatago/plugin-logger",
+  "version": "0.1.0",
+  "description": "Structured logging plugin for Hatago with JSON Lines output",
+  "engines": {
+    "hatago": "^1.0.0",
+    "node": ">=18",
+    "workers": ">=2023-10-30"
+  },
+  "capabilities": ["logger"],
+  "entry": {
+    "default": "./dist/index.js"
+  }
+}

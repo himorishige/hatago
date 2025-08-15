@@ -1,0 +1,48 @@
+{
+  "name": "@{{SCOPE}}/{{PLUGIN_NAME}}",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "{{DESCRIPTION}}",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": ["dist", "hatago.plugin.json"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "dev": "tsc -p tsconfig.json --watch",
+    "test": "echo \"No tests yet\"",
+    "lint": "biome lint src",
+    "lint:fix": "biome lint --write src",
+    "format": "biome format src",
+    "format:fix": "biome format --write src",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["hatago", "plugin", "{{PLUGIN_NAME}}"],
+  "author": "{{AUTHOR}}",
+  "license": "MIT",
+  "dependencies": {
+    "@hatago/core": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.10",
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "{{REPOSITORY_URL}}"
+  },
+  "homepage": "{{HOMEPAGE_URL}}",
+  "bugs": {
+    "url": "{{BUGS_URL}}"
+  }
+}

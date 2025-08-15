@@ -1,0 +1,24 @@
+{
+  "$schema": "https://hatago.dev/schemas/plugin.json",
+  "name": "@{{SCOPE}}/{{PLUGIN_NAME}}",
+  "version": "0.1.0",
+  "description": "{{DESCRIPTION}}",
+  "engines": {
+    "hatago": "^1.0.0",
+    "node": ">=18",
+    "workers": ">=2023-10-30"
+  },
+  "capabilities": [{{CAPABILITIES}}],
+  "entry": {
+    "default": "./dist/index.js"
+  },
+  "mcp": {
+    "tools": [
+      {
+        "name": "{{PLUGIN_NAME}}.example",
+        "title": "Example Tool",
+        "description": "Example tool provided by {{PLUGIN_NAME}} plugin"
+      }
+    ]
+  }
+}

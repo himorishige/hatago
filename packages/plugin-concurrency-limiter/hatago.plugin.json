@@ -1,0 +1,15 @@
+{
+  "$schema": "../../docs/schemas/plugin.json",
+  "name": "@hatago/plugin-concurrency-limiter",
+  "version": "0.1.0",
+  "description": "Concurrency limiting with circuit breaker and queue management",
+  "engines": {
+    "hatago": "^1.0.0",
+    "node": ">=18",
+    "workers": ">=2023-10-30"
+  },
+  "capabilities": ["logger"],
+  "entry": {
+    "default": "./dist/index.js"
+  }
+}

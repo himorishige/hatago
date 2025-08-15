@@ -1,0 +1,15 @@
+{
+  "$schema": "../../docs/schemas/plugin.json",
+  "name": "@hatago/plugin-rate-limit",
+  "version": "0.1.0",
+  "description": "Token bucket rate limiting with configurable limits per endpoint",
+  "engines": {
+    "hatago": "^1.0.0",
+    "node": ">=18",
+    "workers": ">=2023-10-30"
+  },
+  "capabilities": ["logger", "timer"],
+  "entry": {
+    "default": "./dist/index.js"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "@hatago/monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Hatago: lightweight, fast, simple remote MCP server with plugin architecture",
+  "packageManager": "pnpm@8.15.0",
+  "scripts": {
+    "dev": "pnpm -C packages/adapter-node dev",
+    "dev:cf": "pnpm -C packages/adapter-workers dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "clean": "pnpm -r clean",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "format": "biome format .",
+    "format:fix": "biome format --write .",
+    "check": "biome check .",
+    "check:fix": "biome check --write ."
+  },
+  "workspaces": ["packages/*", "server"],
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "typescript": "^5.9.2"
+  }
+}

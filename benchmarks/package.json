@@ -1,0 +1,26 @@
+{
+  "name": "hatago-benchmarks",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "description": "Performance benchmarks for Hatago",
+  "scripts": {
+    "bench:micro": "tsx src/micro-bench.ts",
+    "bench:load": "tsx src/load-test.ts",
+    "bench:workers": "tsx src/workers-bench.ts",
+    "bench:all": "npm run bench:micro && npm run bench:load",
+    "install:tools": "npm install -g autocannon",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hatago/adapter-node": "workspace:*",
+    "@hatago/adapter-workers": "workspace:*",
+    "@hatago/core": "workspace:*",
+    "@hono/node-server": "^1.18.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.10",
+    "tsx": "^4.20.4",
+    "typescript": "^5.9.2"
+  }
+}

@@ -1,0 +1,175 @@
+# Prometheus alerting and recording rules for Hatago MCP Server
+# This file contains SLO-based alerts and pre-computed metrics for efficient monitoring
+
+groups:
+  # Recording rules for SLO calculations
+  - name: hatago.recording.rules
+    interval: 15s
+    rules:
+      # HTTP request rate (per second)
+      - record: hatago:request_rate:5m
+        expr: rate(hatago_requests_total[5m])
+      
+      # HTTP request error rate
+      - record: hatago:error_rate:5m
+        expr: rate(hatago_errors_total[5m]) / rate(hatago_requests_total[5m])
+      
+      # HTTP request success rate (for availability SLO)
+      - record: hatago:success_rate:5m
+        expr: 1 - hatago:error_rate:5m
+      
+      # P95 latency (5-minute window)
+      - record: hatago:latency_p95:5m
+        expr: histogram_quantile(0.95, rate(hatago_request_duration_seconds_bucket[5m]))
+      
+      # P99 latency (5-minute window)
+      - record: hatago:latency_p99:5m
+        expr: histogram_quantile(0.99, rate(hatago_request_duration_seconds_bucket[5m]))
+      
+      # Plugin success rate
+      - record: hatago:plugin_success_rate:5m
+        expr: 1 - (rate(hatago_plugin_failures_total[5m]) / rate(hatago_plugin_events_total[5m]))
+
+  # SLO breach alerts
+  - name: hatago.slo.alerts
+    rules:
+      # Availability SLO: 99.95% (5-minute burn rate)
+      - alert: HatagoAvailabilitySLOBreachCritical
+        expr: hatago:success_rate:5m < 0.9995
+        for: 2m
+        labels:
+          severity: critical
+          slo: availability
+          burn_rate: fast
+        annotations:
+          summary: "Hatago availability SLO breach detected"
+          description: "Success rate {{ $value | humanizePercentage }} is below 99.95% SLO target for {{ $labels.instance }}"
+          runbook_url: "https://github.com/himorishige/hatago/docs/runbooks/availability.md"
+      
+      # P95 latency SLO: <5ms
+      - alert: HatagoLatencyP95SLOBreachWarning
+        expr: hatago:latency_p95:5m > 0.005
+        for: 5m
+        labels:
+          severity: warning
+          slo: latency_p95
+        annotations:
+          summary: "Hatago P95 latency SLO breach detected"
+          description: "P95 latency {{ $value | humanizeDuration }} exceeds 5ms SLO target for {{ $labels.instance }}"
+          runbook_url: "https://github.com/himorishige/hatago/docs/runbooks/latency.md"
+      
+      # P99 latency SLO: <10ms
+      - alert: HatagoLatencyP99SLOBreachWarning
+        expr: hatago:latency_p99:5m > 0.010
+        for: 5m
+        labels:
+          severity: warning
+          slo: latency_p99
+        annotations:
+          summary: "Hatago P99 latency SLO breach detected"
+          description: "P99 latency {{ $value | humanizeDuration }} exceeds 10ms SLO target for {{ $labels.instance }}"
+          runbook_url: "https://github.com/himorishige/hatago/docs/runbooks/latency.md"
+      
+      # Error rate SLO: <0.1%
+      - alert: HatagoErrorRateSLOBreachWarning
+        expr: hatago:error_rate:5m > 0.001
+        for: 3m
+        labels:
+          severity: warning
+          slo: error_rate
+        annotations:
+          summary: "Hatago error rate SLO breach detected"
+          description: "Error rate {{ $value | humanizePercentage }} exceeds 0.1% SLO target for {{ $labels.instance }}"
+          runbook_url: "https://github.com/himorishige/hatago/docs/runbooks/errors.md"
+
+  # Infrastructure and operational alerts
+  - name: hatago.infrastructure.alerts
+    rules:
+      # High request volume
+      - alert: HatagoHighRequestVolume
+        expr: hatago:request_rate:5m > 1000
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Hatago experiencing high request volume"
+          description: "Request rate {{ $value }} req/s is unusually high for {{ $labels.instance }}"
+      
+      # Plugin failures
+      - alert: HatagoPluginFailures
+        expr: rate(hatago_plugin_failures_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Hatago plugin failures detected"
+          description: "Plugin {{ $labels.plugin }} is experiencing failures on {{ $labels.instance }}"
+      
+      # Instance down
+      - alert: HatagoInstanceDown
+        expr: up{job="hatago"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Hatago instance is down"
+          description: "Hatago instance {{ $labels.instance }} has been down for more than 30 seconds"
+          runbook_url: "https://github.com/himorishige/hatago/docs/runbooks/instance-down.md"
+      
+      # Memory usage high
+      - alert: HatagoHighMemoryUsage
+        expr: (process_resident_memory_bytes / process_virtual_memory_max_bytes) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Hatago high memory usage"
+          description: "Memory usage {{ $value | humanizePercentage }} is above 80% for {{ $labels.instance }}"
+
+  # Circuit breaker alerts (for concurrency limiter plugin)
+  - name: hatago.circuit_breaker.alerts
+    rules:
+      - alert: HatagoCircuitBreakerOpen
+        expr: hatago_circuit_breaker_state{state="open"} == 1
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Hatago circuit breaker is open"
+          description: "Circuit breaker for {{ $labels.service }} is open, rejecting requests"
+          runbook_url: "https://github.com/himorishige/hatago/docs/runbooks/circuit-breaker.md"
+
+  # Multi-window, multi-burn-rate alerts for better SLO monitoring
+  - name: hatago.slo.multiwindow.alerts
+    rules:
+      # Fast burn (2% budget in 1 hour = 14.4x burn rate)
+      - alert: HatagoAvailabilitySLOBurnRateFast
+        expr: (
+          hatago:error_rate:5m > (14.4 * 0.0005)
+          and
+          hatago:error_rate:1h > (14.4 * 0.0005)
+        )
+        for: 2m
+        labels:
+          severity: critical
+          slo: availability
+          burn_rate: fast
+        annotations:
+          summary: "Hatago availability SLO fast burn rate detected"
+          description: "High error rate will exhaust 99.95% availability SLO budget in 4 hours"
+      
+      # Slow burn (10% budget in 24 hours = 2.88x burn rate) 
+      - alert: HatagoAvailabilitySLOBurnRateSlow
+        expr: (
+          hatago:error_rate:30m > (2.88 * 0.0005)
+          and
+          hatago:error_rate:6h > (2.88 * 0.0005)
+        )
+        for: 15m
+        labels:
+          severity: warning
+          slo: availability
+          burn_rate: slow
+        annotations:
+          summary: "Hatago availability SLO slow burn rate detected"
+          description: "Sustained error rate will exhaust 99.95% availability SLO budget in 10 days"

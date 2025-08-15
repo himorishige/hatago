@@ -1,0 +1,42 @@
+{
+  "name": "@hatago/adapter-node",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Hatago Node.js adapter",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "hatago-node": "./dist/server.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "dev": "tsx src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "start": "node --enable-source-maps dist/server.js",
+    "clean": "rm -rf dist",
+    "lint": "biome lint src",
+    "lint:fix": "biome lint --write src",
+    "format": "biome format src",
+    "format:fix": "biome format --write src"
+  },
+  "dependencies": {
+    "@hatago/core": "workspace:*",
+    "@hono/node-server": "^1.18.2",
+    "@hono/mcp": "file:../../docs/dist"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.10",
+    "tsx": "^4.20.4",
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "name": "@hatago/plugin-concurrency-limiter",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Concurrency limiting plugin for Hatago with overload protection",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": ["dist", "hatago.plugin.json"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "lint": "biome lint src",
+    "lint:fix": "biome lint --write src",
+    "format": "biome format src",
+    "format:fix": "biome format --write src"
+  },
+  "dependencies": {
+    "@hatago/core": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.0.2",
+    "hono": "^4.6.10"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.10",
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

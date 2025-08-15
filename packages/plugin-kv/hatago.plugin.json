@@ -1,0 +1,39 @@
+{
+  "$schema": "../../docs/schemas/plugin.json",
+  "name": "@hatago/plugin-kv",
+  "version": "0.1.0",
+  "description": "Key-value storage abstraction with Redis (Node.js) and KV (Workers) support",
+  "engines": {
+    "hatago": "^1.0.0",
+    "node": ">=18",
+    "workers": ">=2023-10-30"
+  },
+  "capabilities": ["kv", "logger"],
+  "entry": {
+    "default": "./dist/index.js"
+  },
+  "mcp": {
+    "tools": [
+      {
+        "name": "kv.get",
+        "title": "Get Value",
+        "description": "Get value from key-value store"
+      },
+      {
+        "name": "kv.set",
+        "title": "Set Value", 
+        "description": "Set value in key-value store"
+      },
+      {
+        "name": "kv.delete",
+        "title": "Delete Key",
+        "description": "Delete key from key-value store"
+      },
+      {
+        "name": "kv.list",
+        "title": "List Keys",
+        "description": "List keys with optional prefix"
+      }
+    ]
+  }
+}

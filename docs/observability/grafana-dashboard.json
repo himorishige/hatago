@@ -1,0 +1,299 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "Hatago MCP Server - SLO Dashboard",
+    "tags": ["hatago", "mcp", "slo"],
+    "style": "dark",
+    "timezone": "browser",
+    "refresh": "5s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "SLO Overview",
+        "type": "stat",
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "hatago:success_rate:5m * 100",
+            "legendFormat": "Availability %",
+            "refId": "A"
+          },
+          {
+            "expr": "hatago:latency_p95:5m * 1000",
+            "legendFormat": "P95 Latency (ms)",
+            "refId": "B"
+          },
+          {
+            "expr": "hatago:latency_p99:5m * 1000", 
+            "legendFormat": "P99 Latency (ms)",
+            "refId": "C"
+          },
+          {
+            "expr": "hatago:error_rate:5m * 100",
+            "legendFormat": "Error Rate %",
+            "refId": "D"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": null},
+                {"color": "yellow", "value": 99.9},
+                {"color": "green", "value": 99.95}
+              ]
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {"id": "byName", "options": "P95 Latency (ms)"},
+              "properties": [
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "steps": [
+                      {"color": "green", "value": null},
+                      {"color": "yellow", "value": 3},
+                      {"color": "red", "value": 5}
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {"id": "byName", "options": "P99 Latency (ms)"},
+              "properties": [
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "steps": [
+                      {"color": "green", "value": null},
+                      {"color": "yellow", "value": 7},
+                      {"color": "red", "value": 10}
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {"id": "byName", "options": "Error Rate %"},
+              "properties": [
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "steps": [
+                      {"color": "green", "value": null},
+                      {"color": "yellow", "value": 0.05},
+                      {"color": "red", "value": 0.1}
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": 2,
+        "title": "Request Rate",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "targets": [
+          {
+            "expr": "hatago:request_rate:5m",
+            "legendFormat": "Request Rate (req/s)",
+            "refId": "A"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Requests/sec",
+            "min": 0
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Response Time Percentiles",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "targets": [
+          {
+            "expr": "hatago:latency_p95:5m * 1000",
+            "legendFormat": "P95",
+            "refId": "A"
+          },
+          {
+            "expr": "hatago:latency_p99:5m * 1000",
+            "legendFormat": "P99",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(hatago_request_duration_seconds_bucket[5m])) * 1000",
+            "legendFormat": "P50",
+            "refId": "C"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Latency (ms)",
+            "min": 0
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Error Rate by Status Code",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+        "targets": [
+          {
+            "expr": "rate(hatago_errors_total[5m]) by (code)",
+            "legendFormat": "{{code}}",
+            "refId": "A"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Errors/sec",
+            "min": 0
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Plugin Events and Failures",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+        "targets": [
+          {
+            "expr": "rate(hatago_plugin_events_total[5m]) by (plugin)",
+            "legendFormat": "{{plugin}} events",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(hatago_plugin_failures_total[5m]) by (plugin)",
+            "legendFormat": "{{plugin}} failures",
+            "refId": "B"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Events/sec",
+            "min": 0
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "SLO Burn Rate Alert Status",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 24, "x": 0, "y": 24},
+        "targets": [
+          {
+            "expr": "ALERTS{alertname=~\"HatagoAvailabilitySLO.*\"}",
+            "legendFormat": "{{alertname}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "mappings": [
+              {
+                "options": {"0": {"text": "OK", "color": "green"}},
+                "type": "value"
+              },
+              {
+                "options": {"1": {"text": "FIRING", "color": "red"}},
+                "type": "value"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "Circuit Breaker Status",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 12, "x": 0, "y": 28},
+        "targets": [
+          {
+            "expr": "hatago_circuit_breaker_state",
+            "legendFormat": "{{service}} - {{state}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "mappings": [
+              {
+                "options": {"0": {"text": "CLOSED", "color": "green"}},
+                "type": "value"
+              },
+              {
+                "options": {"1": {"text": "OPEN", "color": "red"}},
+                "type": "value"
+              },
+              {
+                "options": {"2": {"text": "HALF_OPEN", "color": "yellow"}},
+                "type": "value"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "Inflight Requests",
+        "type": "graph",
+        "gridPos": {"h": 4, "w": 12, "x": 12, "y": 28},
+        "targets": [
+          {
+            "expr": "hatago_inflight_requests",
+            "legendFormat": "Inflight Requests",
+            "refId": "A"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Count",
+            "min": 0
+          }
+        ]
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "instance",
+          "type": "query",
+          "query": "label_values(hatago_requests_total, instance)",
+          "refresh": 1,
+          "includeAll": true,
+          "allValue": ".*"
+        }
+      ]
+    },
+    "annotations": {
+      "list": [
+        {
+          "name": "SLO Alerts",
+          "datasource": "Prometheus",
+          "expr": "ALERTS{alertname=~\"Hatago.*SLO.*\"}",
+          "titleFormat": "{{alertname}}",
+          "textFormat": "{{summary}}",
+          "iconColor": "red",
+          "enable": true
+        }
+      ]
+    }
+  }
+}
