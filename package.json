@@ -27,7 +27,8 @@
   },
   "workspaces": [
     "packages/*",
-    "server"
+    "server",
+    "examples/*"
   ],
   "engines": {
     "node": ">=18"
