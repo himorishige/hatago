@@ -32,12 +32,14 @@ export async function createApp(options: CreateNodeAppOptions = {}) {
     plugins: finalPlugins,
   })
 
-  // Add MCP endpoint with @hono/mcp
-  app.all('/mcp', async c => {
-    const transport = new StreamableHTTPTransport()
-    await server.connect(transport as any) // Type assertion for optional sessionId compatibility
-    return transport.handleRequest(c)
-  })
+  // Add MCP endpoint with @hono/mcp (only in HTTP mode)
+  if (app) {
+    app.all('/mcp', async c => {
+      const transport = new StreamableHTTPTransport()
+      await server.connect(transport as any) // Type assertion for optional sessionId compatibility
+      return transport.handleRequest(c)
+    })
+  }
 
   return { app, server, ctx }
 }

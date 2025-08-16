@@ -35,6 +35,11 @@ async function testMultiProxy() {
     ],
   })
 
+  if (!app) {
+    console.error('❌ Failed to create HTTP app')
+    process.exit(1)
+  }
+
   const port = 8787
   console.log(`🚀 Hatago Multi-Proxy Test starting on http://localhost:${port}`)
   console.log(`   Health: http://localhost:${port}/health`)
@@ -44,7 +49,7 @@ async function testMultiProxy() {
   console.log('     - server-b at http://localhost:8789')
 
   return serve({
-    fetch: app.fetch,
+    fetch: app!.fetch,
     port,
   })
 }

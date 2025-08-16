@@ -24,6 +24,11 @@ async function testProxy() {
     ],
   })
 
+  if (!app) {
+    console.error('❌ Failed to create HTTP app')
+    process.exit(1)
+  }
+
   const port = 8787
   console.log(`🚀 Hatago Proxy Test starting on http://localhost:${port}`)
   console.log(`   Health: http://localhost:${port}/health`)
@@ -31,7 +36,7 @@ async function testProxy() {
   console.log('   Proxying: original-hatago at http://localhost:8788')
 
   return serve({
-    fetch: app.fetch,
+    fetch: app!.fetch,
     port,
   })
 }

@@ -32,9 +32,11 @@
   ],
   "scripts": {
     "dev": "tsx src/server.ts",
+    "dev:stdio": "tsx src/stdio.ts",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit",
     "start": "node --enable-source-maps dist/server.js",
+    "start:stdio": "node --enable-source-maps dist/stdio.js",
     "clean": "rm -rf dist",
     "lint": "biome lint src",
     "lint:fix": "biome lint --write src",
@@ -44,7 +46,8 @@
   "dependencies": {
     "@hatago/core": "workspace:*",
     "@hono/node-server": "^1.18.2",
-    "@hono/mcp": "file:../../docs/dist"
+    "@hono/mcp": "file:../../docs/dist",
+    "@modelcontextprotocol/sdk": "^1.0.8"
   },
   "devDependencies": {
     "@types/node": "^20.19.10",

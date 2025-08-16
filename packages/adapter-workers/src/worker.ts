@@ -7,6 +7,9 @@ export default {
       version: '0.1.0',
       env,
     })
+    if (!app) {
+      return new Response('Server initialization failed', { status: 500 })
+    }
     return app.fetch(req, env)
   },
 }

@@ -25,13 +25,18 @@ export async function serveApp(options: ServeOptions = {}) {
 
   const { app } = await createApp({ env })
 
+  if (!app) {
+    console.error('❌ Failed to create HTTP app')
+    process.exit(1)
+  }
+
   console.log(`🚀 Hatago starting on http://${hostname}:${port}`)
   console.log(`   Health: http://${hostname}:${port}/health/live`)
   console.log(`   Ready:  http://${hostname}:${port}/health/ready`)
   console.log(`   MCP:    http://${hostname}:${port}/mcp`)
 
   const server = serve({
-    fetch: app.fetch,
+    fetch: app!.fetch,
     port,
     hostname,
   })
