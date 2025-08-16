@@ -63,7 +63,7 @@ importers:
 
   examples/external-mcp-clock:
     dependencies:
-      '@hatago/mcp-transport-internal':
+      '@hatago/hono-mcp':
         specifier: file:../../packages/hono-mcp
         version: file:packages/hono-mcp(@modelcontextprotocol/sdk@1.17.3)(hono@4.9.1)
       '@hono/node-server':
@@ -88,7 +88,7 @@ importers:
 
   examples/external-mcp-math:
     dependencies:
-      '@hatago/mcp-transport-internal':
+      '@hatago/hono-mcp':
         specifier: file:../../packages/hono-mcp
         version: file:packages/hono-mcp(@modelcontextprotocol/sdk@1.17.3)(hono@4.9.1)
       '@hono/node-server':
@@ -5691,7 +5691,7 @@ packages:
   file:packages/hono-mcp(@modelcontextprotocol/sdk@1.17.3)(hono@4.9.1):
     resolution: {directory: packages/hono-mcp, type: directory}
     id: file:packages/hono-mcp
-    name: '@hatago/mcp-transport-internal'
+    name: '@hatago/hono-mcp'
     peerDependencies:
       '@modelcontextprotocol/sdk': ^1.17.2
       hono: '>=4.0.0'

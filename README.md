@@ -81,12 +81,12 @@ curl -X POST http://localhost:8787/mcp \
 ### Available Built-in Tools
 
 - **`hello_hatago`**: Demo tool with progress notifications
-- **`logs.query`**: Query structured logs with filtering
-- **`logs.config`**: Get/update logging configuration  
-- **`security.verify`**: Plugin signature verification
-- **`security.generate_key`**: Generate test key pairs
-- **`security.sign_test`**: Sign test data (development)
-- **`security.status`**: Security system status
+- **`logs_query`**: Query structured logs with filtering
+- **`logs_config`**: Get/update logging configuration  
+- **`security_verify`**: Plugin signature verification
+- **`security_generate_key`**: Generate test key pairs
+- **`security_sign_test`**: Sign test data (development)
+- **`security_status`**: Security system status
 
 ## 📦 Packages
 
