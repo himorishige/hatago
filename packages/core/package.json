@@ -58,7 +58,7 @@
     "hono": ">=4.0.0"
   },
   "dependencies": {
-    "@hatago/mcp-transport-internal": "file:../hono-mcp",
+    "@hatago/hono-mcp": "workspace:*",
     "@himorishige/noren-core": "^0.6.2",
     "@himorishige/noren-plugin-security": "^0.6.2",
     "zod": "^3.25.76"

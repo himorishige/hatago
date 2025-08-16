@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "@hatago/core": "^0.1.1",
-    "@hatago/mcp-transport-internal": "file:../hono-mcp"
+    "@hatago/hono-mcp": "workspace:*"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241224.0",

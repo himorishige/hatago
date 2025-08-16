@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { StreamableHTTPTransport } from '@hatago/mcp-transport-internal'
+import { StreamableHTTPTransport } from '@hatago/hono-mcp'
 import { serve } from '@hono/node-server'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { Hono } from 'hono'

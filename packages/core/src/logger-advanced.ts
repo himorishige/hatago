@@ -170,7 +170,9 @@ class Logger {
       msg,
       transport: this.config.transport,
       ...this.context,
-      ...(typeof redactedMeta === 'object' && redactedMeta !== null ? redactedMeta as Record<string, unknown> : {}),
+      ...(typeof redactedMeta === 'object' && redactedMeta !== null
+        ? (redactedMeta as Record<string, unknown>)
+        : {}),
     }
 
     const output = this.format(entry)
@@ -200,7 +202,7 @@ class Logger {
       return obj
     }
 
-    const result: Record<string, unknown> = Array.isArray(obj) ? [] as any : {}
+    const result: Record<string, unknown> = Array.isArray(obj) ? ([] as any) : {}
 
     for (const [key, value] of Object.entries(obj)) {
       const keyLower = key.toLowerCase()

@@ -135,7 +135,7 @@ export class StreamableHTTPTransport implements Transport {
                 }
               },
             })
-            return result || '_unknown_stream'
+            return result ?? '_unknown_stream'
           }
         }
       }

@@ -169,9 +169,9 @@ async function runMicroBenchmarks() {
   // Performance budget checks
   console.log('\n🎯 Performance Budget Check:')
   const budgets = [
-    { name: 'App Creation', budget: 100, actual: results[0].opsPerSec }, // 100 ops/sec
-    { name: 'Health endpoint', budget: 5000, actual: results[2].opsPerSec }, // 5000 ops/sec
-    { name: 'Context creation', budget: 50000, actual: results[4].opsPerSec }, // 50k ops/sec
+    { name: 'App Creation', budget: 100, actual: results[0]?.opsPerSec ?? 0 }, // 100 ops/sec
+    { name: 'Health endpoint', budget: 5000, actual: results[2]?.opsPerSec ?? 0 }, // 5000 ops/sec
+    { name: 'Context creation', budget: 50000, actual: results[4]?.opsPerSec ?? 0 }, // 50k ops/sec
   ]
 
   for (const check of budgets) {

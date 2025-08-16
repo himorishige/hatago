@@ -7,7 +7,7 @@
 
 // For now, use internal enhanced implementation
 // Future: Switch to official @hono/mcp when it supports all required features
-export { StreamableHTTPTransport } from '@hatago/mcp-transport-internal'
+export { StreamableHTTPTransport } from '@hatago/hono-mcp'
 
 // Type re-exports for convenience
 export type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js'

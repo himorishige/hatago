@@ -211,7 +211,7 @@ export const structuredLogging: HatagoPluginFactory<StructuredLoggingConfig> =
 
     // Register log management tool
     server.registerTool(
-      'logs.query',
+      'logs_query',
       {
         title: 'Query Logs',
         description: 'Query structured logs with filtering options',
@@ -255,7 +255,7 @@ export const structuredLogging: HatagoPluginFactory<StructuredLoggingConfig> =
 
     // Register log configuration tool
     server.registerTool(
-      'logs.config',
+      'logs_config',
       {
         title: 'Log Configuration',
         description: 'Get or update logging configuration',

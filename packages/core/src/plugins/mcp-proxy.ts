@@ -63,7 +63,7 @@ class MCPClient {
       params: {
         name: toolName,
         arguments: args,
-        ...(meta && { _meta: meta } as any),
+        ...(meta && ({ _meta: meta } as any)),
       },
     }
 
@@ -226,7 +226,10 @@ async function connectToServer(server: McpServer, serverConfig: MCPServerConfig)
     // Initialize connection
     console.log(`MCP Proxy: Connecting to ${serverConfig.id} at ${serverConfig.endpoint}`)
     const initResult = await client.initialize()
-    console.log(`MCP Proxy: Connected to ${serverConfig.id}:`, (initResult as any).result?.serverInfo)
+    console.log(
+      `MCP Proxy: Connected to ${serverConfig.id}:`,
+      (initResult as any).result?.serverInfo
+    )
 
     // List available tools
     const toolsResult = await client.listTools()

@@ -82,10 +82,10 @@ async function promptSelect(
   const index = Number.parseInt(answer, 10) - 1
 
   if (index >= 0 && index < choices.length) {
-    return choices[index]
+    return choices[index]!
   }
 
-  return defaultValue || choices[0]
+  return defaultValue ?? choices[0] ?? ''
 }
 
 /**
@@ -260,9 +260,9 @@ async function handleCreatePlugin(pluginName: string, options: CreatePluginOptio
       if (options.interactive && pluginTemplates.length > 1) {
         const choices = pluginTemplates.map(t => `${t.name} - ${t.description}`)
         const selected = await promptSelect('Choose a template:', choices)
-        options.template = pluginTemplates[choices.indexOf(selected)].name
+        options.template = pluginTemplates[choices.indexOf(selected)]?.name ?? ''
       } else {
-        options.template = pluginTemplates[0].name
+        options.template = pluginTemplates[0]?.name ?? ''
       }
     }
 
@@ -320,7 +320,7 @@ async function handleCreatePlugin(pluginName: string, options: CreatePluginOptio
 
     const result = engine.generateFromTemplate(templateDir, outputDir, context, {
       includeOptional: true,
-      dryRun: options.dry,
+      dryRun: options.dry ?? false,
     })
 
     // Filter files based on options

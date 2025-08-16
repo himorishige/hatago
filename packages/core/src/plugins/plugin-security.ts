@@ -171,9 +171,7 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
 
     app.get(`${endpoint}/keys`, c => {
       // Get list of trusted keys if default registry is used
-      const keys =
-        (verifier as any).defaultRegistry?.listKeys() ||
-        []
+      const keys = (verifier as any).defaultRegistry?.listKeys() || []
       return c.json({
         trustedKeys: keys.length,
         keys: keys.map((keyId: any) => ({ keyId: keyId as string })),
@@ -182,7 +180,7 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
 
     // MCP tools for security management
     server.registerTool(
-      'security.verify',
+      'security_verify',
       {
         title: 'Verify Plugin Signature',
         description: 'Verify a plugin signature for testing purposes',
@@ -238,7 +236,7 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
     )
 
     server.registerTool(
-      'security.generate_key',
+      'security_generate_key',
       {
         title: 'Generate Test Key Pair',
         description: 'Generate a test key pair for plugin signing (development only)',
@@ -305,7 +303,7 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
     )
 
     server.registerTool(
-      'security.sign_test',
+      'security_sign_test',
       {
         title: 'Sign Test Data',
         description: 'Sign test data with a generated key (development only)',
@@ -372,7 +370,7 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
                     signature,
                     message: 'Test data signed successfully',
                     verification_command:
-                      'Use security.verify tool with this signature and testData',
+                      'Use security_verify tool with this signature and testData',
                   },
                   null,
                   2
@@ -395,7 +393,7 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
     )
 
     server.registerTool(
-      'security.status',
+      'security_status',
       {
         title: 'Security Status',
         description: 'Get plugin security system status and metrics',

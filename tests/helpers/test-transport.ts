@@ -72,7 +72,7 @@ export function createMockContext(options: {
   })
 
   const responseHeaders: Record<string, string> = {}
-  
+
   return {
     req: {
       method,
@@ -84,7 +84,7 @@ export function createMockContext(options: {
         return headers
       },
       text: async () => body || '',
-      json: async () => body ? JSON.parse(body) : {},
+      json: async () => (body ? JSON.parse(body) : {}),
       raw: request,
     },
     header: (name: string, value: string) => {
@@ -138,7 +138,12 @@ export class JSONRPCMessageFactory {
     }
   }
 
-  static createError(id: string | number | null, code: number, message: string, data?: unknown): JSONRPCMessage {
+  static createError(
+    id: string | number | null,
+    code: number,
+    message: string,
+    data?: unknown
+  ): JSONRPCMessage {
     return {
       jsonrpc: '2.0',
       id,
@@ -158,7 +163,10 @@ export class JSONRPCMessageFactory {
     }
   }
 
-  static createInitializeRequest(clientName = 'test-client', clientVersion = '1.0.0'): JSONRPCMessage {
+  static createInitializeRequest(
+    clientName = 'test-client',
+    clientVersion = '1.0.0'
+  ): JSONRPCMessage {
     return this.createRequest('initialize', {
       protocolVersion: '2025-06-18',
       capabilities: {},
@@ -166,7 +174,11 @@ export class JSONRPCMessageFactory {
     })
   }
 
-  static createInitializeResponse(id: string | number, serverName = 'test-server', serverVersion = '1.0.0'): JSONRPCMessage {
+  static createInitializeResponse(
+    id: string | number,
+    serverName = 'test-server',
+    serverVersion = '1.0.0'
+  ): JSONRPCMessage {
     return this.createResponse(id, {
       protocolVersion: '2025-06-18',
       capabilities: {},
@@ -178,7 +190,10 @@ export class JSONRPCMessageFactory {
     return this.createRequest('tools/list')
   }
 
-  static createToolsListResponse(id: string | number, tools: Array<{ name: string; title?: string; description?: string }>): JSONRPCMessage {
+  static createToolsListResponse(
+    id: string | number,
+    tools: Array<{ name: string; title?: string; description?: string }>
+  ): JSONRPCMessage {
     return this.createResponse(id, { tools })
   }
 
@@ -194,7 +209,11 @@ export class JSONRPCMessageFactory {
     return this.createResponse(id, result)
   }
 
-  static createProgressNotification(progressToken: string, progress: number, total?: number): JSONRPCMessage {
+  static createProgressNotification(
+    progressToken: string,
+    progress: number,
+    total?: number
+  ): JSONRPCMessage {
     return this.createNotification('notifications/progress', {
       progressToken,
       progress,
@@ -210,11 +229,14 @@ export class StreamingTestHelper {
   /**
    * SSEストリームからメッセージを収集
    */
-  static async collectSSEMessages(stream: ReadableStream<Uint8Array>, timeout = 1000): Promise<JSONRPCMessage[]> {
+  static async collectSSEMessages(
+    stream: ReadableStream<Uint8Array>,
+    timeout = 1000
+  ): Promise<JSONRPCMessage[]> {
     const messages: JSONRPCMessage[] = []
     const reader = stream.getReader()
     const decoder = new TextDecoder()
-    
+
     const timeoutPromise = new Promise<void>((_, reject) => {
       setTimeout(() => reject(new Error('Stream timeout')), timeout)
     })
@@ -223,7 +245,7 @@ export class StreamingTestHelper {
       while (true) {
         const result = await Promise.race([
           reader.read(),
-          timeoutPromise.then(() => ({ done: true, value: undefined }))
+          timeoutPromise.then(() => ({ done: true, value: undefined })),
         ])
 
         if (result.done) break
@@ -254,7 +276,7 @@ export class StreamingTestHelper {
    */
   static createStreamingResponse(messages: JSONRPCMessage[]): Response {
     const encoder = new TextEncoder()
-    
+
     const stream = new ReadableStream({
       start(controller) {
         for (const message of messages) {
@@ -262,14 +284,14 @@ export class StreamingTestHelper {
           controller.enqueue(encoder.encode(data))
         }
         controller.close()
-      }
+      },
     })
 
     return new Response(stream, {
       headers: {
         'content-type': 'text/event-stream',
         'cache-control': 'no-cache',
-        'connection': 'keep-alive',
+        connection: 'keep-alive',
       },
     })
   }
@@ -291,7 +313,7 @@ export class StreamingTestHelper {
       start() {
         // Immediately abort
         controller.abort()
-      }
+      },
     })
 
     return new Response(stream, {

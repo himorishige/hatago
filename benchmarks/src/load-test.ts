@@ -218,18 +218,18 @@ async function runAllLoadTests() {
     // Performance targets check
     console.log('\n🎯 Performance Targets:')
     const targets = [
-      { name: 'Health RPS (Light)', target: 1000, actual: results[0].result.rps },
-      { name: 'Health RPS (Heavy)', target: 500, actual: results[1].result.rps },
+      { name: 'Health RPS (Light)', target: 1000, actual: results[0]?.result?.rps ?? 0 },
+      { name: 'Health RPS (Heavy)', target: 500, actual: results[1]?.result?.rps ?? 0 },
       {
         name: 'P95 Latency (< 50ms)',
         target: 50,
-        actual: results[0].result.p95Latency,
+        actual: results[0]?.result?.p95Latency ?? 0,
         reverse: true,
       },
       {
         name: 'Success Rate (> 99%)',
         target: 99,
-        actual: (results[0].result.successfulRequests / results[0].result.totalRequests) * 100,
+        actual: results[0]?.result ? (results[0].result.successfulRequests / results[0].result.totalRequests) * 100 : 0,
       },
     ]
 

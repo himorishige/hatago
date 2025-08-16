@@ -32,7 +32,7 @@ describe('ConfigLoader', () => {
   describe('Default Configuration', () => {
     it('should return default configuration when no config file exists', async () => {
       const result = await loadConfig(join(tempDir, 'nonexistent.json'))
-      
+
       expect(result.config).toBeDefined()
       expect(result.config.server.port).toBe(8787)
       expect(result.config.server.hostname).toBe('localhost')
@@ -43,7 +43,7 @@ describe('ConfigLoader', () => {
 
     it('should have consistent default values', async () => {
       const result = await loadConfig()
-      
+
       expect(result.config.proxy.servers).toEqual([])
       expect(result.config.proxy.conflictResolution).toBe('error')
       expect(result.config.security.requireAuth).toBe(false)
@@ -67,11 +67,11 @@ describe('ConfigLoader', () => {
           output: 'file',
         },
       }
-      
+
       writeFileSync(configPath, JSON.stringify(config, null, 2))
-      
+
       const result = await loadConfig(configPath)
-      
+
       expect(result.config.server.port).toBe(9999)
       expect(result.config.server.hostname).toBe('0.0.0.0')
       expect(result.config.server.cors).toBe(false)
@@ -87,11 +87,11 @@ describe('ConfigLoader', () => {
           port: 3000,
         },
       }
-      
+
       writeFileSync(configPath, JSON.stringify(partialConfig, null, 2))
-      
+
       const result = await loadConfig(configPath)
-      
+
       // オーバーライドされた値
       expect(result.config.server.port).toBe(3000)
       // デフォルト値が保持される
@@ -115,11 +115,11 @@ describe('ConfigLoader', () => {
           },
         },
       }
-      
+
       writeFileSync(configPath, JSON.stringify(config, null, 2))
-      
+
       const result = await loadConfig(configPath)
-      
+
       expect(result.config.proxy.namespace.separator).toBe('::')
       expect(result.config.proxy.namespace.caseSensitive).toBe(true)
       expect(result.config.proxy.namespace.maxLength).toBe(100)
@@ -141,7 +141,7 @@ describe('ConfigLoader', () => {
       })
 
       const result = await loadConfig()
-      
+
       expect(result.config.server.port).toBe(5000)
       expect(result.config.server.hostname).toBe('example.com')
       expect(result.config.logging.level).toBe('error')
@@ -157,7 +157,7 @@ describe('ConfigLoader', () => {
       })
 
       const result = await loadConfig()
-      
+
       expect(result.config.server.cors).toBe(false)
       expect(result.config.security.requireAuth).toBe(true)
       expect(result.config.security.rateLimit.enabled).toBe(true)
@@ -173,7 +173,7 @@ describe('ConfigLoader', () => {
       })
 
       const result = await loadConfig()
-      
+
       expect(result.config.server.port).toBe(3000)
       expect(result.config.server.timeout).toBe(45000)
       expect(result.config.security.rateLimit.windowMs).toBe(120000)
@@ -186,9 +186,9 @@ describe('ConfigLoader', () => {
         server: { port: 8000 },
         logging: { level: 'debug' },
       }
-      
+
       writeFileSync(configPath, JSON.stringify(config, null, 2))
-      
+
       envMock.restore()
       envMock = mockEnv({
         HATAGO_PORT: '9000',
@@ -196,7 +196,7 @@ describe('ConfigLoader', () => {
       })
 
       const result = await loadConfig(configPath)
-      
+
       // 環境変数が優先される
       expect(result.config.server.port).toBe(9000)
       expect(result.config.logging.level).toBe('error')
@@ -207,15 +207,15 @@ describe('ConfigLoader', () => {
     it('should handle malformed JSON gracefully', async () => {
       const configPath = join(tempDir, 'hatago.config.json')
       writeFileSync(configPath, '{ invalid json }')
-      
+
       await expect(loadConfig(configPath)).rejects.toThrow()
     })
 
     it('should handle missing file gracefully', async () => {
       const configPath = join(tempDir, 'missing.json')
-      
+
       const result = await loadConfig(configPath)
-      
+
       // デフォルト設定が返される
       expect(result.config.server.port).toBe(8787)
       expect(result.filepath).toBeNull()
@@ -224,10 +224,10 @@ describe('ConfigLoader', () => {
     it('should handle permission errors', async () => {
       const configPath = join(tempDir, 'readonly.json')
       writeFileSync(configPath, '{}')
-      
+
       // ファイルを読み取り専用にして、読み込み権限を削除をシミュレート
       vi.doMock('node:fs/promises', () => ({
-        readFile: vi.fn().mockRejectedValue(new Error('EACCES: permission denied'))
+        readFile: vi.fn().mockRejectedValue(new Error('EACCES: permission denied')),
       }))
 
       await expect(loadConfig(configPath)).rejects.toThrow('permission denied')
@@ -240,9 +240,9 @@ describe('ConfigLoader', () => {
       const config = {
         server: { port: -1 },
       }
-      
+
       writeFileSync(configPath, JSON.stringify(config, null, 2))
-      
+
       await expect(loadConfig(configPath)).rejects.toThrow()
     })
 
@@ -251,9 +251,9 @@ describe('ConfigLoader', () => {
       const config = {
         logging: { level: 'invalid' },
       }
-      
+
       writeFileSync(configPath, JSON.stringify(config, null, 2))
-      
+
       await expect(loadConfig(configPath)).rejects.toThrow()
     })
 
@@ -262,9 +262,9 @@ describe('ConfigLoader', () => {
       const config = {
         proxy: { namespaceStrategy: 'invalid' },
       }
-      
+
       writeFileSync(configPath, JSON.stringify(config, null, 2))
-      
+
       await expect(loadConfig(configPath)).rejects.toThrow()
     })
 
@@ -273,9 +273,9 @@ describe('ConfigLoader', () => {
       const config = {
         proxy: { conflictResolution: 'invalid' },
       }
-      
+
       writeFileSync(configPath, JSON.stringify(config, null, 2))
-      
+
       await expect(loadConfig(configPath)).rejects.toThrow()
     })
   })
@@ -315,11 +315,11 @@ describe('ConfigLoader', () => {
           conflictResolution: 'first-wins',
         },
       }
-      
+
       writeFileSync(configPath, JSON.stringify(config, null, 2))
-      
+
       const result = await loadConfig(configPath)
-      
+
       expect(result.config.proxy.servers).toHaveLength(2)
       expect(result.config.proxy.servers[0].id).toBe('server1')
       expect(result.config.proxy.servers[0].endpoint).toBe('http://localhost:3000')
@@ -337,7 +337,7 @@ describe('ConfigLoader', () => {
       })
 
       const result = await loadConfig()
-      
+
       expect(result.config.security.allowedOrigins).toEqual([
         'https://example.com',
         'https://app.example.com',
@@ -354,7 +354,7 @@ describe('ConfigLoader', () => {
       })
 
       const result = await loadConfig()
-      
+
       expect(result.config.proxy.namespace.separator).toBe('|')
       expect(result.config.proxy.namespace.caseSensitive).toBe(true)
       expect(result.config.proxy.namespace.maxLength).toBe(50)

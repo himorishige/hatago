@@ -1,9 +1,8 @@
 {
-  "name": "@hatago/mcp-transport-internal",
+  "name": "@hatago/hono-mcp",
   "version": "0.1.0",
-  "description": "Internal MCP StreamableHTTP Transport for Hatago (enhanced version based on @hono/mcp)",
+  "description": "MCP StreamableHTTP Transport for Hatago (enhanced version based on @hono/mcp)",
   "type": "module",
-  "private": true,
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [

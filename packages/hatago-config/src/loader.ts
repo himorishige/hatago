@@ -121,7 +121,9 @@ function parseJsoncContent(content: string, filepath: string): unknown {
 
     return result
   } catch (error) {
-    throw new Error(`Failed to parse JSONC in ${filepath}: ${error instanceof Error ? error.message : String(error)}`)
+    throw new Error(
+      `Failed to parse JSONC in ${filepath}: ${error instanceof Error ? error.message : String(error)}`
+    )
   }
 }
 
@@ -192,7 +194,7 @@ function mergeConfigs(base: unknown, override: unknown): unknown {
     return override
   }
 
-  const result: Record<string, unknown> = { ...base as Record<string, unknown> }
+  const result: Record<string, unknown> = { ...(base as Record<string, unknown>) }
 
   for (const [key, value] of Object.entries(override)) {
     if (value && typeof value === 'object' && !Array.isArray(value)) {

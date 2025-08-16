@@ -8,7 +8,7 @@ describe('createApp (Node.js adapter)', () => {
     expect(app).toBeDefined()
     expect(server).toBeDefined()
     expect(ctx).toBeDefined()
-  })
+  }, 5000) // 5 second timeout
 
   it('should convert Node.js env to generic record', async () => {
     const nodeEnv: NodeJS.ProcessEnv = {
@@ -21,7 +21,7 @@ describe('createApp (Node.js adapter)', () => {
     // Should filter out undefined values
     expect(ctx.env).toEqual({ TEST_VAR: 'test-value' })
     expect(ctx.env).not.toHaveProperty('UNDEFINED_VAR')
-  })
+  }, 5000)
 
   it('should use custom plugins when provided', async () => {
     const mockPlugin = vi.fn()
@@ -31,7 +31,7 @@ describe('createApp (Node.js adapter)', () => {
     })
 
     expect(mockPlugin).toHaveBeenCalledOnce()
-  })
+  }, 5000)
 
   it('should work in stdio mode', async () => {
     const { app, server } = await createApp({
@@ -40,5 +40,15 @@ describe('createApp (Node.js adapter)', () => {
 
     expect(app).toBeNull()
     expect(server).toBeDefined()
-  })
+  }, 5000)
+
+  it('should create app without default plugins (debug test)', async () => {
+    const { app, server, ctx } = await createApp({
+      plugins: [], // Empty plugins array to avoid default plugins
+    })
+
+    expect(app).toBeDefined()
+    expect(server).toBeDefined()
+    expect(ctx).toBeDefined()
+  }, 5000)
 })
