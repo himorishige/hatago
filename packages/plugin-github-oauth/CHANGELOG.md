@@ -1,5 +1,13 @@
 # @hatago/plugin-github-oauth
 
+## 0.3.0
+
+### Patch Changes
+
+- Version alignment to 0.3.0
+- Updated dependencies
+  - @hatago/core@0.3.0
+
 ## 1.0.0
 
 ### Minor Changes

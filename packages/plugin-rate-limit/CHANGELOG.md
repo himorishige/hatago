@@ -1,6 +1,6 @@
 # @hatago/plugin-rate-limit
 
-## 1.0.0
+## 0.3.0
 
 ### Minor Changes
 
