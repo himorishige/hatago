@@ -3,40 +3,10 @@
  * Provides structured logging capabilities across all runtimes
  */
 
-export enum LogLevel {
-  DEBUG = 0,
-  INFO = 1,
-  WARN = 2,
-  ERROR = 3,
-}
-
-export interface LogEntry {
-  timestamp: string
-  level: LogLevel
-  message: string
-  meta?: Record<string, unknown>
-  component?: string
-  trace_id?: string
-  error?: {
-    name: string
-    message: string
-    stack?: string
-  }
-}
-
-export interface Logger {
-  debug(message: string, meta?: Record<string, unknown>): void
-  info(message: string, meta?: Record<string, unknown>): void
-  warn(message: string, meta?: Record<string, unknown>): void
-  error(message: string, meta?: Record<string, unknown>, error?: Error): void
-}
-
-export interface LoggerConfig {
-  level: LogLevel
-  format: 'json' | 'compact'
-  includeStackTrace: boolean
-  redactFields: string[]
-}
+import type { SafeValue } from '../types/utils.types.js'
+import { TypeGuards } from '../types/utils.types.js'
+import type { Logger, LoggerConfig, LogEntry, LogLevel } from './types.js'
+import { LogLevel as LogLevelEnum } from './types.js'
 
 /**
  * Create a runtime-agnostic logger
@@ -44,16 +14,16 @@ export interface LoggerConfig {
 export function createLogger(config: LoggerConfig, component?: string): Logger {
   const shouldLog = (logLevel: LogLevel): boolean => logLevel >= config.level
 
-  const redactSensitiveData = (obj: unknown): unknown => {
+  const redactSensitiveData = (obj: unknown): SafeValue => {
     if (typeof obj !== 'object' || obj === null) {
-      return obj
+      return obj as SafeValue
     }
 
     if (Array.isArray(obj)) {
       return obj.map(redactSensitiveData)
     }
 
-    const result: Record<string, unknown> = {}
+    const result: Record<string, SafeValue> = {}
     for (const [key, value] of Object.entries(obj)) {
       const lowerKey = key.toLowerCase()
       if (config.redactFields.some(field => lowerKey.includes(field))) {
@@ -61,7 +31,7 @@ export function createLogger(config: LoggerConfig, component?: string): Logger {
       } else if (typeof value === 'object') {
         result[key] = redactSensitiveData(value)
       } else {
-        result[key] = value
+        result[key] = value as SafeValue
       }
     }
     return result
@@ -84,7 +54,10 @@ export function createLogger(config: LoggerConfig, component?: string): Logger {
     }
 
     if (meta) {
-      entry.meta = redactSensitiveData(meta) as any
+      const redactedMeta = redactSensitiveData(meta)
+      if (TypeGuards.isObject(redactedMeta)) {
+        entry.meta = redactedMeta as Record<string, unknown>
+      }
     }
 
     if (error && config.includeStackTrace) {
@@ -103,8 +76,18 @@ export function createLogger(config: LoggerConfig, component?: string): Logger {
       return JSON.stringify(entry)
     }
 
+    if (config.format === 'pretty') {
+      // Pretty format with colors (for development)
+      const levelName = LogLevelEnum[entry.level]
+      const timestamp = entry.timestamp.split('T')[1]?.split('.')[0] || ''
+      const comp = entry.component ? `[${entry.component}]` : ''
+      const meta = entry.meta ? ` ${JSON.stringify(entry.meta)}` : ''
+
+      return `${timestamp} ${levelName.padEnd(5)} ${comp} ${entry.message}${meta}`
+    }
+
     // Compact format for development
-    const levelName = LogLevel[entry.level]
+    const levelName = LogLevelEnum[entry.level]
     const timestamp = entry.timestamp.split('T')[1]?.split('.')[0] || ''
     const comp = entry.component ? `[${entry.component}]` : ''
     const meta = entry.meta ? ` ${JSON.stringify(entry.meta)}` : ''
@@ -117,16 +100,16 @@ export function createLogger(config: LoggerConfig, component?: string): Logger {
 
     // Use appropriate console method based on level
     switch (entry.level) {
-      case LogLevel.DEBUG:
+      case LogLevelEnum.DEBUG:
         console.debug(formatted)
         break
-      case LogLevel.INFO:
+      case LogLevelEnum.INFO:
         console.info(formatted)
         break
-      case LogLevel.WARN:
+      case LogLevelEnum.WARN:
         console.warn(formatted)
         break
-      case LogLevel.ERROR:
+      case LogLevelEnum.ERROR:
         console.error(formatted)
         break
     }
@@ -134,26 +117,26 @@ export function createLogger(config: LoggerConfig, component?: string): Logger {
 
   return {
     debug: (message: string, meta?: Record<string, unknown>) => {
-      if (!shouldLog(LogLevel.DEBUG)) return
-      const entry = createLogEntry(LogLevel.DEBUG, message, meta)
+      if (!shouldLog(LogLevelEnum.DEBUG)) return
+      const entry = createLogEntry(LogLevelEnum.DEBUG, message, meta)
       writeLog(entry)
     },
 
     info: (message: string, meta?: Record<string, unknown>) => {
-      if (!shouldLog(LogLevel.INFO)) return
-      const entry = createLogEntry(LogLevel.INFO, message, meta)
+      if (!shouldLog(LogLevelEnum.INFO)) return
+      const entry = createLogEntry(LogLevelEnum.INFO, message, meta)
       writeLog(entry)
     },
 
     warn: (message: string, meta?: Record<string, unknown>) => {
-      if (!shouldLog(LogLevel.WARN)) return
-      const entry = createLogEntry(LogLevel.WARN, message, meta)
+      if (!shouldLog(LogLevelEnum.WARN)) return
+      const entry = createLogEntry(LogLevelEnum.WARN, message, meta)
       writeLog(entry)
     },
 
     error: (message: string, meta?: Record<string, unknown>, error?: Error) => {
-      if (!shouldLog(LogLevel.ERROR)) return
-      const entry = createLogEntry(LogLevel.ERROR, message, meta, error)
+      if (!shouldLog(LogLevelEnum.ERROR)) return
+      const entry = createLogEntry(LogLevelEnum.ERROR, message, meta, error)
       writeLog(entry)
     },
   }
@@ -163,7 +146,7 @@ export function createLogger(config: LoggerConfig, component?: string): Logger {
  * Default logger configuration
  */
 export const DEFAULT_LOGGER_CONFIG: LoggerConfig = {
-  level: LogLevel.INFO,
+  level: LogLevelEnum.INFO,
   format: 'compact',
   includeStackTrace: true,
   redactFields: ['password', 'token', 'secret', 'key', 'authorization'],
@@ -177,7 +160,7 @@ export function createDefaultLogger(component?: string): Logger {
 
   const config: LoggerConfig = {
     ...DEFAULT_LOGGER_CONFIG,
-    level: isProduction ? LogLevel.INFO : LogLevel.DEBUG,
+    level: isProduction ? LogLevelEnum.INFO : LogLevelEnum.DEBUG,
     format: isProduction ? 'json' : 'compact',
     includeStackTrace: !isProduction,
   }

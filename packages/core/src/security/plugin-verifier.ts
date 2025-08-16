@@ -3,7 +3,7 @@
  * Provides cryptographic verification of plugin integrity and authenticity
  */
 
-import { createDefaultLogger } from '../logger.js'
+import { createDefaultLogger } from '../logger/index.js'
 
 const logger = createDefaultLogger('plugin-verifier')
 
@@ -101,7 +101,7 @@ export class InMemoryKeyRegistry implements TrustedKeyRegistry {
   async addKey(
     keyId: string,
     key: CryptoKey,
-    trusted,
+    trusted: boolean,
     metadata: {
       algorithm: string
       issuer?: string

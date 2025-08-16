@@ -3,10 +3,19 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "strict": false,
-    "noImplicitAny": false,
-    "noUncheckedIndexedAccess": false,
-    "exactOptionalPropertyTypes": false
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "useUnknownInCatchVariables": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
