@@ -35,6 +35,43 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@20.19.11)(@vitest/ui@2.1.9)(msw@2.10.5)
 
+  apps/hatago-server:
+    dependencies:
+      '@hatago/adapter-node':
+        specifier: workspace:*
+        version: link:../../packages/adapter-node
+      '@hatago/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@himorishige/noren-core':
+        specifier: ^0.6.2
+        version: 0.6.3
+      '@himorishige/noren-plugin-security':
+        specifier: ^0.6.2
+        version: 0.6.3
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.17.3
+        version: 1.17.3
+      hono:
+        specifier: ^4.9.1
+        version: 4.9.2
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^20.19.11
+        version: 20.19.11
+      tsx:
+        specifier: ^4.20.4
+        version: 4.20.4
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.2
+      wrangler:
+        specifier: ^3.114.13
+        version: 3.114.13
+
   benchmarks:
     dependencies:
       '@hatago/adapter-node':
@@ -3506,6 +3543,7 @@ packages:
         integrity: sha512-RRECPsj7iu/xb5oKYcsFHSppFNnsj/52OVTRKb4zP5onXwVF3zVmmToNcOfGC+CRDpfK/U584fMg38ZHCaElKQ==,
       }
     engines: { node: '>=7.0.0' }
+    requiresBuild: true
     dependencies:
       color-name: 1.1.4
     dev: true
@@ -3515,6 +3553,7 @@ packages:
       {
         integrity: sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==,
       }
+    requiresBuild: true
     dev: true
 
   /color-string@1.9.1:
@@ -6179,6 +6218,7 @@ packages:
       }
     engines: { node: '>=10' }
     hasBin: true
+    requiresBuild: true
 
   /send@1.2.0:
     resolution:
@@ -7256,6 +7296,37 @@ packages:
       '@cloudflare/workerd-linux-64': 1.20250718.0
       '@cloudflare/workerd-linux-arm64': 1.20250718.0
       '@cloudflare/workerd-windows-64': 1.20250718.0
+    dev: true
+
+  /wrangler@3.114.13:
+    resolution:
+      {
+        integrity: sha512-bJbKJGTjClEp5XeyjiIKXodHW6j14ZsXuMphjvTZSwkQjGg6QlOol74/44d/u1Uso+hhIzYFg6m/d/1ggxUqWQ==,
+      }
+    engines: { node: '>=16.17.0' }
+    hasBin: true
+    peerDependencies:
+      '@cloudflare/workers-types': ^4.20250408.0
+    peerDependenciesMeta:
+      '@cloudflare/workers-types':
+        optional: true
+    dependencies:
+      '@cloudflare/kv-asset-handler': 0.3.4
+      '@cloudflare/unenv-preset': 2.0.2(unenv@2.0.0-rc.14)(workerd@1.20250718.0)
+      '@esbuild-plugins/node-globals-polyfill': 0.2.3(esbuild@0.17.19)
+      '@esbuild-plugins/node-modules-polyfill': 0.2.2(esbuild@0.17.19)
+      blake3-wasm: 2.1.5
+      esbuild: 0.17.19
+      miniflare: 3.20250718.1
+      path-to-regexp: 6.3.0
+      unenv: 2.0.0-rc.14
+      workerd: 1.20250718.0
+    optionalDependencies:
+      fsevents: 2.3.3
+      sharp: 0.33.5
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
     dev: true
 
   /wrangler@3.114.13(@cloudflare/workers-types@4.20250816.0):

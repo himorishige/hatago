@@ -1,4 +1,3 @@
-import { z } from 'zod'
 import type { HatagoPlugin } from '../system/types.ts'
 import { logger } from '../utils/logger.js'
 
@@ -20,7 +19,7 @@ export const helloHatago =
         inputSchema: {},
       },
       // handler receives (args, extra)
-      async (_args, extra) => {
+      async (_args: Record<string, unknown>, extra: any) => {
         const text =
           'Hello Hatago! This is a test string with approximately 100 characters for progress notification.'
         const chars = text.split('')

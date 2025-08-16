@@ -18,16 +18,16 @@
     "node": ">=18"
   },
   "dependencies": {
-    "@hatago/core": "workspace:*",
     "@hatago/adapter-node": "workspace:*",
-    "@modelcontextprotocol/sdk": "^1.17.3",
+    "@hatago/core": "workspace:*",
     "@himorishige/noren-core": "^0.6.2",
     "@himorishige/noren-plugin-security": "^0.6.2",
+    "@modelcontextprotocol/sdk": "^1.17.3",
     "hono": "^4.9.1",
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@types/node": "^20.19.10",
+    "@types/node": "^20.19.11",
     "tsx": "^4.20.4",
     "typescript": "^5.9.2",
     "wrangler": "^3.114.13"
