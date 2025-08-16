@@ -280,7 +280,7 @@ export function createGitHubOAuthClient(config: GitHubOAuthConfig): GitHubOAuthC
  * Legacy GitHub API client with OAuth support
  * @deprecated Use createGitHubOAuthClient() instead
  */
-class GitHubOAuthClient {
+class _GitHubOAuthClient {
   private client: GitHubOAuthClientInstance
 
   constructor(config: GitHubOAuthConfig) {

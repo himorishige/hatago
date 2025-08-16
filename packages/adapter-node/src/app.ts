@@ -21,7 +21,7 @@ const convertNodeEnv = (env?: NodeJS.ProcessEnv): Record<string, unknown> => {
 /**
  * Create default plugins for Node.js runtime (pure function)
  */
-const createDefaultPlugins = (env?: Record<string, unknown>): HatagoPlugin[] => {
+const createDefaultPlugins = (_env?: Record<string, unknown>): HatagoPlugin[] => {
   // Node.js runtime has full capabilities
   return [helloHatago]
 }

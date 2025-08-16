@@ -10,7 +10,7 @@ export interface CreateWorkersAppOptions extends Omit<CreateAppOptions, 'env'> {
 /**
  * Create default plugins for Workers runtime
  */
-const createDefaultPlugins = (env?: Record<string, unknown>): HatagoPlugin[] => {
+const createDefaultPlugins = (_env?: Record<string, unknown>): HatagoPlugin[] => {
   // Workers runtime has specific capabilities and constraints
   return [helloHatago]
 }

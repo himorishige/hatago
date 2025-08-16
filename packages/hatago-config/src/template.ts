@@ -461,6 +461,6 @@ export class TemplateEngine {
     config: Partial<TemplateConfig>,
     files: { [filename: string]: string }
   ): void {
-    return this.engine.createTemplate(templateDir, config, files)
+    this.engine.createTemplate(templateDir, config, files)
   }
 }
