@@ -7,7 +7,7 @@ A lightweight, fast, and extensible MCP (Model Context Protocol) server framewor
 
 ## Overview
 
-Hatago is a production-ready MCP server framework designed for modern JavaScript runtimes. It provides a minimal core with powerful plugin architecture, enabling you to build scalable, secure MCP servers that run anywhere.
+Hatago is a production-ready MCP server framework designed for modern JavaScript runtimes. It provides a minimal core with powerful plugin architecture, enabling you to build scalable, secure MCP servers that run anywhere. Hatago is built on [Hono](https://hono.dev/) as its core framework.
 
 ## ✨ Features
 
@@ -351,7 +351,5 @@ MIT License - see the [LICENSE](./LICENSE) file for details.
   <p>
     <a href="https://github.com/himorishige/hatago">GitHub</a> •
     <a href="https://www.npmjs.com/org/hatago">npm</a> •
-    <a href="https://hatago.dev">Documentation</a> •
-    <a href="https://discord.gg/hatago">Discord</a>
   </p>
 </div>

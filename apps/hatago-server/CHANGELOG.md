@@ -1,5 +1,11 @@
 # @hatago/reference-server
 
+## 0.3.0
+
+### Minor Changes
+
+- Updated dependencies [2aeb2f7]
+
 ## 0.2.0
 
 ### Minor Changes
