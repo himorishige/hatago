@@ -12,9 +12,10 @@ export interface CreateNodeAppOptions extends Omit<CreateAppOptions, 'env'> {
  */
 const convertNodeEnv = (env?: NodeJS.ProcessEnv): Record<string, unknown> => {
   if (!env) return {}
-  return Object.fromEntries(
-    Object.entries(env).filter(([, v]) => v !== undefined)
-  ) as Record<string, unknown>
+  return Object.fromEntries(Object.entries(env).filter(([, v]) => v !== undefined)) as Record<
+    string,
+    unknown
+  >
 }
 
 /**

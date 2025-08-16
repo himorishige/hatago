@@ -18,7 +18,10 @@ const createDefaultPlugins = (env?: Record<string, unknown>): HatagoPlugin[] => 
 /**
  * Configure MCP endpoint for Workers runtime
  */
-const configureMCPEndpoint = (app: NonNullable<Awaited<ReturnType<typeof createCoreApp>>['app']>, server: Awaited<ReturnType<typeof createCoreApp>>['server']) => {
+const configureMCPEndpoint = (
+  app: NonNullable<Awaited<ReturnType<typeof createCoreApp>>['app']>,
+  server: Awaited<ReturnType<typeof createCoreApp>>['server']
+) => {
   app.all('/mcp', async c => {
     const transport = new StreamableHTTPTransport()
     // Initialize sessionId to satisfy Transport interface requirement

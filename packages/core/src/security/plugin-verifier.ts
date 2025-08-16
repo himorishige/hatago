@@ -80,23 +80,99 @@ export interface PluginVerifierConfig {
 }
 
 /**
- * Simple in-memory key registry for development
+ * Key registry entry type
  */
-export class InMemoryKeyRegistry implements TrustedKeyRegistry {
-  private keys = new Map<
-    string,
-    {
-      key: CryptoKey
-      trusted: boolean
-      metadata: {
-        algorithm: string
-        issuer?: string
-        subject?: string
-        validFrom?: string
-        validTo?: string
-      }
+interface KeyRegistryEntry {
+  key: CryptoKey
+  trusted: boolean
+  metadata: {
+    algorithm: string
+    issuer?: string
+    subject?: string
+    validFrom?: string
+    validTo?: string
+  }
+}
+
+/**
+ * In-memory key registry implementation
+ */
+interface InMemoryKeyRegistryInstance extends TrustedKeyRegistry {
+  addKey(
+    keyId: string,
+    key: CryptoKey,
+    trusted: boolean,
+    metadata: {
+      algorithm: string
+      issuer?: string
+      subject?: string
+      validFrom?: string
+      validTo?: string
     }
-  >()
+  ): Promise<void>
+  listKeys(): string[]
+}
+
+/**
+ * Create an in-memory key registry for development
+ */
+export function createInMemoryKeyRegistry(): InMemoryKeyRegistryInstance {
+  const keys = new Map<string, KeyRegistryEntry>()
+
+  const addKey = async (
+    keyId: string,
+    key: CryptoKey,
+    trusted: boolean,
+    metadata: {
+      algorithm: string
+      issuer?: string
+      subject?: string
+      validFrom?: string
+      validTo?: string
+    }
+  ): Promise<void> => {
+    keys.set(keyId, { key, trusted, metadata })
+    logger.info('Key added to registry', { keyId, trusted, algorithm: metadata.algorithm })
+  }
+
+  const getKey = async (keyId: string): Promise<CryptoKey | null> => {
+    const entry = keys.get(keyId)
+    return entry?.key || null
+  }
+
+  const isTrusted = async (keyId: string): Promise<boolean> => {
+    const entry = keys.get(keyId)
+    return entry?.trusted || false
+  }
+
+  const getKeyInfo = async (keyId: string) => {
+    const entry = keys.get(keyId)
+    return entry?.metadata || null
+  }
+
+  const listKeys = (): string[] => {
+    return Array.from(keys.keys())
+  }
+
+  return {
+    addKey,
+    getKey,
+    isTrusted,
+    getKeyInfo,
+    listKeys,
+  }
+}
+
+/**
+ * Legacy class wrapper for backward compatibility
+ * @deprecated Use createInMemoryKeyRegistry() instead
+ */
+export class InMemoryKeyRegistry implements InMemoryKeyRegistryInstance {
+  private registry: InMemoryKeyRegistryInstance
+
+  constructor() {
+    this.registry = createInMemoryKeyRegistry()
+  }
 
   async addKey(
     keyId: string,
@@ -110,65 +186,190 @@ export class InMemoryKeyRegistry implements TrustedKeyRegistry {
       validTo?: string
     }
   ): Promise<void> {
-    this.keys.set(keyId, { key, trusted, metadata })
-    logger.info('Key added to registry', { keyId, trusted, algorithm: metadata.algorithm })
+    return this.registry.addKey(keyId, key, trusted, metadata)
   }
 
   async getKey(keyId: string): Promise<CryptoKey | null> {
-    const entry = this.keys.get(keyId)
-    return entry?.key || null
+    return this.registry.getKey(keyId)
   }
 
   async isTrusted(keyId: string): Promise<boolean> {
-    const entry = this.keys.get(keyId)
-    return entry?.trusted || false
+    return this.registry.isTrusted(keyId)
   }
 
   async getKeyInfo(keyId: string) {
-    const entry = this.keys.get(keyId)
-    return entry?.metadata || null
+    return this.registry.getKeyInfo(keyId)
   }
 
   listKeys(): string[] {
-    return Array.from(this.keys.keys())
+    return this.registry.listKeys()
   }
 }
 
 /**
- * Plugin signature verifier
+ * Plugin verifier instance interface
  */
-export class PluginVerifier {
-  private config: Required<PluginVerifierConfig>
-  private defaultRegistry: InMemoryKeyRegistry
-
-  constructor(config: PluginVerifierConfig = {}) {
-    this.defaultRegistry = new InMemoryKeyRegistry()
-
-    this.config = {
-      enabled: config.enabled ?? true,
-      requireSigned: config.requireSigned ?? false,
-      maxSignatureAge: config.maxSignatureAge ?? 24 * 60 * 60 * 1000, // 24 hours
-      keyRegistry: config.keyRegistry ?? this.defaultRegistry,
-      allowTestKeys: config.allowTestKeys ?? true,
+interface PluginVerifierInstance {
+  verifyPlugin(pluginData: Uint8Array, signature: PluginSignature): Promise<VerificationResult>
+  signPlugin(
+    pluginData: Uint8Array,
+    privateKey: CryptoKey,
+    keyId: string,
+    algorithm?: PluginSignature['algorithm']
+  ): Promise<PluginSignature>
+  generateKeyPair(algorithm?: PluginSignature['algorithm']): Promise<{
+    publicKey: CryptoKey
+    privateKey: CryptoKey
+    keyId: string
+  }>
+  addTrustedKey(
+    keyId: string,
+    publicKey: CryptoKey,
+    metadata: {
+      algorithm: string
+      issuer?: string
+      subject?: string
+      validFrom?: string
+      validTo?: string
     }
+  ): Promise<void>
+}
 
-    logger.info('Plugin verifier initialized', {
-      enabled: this.config.enabled,
-      requireSigned: this.config.requireSigned,
-      maxSignatureAge: this.config.maxSignatureAge,
-    })
+/**
+ * Create a plugin signature verifier
+ */
+export function createPluginVerifier(config: PluginVerifierConfig = {}): PluginVerifierInstance {
+  const defaultRegistry = createInMemoryKeyRegistry()
+
+  const finalConfig: Required<PluginVerifierConfig> = {
+    enabled: config.enabled ?? true,
+    requireSigned: config.requireSigned ?? false,
+    maxSignatureAge: config.maxSignatureAge ?? 24 * 60 * 60 * 1000, // 24 hours
+    keyRegistry: config.keyRegistry ?? defaultRegistry,
+    allowTestKeys: config.allowTestKeys ?? true,
+  }
+
+  logger.info('Plugin verifier initialized', {
+    enabled: finalConfig.enabled,
+    requireSigned: finalConfig.requireSigned,
+    maxSignatureAge: finalConfig.maxSignatureAge,
+  })
+
+  // Utility functions for crypto operations
+  const base64ToBytes = (base64: string): Uint8Array => {
+    const binaryString = atob(base64)
+    const bytes = new Uint8Array(binaryString.length)
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i)
+    }
+    return bytes
+  }
+
+  const bytesToBase64 = (bytes: Uint8Array): string => {
+    const binaryString = Array.from(bytes, byte => String.fromCharCode(byte)).join('')
+    return btoa(binaryString)
+  }
+
+  const getWebCryptoAlgorithm = (algorithm: PluginSignature['algorithm']): AlgorithmIdentifier => {
+    switch (algorithm) {
+      case 'ed25519':
+        return 'Ed25519'
+      case 'rsa-pss':
+        return {
+          name: 'RSA-PSS',
+          saltLength: 32,
+        } as RsaPssParams
+      case 'ecdsa-p256':
+        return {
+          name: 'ECDSA',
+          hash: 'SHA-256',
+        } as EcdsaParams
+      default:
+        throw new Error(`Unsupported algorithm: ${algorithm}`)
+    }
+  }
+
+  const getKeyGenerationAlgorithm = (
+    algorithm: PluginSignature['algorithm']
+  ): AlgorithmIdentifier => {
+    switch (algorithm) {
+      case 'ed25519':
+        return 'Ed25519'
+      case 'rsa-pss':
+        return {
+          name: 'RSA-PSS',
+          modulusLength: 2048,
+          publicExponent: new Uint8Array([1, 0, 1]),
+          hash: 'SHA-256',
+        } as RsaHashedKeyGenParams
+      case 'ecdsa-p256':
+        return {
+          name: 'ECDSA',
+          namedCurve: 'P-256',
+        } as EcKeyGenParams
+      default:
+        throw new Error(`Unsupported algorithm: ${algorithm}`)
+    }
+  }
+
+  const cryptoVerify = async (
+    algorithm: PluginSignature['algorithm'],
+    publicKey: CryptoKey,
+    signature: Uint8Array,
+    data: Uint8Array
+  ): Promise<boolean> => {
+    const alg = getWebCryptoAlgorithm(algorithm)
+    // Create ArrayBuffer copies to ensure correct type
+    const signatureBuffer = signature.slice().buffer
+    const dataBuffer = data.slice().buffer
+    return await crypto.subtle.verify(alg, publicKey, signatureBuffer, dataBuffer)
+  }
+
+  const cryptoSign = async (
+    algorithm: PluginSignature['algorithm'],
+    privateKey: CryptoKey,
+    data: Uint8Array
+  ): Promise<Uint8Array> => {
+    const alg = getWebCryptoAlgorithm(algorithm)
+    // Create ArrayBuffer copy to ensure correct type
+    const dataBuffer = data.slice().buffer
+    const signature = await crypto.subtle.sign(alg, privateKey, dataBuffer)
+    return new Uint8Array(signature)
+  }
+
+  const generateCryptoKeyPair = async (
+    algorithm: PluginSignature['algorithm']
+  ): Promise<CryptoKeyPair> => {
+    const keyGenAlg = getKeyGenerationAlgorithm(algorithm)
+    const result = await crypto.subtle.generateKey(
+      keyGenAlg,
+      true, // extractable
+      ['sign', 'verify']
+    )
+
+    // Ensure we got a key pair, not a single key
+    if ('privateKey' in result && 'publicKey' in result) {
+      return result as CryptoKeyPair
+    }
+    throw new Error('Expected CryptoKeyPair but got CryptoKey')
+  }
+
+  const generateKeyId = async (publicKey: CryptoKey): Promise<string> => {
+    const exported = await crypto.subtle.exportKey('spki', publicKey)
+    const hash = await crypto.subtle.digest('SHA-256', exported)
+    return bytesToBase64(new Uint8Array(hash)).slice(0, 16)
   }
 
   /**
    * Verify plugin signature
    */
-  async verifyPlugin(
+  const verifyPlugin = async (
     pluginData: Uint8Array,
     signature: PluginSignature
-  ): Promise<VerificationResult> {
+  ): Promise<VerificationResult> => {
     const verifiedAt = new Date().toISOString()
 
-    if (!this.config.enabled) {
+    if (!finalConfig.enabled) {
       return {
         valid: true,
         status: 'valid',
@@ -180,7 +381,7 @@ export class PluginVerifier {
     try {
       // Check signature age
       const signatureAge = Date.now() - new Date(signature.timestamp).getTime()
-      if (signatureAge > this.config.maxSignatureAge) {
+      if (signatureAge > finalConfig.maxSignatureAge) {
         return {
           valid: false,
           status: 'expired',
@@ -190,7 +391,7 @@ export class PluginVerifier {
       }
 
       // Get public key
-      const publicKey = await this.config.keyRegistry.getKey(signature.keyId)
+      const publicKey = await finalConfig.keyRegistry.getKey(signature.keyId)
       if (!publicKey) {
         return {
           valid: false,
@@ -201,8 +402,8 @@ export class PluginVerifier {
       }
 
       // Check if key is trusted (unless test keys are allowed)
-      const isTrusted = await this.config.keyRegistry.isTrusted(signature.keyId)
-      if (!isTrusted && !this.config.allowTestKeys) {
+      const isTrusted = await finalConfig.keyRegistry.isTrusted(signature.keyId)
+      if (!isTrusted && !finalConfig.allowTestKeys) {
         return {
           valid: false,
           status: 'untrusted',
@@ -212,13 +413,8 @@ export class PluginVerifier {
       }
 
       // Verify signature
-      const signatureBytes = this.base64ToBytes(signature.signature)
-      const isValid = await this.cryptoVerify(
-        signature.algorithm,
-        publicKey,
-        signatureBytes,
-        pluginData
-      )
+      const signatureBytes = base64ToBytes(signature.signature)
+      const isValid = await cryptoVerify(signature.algorithm, publicKey, signatureBytes, pluginData)
 
       if (!isValid) {
         return {
@@ -230,7 +426,7 @@ export class PluginVerifier {
       }
 
       // Get signer info
-      const keyInfo = await this.config.keyRegistry.getKeyInfo(signature.keyId)
+      const keyInfo = await finalConfig.keyRegistry.getKeyInfo(signature.keyId)
       const signer = {
         keyId: signature.keyId,
         ...(keyInfo?.issuer && { issuer: keyInfo.issuer }),
@@ -260,15 +456,15 @@ export class PluginVerifier {
   /**
    * Sign plugin data (for development/testing)
    */
-  async signPlugin(
+  const signPlugin = async (
     pluginData: Uint8Array,
     privateKey: CryptoKey,
     keyId: string,
     algorithm: PluginSignature['algorithm'] = 'ed25519'
-  ): Promise<PluginSignature> {
+  ): Promise<PluginSignature> => {
     try {
-      const signatureBytes = await this.cryptoSign(algorithm, privateKey, pluginData)
-      const signature = this.bytesToBase64(signatureBytes)
+      const signatureBytes = await cryptoSign(algorithm, privateKey, pluginData)
+      const signature = bytesToBase64(signatureBytes)
 
       return {
         algorithm,
@@ -287,13 +483,15 @@ export class PluginVerifier {
   /**
    * Generate key pair for signing (development/testing)
    */
-  async generateKeyPair(algorithm: PluginSignature['algorithm'] = 'ed25519'): Promise<{
+  const generateKeyPair = async (
+    algorithm: PluginSignature['algorithm'] = 'ed25519'
+  ): Promise<{
     publicKey: CryptoKey
     privateKey: CryptoKey
     keyId: string
-  }> {
-    const keyPair = await this.generateCryptoKeyPair(algorithm)
-    const keyId = await this.generateKeyId(keyPair.publicKey)
+  }> => {
+    const keyPair = await generateCryptoKeyPair(algorithm)
+    const keyId = await generateKeyId(keyPair.publicKey)
 
     return {
       publicKey: keyPair.publicKey,
@@ -305,6 +503,65 @@ export class PluginVerifier {
   /**
    * Add trusted key to default registry
    */
+  const addTrustedKey = async (
+    keyId: string,
+    publicKey: CryptoKey,
+    metadata: {
+      algorithm: string
+      issuer?: string
+      subject?: string
+      validFrom?: string
+      validTo?: string
+    }
+  ): Promise<void> => {
+    if ('addKey' in defaultRegistry) {
+      await defaultRegistry.addKey(keyId, publicKey, true, metadata)
+    }
+  }
+
+  return {
+    verifyPlugin,
+    signPlugin,
+    generateKeyPair,
+    addTrustedKey,
+  }
+}
+
+/**
+ * Legacy class wrapper for backward compatibility
+ * @deprecated Use createPluginVerifier() instead
+ */
+export class PluginVerifier {
+  private verifier: PluginVerifierInstance
+
+  constructor(config: PluginVerifierConfig = {}) {
+    this.verifier = createPluginVerifier(config)
+  }
+
+  async verifyPlugin(
+    pluginData: Uint8Array,
+    signature: PluginSignature
+  ): Promise<VerificationResult> {
+    return this.verifier.verifyPlugin(pluginData, signature)
+  }
+
+  async signPlugin(
+    pluginData: Uint8Array,
+    privateKey: CryptoKey,
+    keyId: string,
+    algorithm: PluginSignature['algorithm'] = 'ed25519'
+  ): Promise<PluginSignature> {
+    return this.verifier.signPlugin(pluginData, privateKey, keyId, algorithm)
+  }
+
+  async generateKeyPair(algorithm: PluginSignature['algorithm'] = 'ed25519'): Promise<{
+    publicKey: CryptoKey
+    privateKey: CryptoKey
+    keyId: string
+  }> {
+    return this.verifier.generateKeyPair(algorithm)
+  }
+
   async addTrustedKey(
     keyId: string,
     publicKey: CryptoKey,
@@ -316,118 +573,24 @@ export class PluginVerifier {
       validTo?: string
     }
   ): Promise<void> {
-    if (this.defaultRegistry) {
-      await this.defaultRegistry.addKey(keyId, publicKey, true, metadata)
-    }
-  }
-
-  // Private methods for crypto operations
-
-  private async cryptoVerify(
-    algorithm: PluginSignature['algorithm'],
-    publicKey: CryptoKey,
-    signature: Uint8Array,
-    data: Uint8Array
-  ): Promise<boolean> {
-    const alg = this.getWebCryptoAlgorithm(algorithm)
-    // Create ArrayBuffer copies to ensure correct type
-    const signatureBuffer = signature.slice().buffer
-    const dataBuffer = data.slice().buffer
-    return await crypto.subtle.verify(alg, publicKey, signatureBuffer, dataBuffer)
-  }
-
-  private async cryptoSign(
-    algorithm: PluginSignature['algorithm'],
-    privateKey: CryptoKey,
-    data: Uint8Array
-  ): Promise<Uint8Array> {
-    const alg = this.getWebCryptoAlgorithm(algorithm)
-    // Create ArrayBuffer copy to ensure correct type
-    const dataBuffer = data.slice().buffer
-    const signature = await crypto.subtle.sign(alg, privateKey, dataBuffer)
-    return new Uint8Array(signature)
-  }
-
-  private async generateCryptoKeyPair(
-    algorithm: PluginSignature['algorithm']
-  ): Promise<CryptoKeyPair> {
-    const keyGenAlg = this.getKeyGenerationAlgorithm(algorithm)
-    const result = await crypto.subtle.generateKey(
-      keyGenAlg,
-      true, // extractable
-      ['sign', 'verify']
-    )
-
-    // Ensure we got a key pair, not a single key
-    if ('privateKey' in result && 'publicKey' in result) {
-      return result as CryptoKeyPair
-    }
-    throw new Error('Expected CryptoKeyPair but got CryptoKey')
-  }
-
-  private async generateKeyId(publicKey: CryptoKey): Promise<string> {
-    const exported = await crypto.subtle.exportKey('spki', publicKey)
-    const hash = await crypto.subtle.digest('SHA-256', exported)
-    return this.bytesToBase64(new Uint8Array(hash)).slice(0, 16)
-  }
-
-  private getWebCryptoAlgorithm(algorithm: PluginSignature['algorithm']): AlgorithmIdentifier {
-    switch (algorithm) {
-      case 'ed25519':
-        return 'Ed25519'
-      case 'rsa-pss':
-        return {
-          name: 'RSA-PSS',
-          saltLength: 32,
-        } as RsaPssParams
-      case 'ecdsa-p256':
-        return {
-          name: 'ECDSA',
-          hash: 'SHA-256',
-        } as EcdsaParams
-      default:
-        throw new Error(`Unsupported algorithm: ${algorithm}`)
-    }
-  }
-
-  private getKeyGenerationAlgorithm(algorithm: PluginSignature['algorithm']): AlgorithmIdentifier {
-    switch (algorithm) {
-      case 'ed25519':
-        return 'Ed25519'
-      case 'rsa-pss':
-        return {
-          name: 'RSA-PSS',
-          modulusLength: 2048,
-          publicExponent: new Uint8Array([1, 0, 1]),
-          hash: 'SHA-256',
-        } as RsaHashedKeyGenParams
-      case 'ecdsa-p256':
-        return {
-          name: 'ECDSA',
-          namedCurve: 'P-256',
-        } as EcKeyGenParams
-      default:
-        throw new Error(`Unsupported algorithm: ${algorithm}`)
-    }
-  }
-
-  private base64ToBytes(base64: string): Uint8Array {
-    const binaryString = atob(base64)
-    const bytes = new Uint8Array(binaryString.length)
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i)
-    }
-    return bytes
-  }
-
-  private bytesToBase64(bytes: Uint8Array): string {
-    const binaryString = Array.from(bytes, byte => String.fromCharCode(byte)).join('')
-    return btoa(binaryString)
+    return this.verifier.addTrustedKey(keyId, publicKey, metadata)
   }
 }
 
 /**
+ * Create default plugin verifier instance
+ */
+export function createDefaultPluginVerifier(): PluginVerifierInstance {
+  return createPluginVerifier({
+    enabled: true,
+    requireSigned: false, // Start with false for development
+    allowTestKeys: true,
+  })
+}
+
+/**
  * Default plugin verifier instance
+ * @deprecated Use createDefaultPluginVerifier() instead
  */
 export const defaultPluginVerifier = new PluginVerifier({
   enabled: true,
