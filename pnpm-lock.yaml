@@ -64,8 +64,8 @@ importers:
   examples/external-mcp-clock:
     dependencies:
       '@hatago/hono-mcp':
-        specifier: file:../../packages/hono-mcp
-        version: file:packages/hono-mcp(@modelcontextprotocol/sdk@1.17.3)(hono@4.9.1)
+        specifier: workspace:*
+        version: link:../../packages/hono-mcp
       '@hono/node-server':
         specifier: ^1.18.2
         version: 1.18.2(hono@4.9.1)
@@ -89,8 +89,8 @@ importers:
   examples/external-mcp-math:
     dependencies:
       '@hatago/hono-mcp':
-        specifier: file:../../packages/hono-mcp
-        version: file:packages/hono-mcp(@modelcontextprotocol/sdk@1.17.3)(hono@4.9.1)
+        specifier: workspace:*
+        version: link:../../packages/hono-mcp
       '@hono/node-server':
         specifier: ^1.18.2
         version: 1.18.2(hono@4.9.1)
