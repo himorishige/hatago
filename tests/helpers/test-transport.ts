@@ -3,9 +3,9 @@
  * StreamableHTTPTransportの動作をテストするためのユーティリティ
  */
 
-import { vi } from 'vitest'
 import type { JSONRPCMessage } from '@modelcontextprotocol/sdk/types.js'
 import type { Context } from 'hono'
+import { vi } from 'vitest'
 
 /**
  * テスト用のSSEストリーミングAPIモック
@@ -118,13 +118,14 @@ export function createMockContext(options: {
 /**
  * テスト用のJSON-RPCメッセージファクトリー
  */
+// biome-ignore lint/complexity/noStaticOnlyClass: テストヘルパーとして便利
 export class JSONRPCMessageFactory {
   private static idCounter = 1
 
   static createRequest(method: string, params?: unknown, id?: string | number): JSONRPCMessage {
     return {
       jsonrpc: '2.0',
-      id: id ?? this.idCounter++,
+      id: id ?? JSONRPCMessageFactory.idCounter++,
       method,
       params,
     }
@@ -167,7 +168,7 @@ export class JSONRPCMessageFactory {
     clientName = 'test-client',
     clientVersion = '1.0.0'
   ): JSONRPCMessage {
-    return this.createRequest('initialize', {
+    return JSONRPCMessageFactory.createRequest('initialize', {
       protocolVersion: '2025-06-18',
       capabilities: {},
       clientInfo: { name: clientName, version: clientVersion },
@@ -179,7 +180,7 @@ export class JSONRPCMessageFactory {
     serverName = 'test-server',
     serverVersion = '1.0.0'
   ): JSONRPCMessage {
-    return this.createResponse(id, {
+    return JSONRPCMessageFactory.createResponse(id, {
       protocolVersion: '2025-06-18',
       capabilities: {},
       serverInfo: { name: serverName, version: serverVersion },
@@ -187,18 +188,18 @@ export class JSONRPCMessageFactory {
   }
 
   static createToolsListRequest(): JSONRPCMessage {
-    return this.createRequest('tools/list')
+    return JSONRPCMessageFactory.createRequest('tools/list')
   }
 
   static createToolsListResponse(
     id: string | number,
     tools: Array<{ name: string; title?: string; description?: string }>
   ): JSONRPCMessage {
-    return this.createResponse(id, { tools })
+    return JSONRPCMessageFactory.createResponse(id, { tools })
   }
 
   static createToolCallRequest(toolName: string, args: unknown, meta?: unknown): JSONRPCMessage {
-    return this.createRequest('tools/call', {
+    return JSONRPCMessageFactory.createRequest('tools/call', {
       name: toolName,
       arguments: args,
       ...(meta && { _meta: meta }),
@@ -206,7 +207,7 @@ export class JSONRPCMessageFactory {
   }
 
   static createToolCallResponse(id: string | number, result: unknown): JSONRPCMessage {
-    return this.createResponse(id, result)
+    return JSONRPCMessageFactory.createResponse(id, result)
   }
 
   static createProgressNotification(
@@ -214,7 +215,7 @@ export class JSONRPCMessageFactory {
     progress: number,
     total?: number
   ): JSONRPCMessage {
-    return this.createNotification('notifications/progress', {
+    return JSONRPCMessageFactory.createNotification('notifications/progress', {
       progressToken,
       progress,
       total,
@@ -225,6 +226,7 @@ export class JSONRPCMessageFactory {
 /**
  * ストリーミングテスト用のヘルパー
  */
+// biome-ignore lint/complexity/noStaticOnlyClass: テストヘルパーとして便利
 export class StreamingTestHelper {
   /**
    * SSEストリームからメッセージを収集

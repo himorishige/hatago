@@ -2,8 +2,8 @@
  * Configuration loader for Hatago
  */
 
-import { resolve } from 'node:path'
 import { readFile } from 'node:fs/promises'
+import { resolve } from 'node:path'
 import { logger } from '../utils/logger.js'
 import type { HatagoConfig } from './types.js'
 

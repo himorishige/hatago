@@ -3,9 +3,9 @@
  * ツール名の名前空間管理、衝突解決、統計情報の取得をテスト
  */
 
-import { describe, expect, it, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { NamespaceManager } from '../../../src/config/namespace-manager.js'
-import type { ProxyConfig, MCPServerConfig } from '../../../src/config/types.js'
+import type { MCPServerConfig, ProxyConfig } from '../../../src/config/types.js'
 
 describe('NamespaceManager', () => {
   let namespaceManager: NamespaceManager
@@ -174,7 +174,7 @@ describe('NamespaceManager', () => {
       namespaceManager.registerTool(server1, tool1)
 
       // プロンプト戦略では衝突を記録するが続行する
-      const name2 = namespaceManager.registerTool(server2, tool2)
+      const _name2 = namespaceManager.registerTool(server2, tool2)
 
       const conflicts = namespaceManager.getConflicts()
       expect(conflicts).toHaveLength(1)

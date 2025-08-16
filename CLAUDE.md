@@ -159,31 +159,43 @@ curl -sS http://localhost:8787/mcp -H 'content-type: application/json' -d '{
 ## Project Structure
 
 ```
-server/
-├── src/
-│   ├── app.ts              # Main application factory
-│   ├── dev-node.ts         # Node.js development server
-│   ├── stdio-server.ts     # stdio transport server (Claude Desktop integration)
-│   ├── worker.ts           # Cloudflare Workers entry point
-│   ├── config/             # Configuration management system
-│   │   ├── loader.ts       # Configuration file loader
-│   │   ├── namespace-manager.ts # Namespace management for MCP proxy
-│   │   └── types.ts        # Configuration type definitions
-│   ├── plugins/
-│   │   ├── index.ts        # Plugin registry
-│   │   ├── hello-hatago.ts # Demo streaming tool
-│   │   ├── oauth-metadata.ts # OAuth PRM support (RFC 9728)
-│   │   ├── enhanced-mcp-proxy.ts # MCP proxy with namespace management
-│   │   └── github-oauth-test.ts # GitHub OAuth integration test
-│   ├── system/
-│   │   ├── plugins.ts      # Plugin application logic
-│   │   └── types.ts        # Core type definitions
-│   └── utils/
-│       └── logger.ts       # Noren-integrated structured logger
-├── hatago.config.json      # Configuration file for MCP proxy and server settings
-├── package.json
-├── tsconfig.json
-└── wrangler.jsonc          # Cloudflare Workers config
+packages/
+├── core/                   # Core Hatago framework
+├── adapter-node/          # Node.js adapter
+├── adapter-workers/       # Cloudflare Workers adapter
+├── cli/                   # CLI tools
+└── hono-mcp/              # MCP transport for Hono
+
+apps/
+└── hatago-server/         # Example Hatago server application
+    ├── src/
+    │   ├── app.ts              # Main application factory
+    │   ├── dev-node.ts         # Node.js development server
+    │   ├── stdio-server.ts     # stdio transport server (Claude Desktop integration)
+    │   ├── worker.ts           # Cloudflare Workers entry point
+    │   ├── config/             # Configuration management system
+    │   │   ├── loader.ts       # Configuration file loader
+    │   │   ├── namespace-manager.ts # Namespace management for MCP proxy
+    │   │   └── types.ts        # Configuration type definitions
+    │   ├── plugins/
+    │   │   ├── index.ts        # Plugin registry
+    │   │   ├── hello-hatago.ts # Demo streaming tool
+    │   │   ├── oauth-metadata.ts # OAuth PRM support (RFC 9728)
+    │   │   ├── enhanced-mcp-proxy.ts # MCP proxy with namespace management
+    │   │   └── github-oauth-test.ts # GitHub OAuth integration test
+    │   ├── system/
+    │   │   ├── plugins.ts      # Plugin application logic
+    │   │   └── types.ts        # Core type definitions
+    │   └── utils/
+    │       └── logger.ts       # Noren-integrated structured logger
+    ├── hatago.config.json      # Configuration file for MCP proxy and server settings
+    ├── package.json
+    ├── tsconfig.json
+    └── wrangler.jsonc          # Cloudflare Workers config
+
+examples/
+├── external-mcp-clock/    # External MCP server example
+└── external-mcp-math/     # External MCP server example
 ```
 
 ## Development Notes

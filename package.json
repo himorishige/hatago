@@ -27,7 +27,7 @@
   },
   "workspaces": [
     "packages/*",
-    "server",
+    "apps/*",
     "examples/*"
   ],
   "engines": {

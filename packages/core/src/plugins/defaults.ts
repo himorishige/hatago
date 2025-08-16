@@ -16,7 +16,7 @@ export function createDefaultPlugins(env: Record<string, unknown> = {}): HatagoP
   const RESOURCE = env.RESOURCE as string | undefined
   const PLUGIN_SECURITY_ENABLED = env.PLUGIN_SECURITY_ENABLED !== 'false'
   const REQUIRE_SIGNED_PLUGINS = env.REQUIRE_SIGNED_PLUGINS === 'true'
-  
+
   return [
     // Structured logging (disabled in test environment to prevent memory leaks)
     structuredLogging({
@@ -36,7 +36,7 @@ export function createDefaultPlugins(env: Record<string, unknown> = {}): HatagoP
     }),
 
     // Stream "Hello Hatago" demo tool (disabled in test environment to prevent memory leaks)
-    ...(((env.NODE_ENV || process.env.NODE_ENV) !== 'test') ? [helloHatago()] : []),
+    ...((env.NODE_ENV || process.env.NODE_ENV) !== 'test' ? [helloHatago()] : []),
 
     // Health endpoints for monitoring (disabled in test environment to prevent memory leaks)
     healthEndpoints({ enabled: (env.NODE_ENV || process.env.NODE_ENV) !== 'test' }),
@@ -53,10 +53,14 @@ export function createDefaultPlugins(env: Record<string, unknown> = {}): HatagoP
     }),
 
     // OAuth Protected Resource Metadata (RFC 9728) (disabled in test environment)
-    ...((env.NODE_ENV || process.env.NODE_ENV) !== 'test' ? [oauthMetadata({
-      issuer: AUTH_ISSUER,
-      ...(RESOURCE && { resource: RESOURCE }),
-      requireAuth: REQUIRE_AUTH,
-    })] : []),
+    ...((env.NODE_ENV || process.env.NODE_ENV) !== 'test'
+      ? [
+          oauthMetadata({
+            issuer: AUTH_ISSUER,
+            ...(RESOURCE && { resource: RESOURCE }),
+            requireAuth: REQUIRE_AUTH,
+          }),
+        ]
+      : []),
   ]
 }

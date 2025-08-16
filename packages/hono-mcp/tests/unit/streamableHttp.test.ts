@@ -3,15 +3,15 @@
  * ストリーミング、接続管理、エラーハンドリング、リソース管理をテスト
  */
 
-import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest'
-import { StreamableHTTPTransport } from '../../src/streamableHttp.js'
-import {
-  createMockContext,
-  MockSSEStreamingApi,
-  JSONRPCMessageFactory,
-  StreamingTestHelper,
-} from '../../../../tests/helpers/test-transport.js'
 import type { JSONRPCMessage } from '@modelcontextprotocol/sdk/types.js'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  JSONRPCMessageFactory,
+  MockSSEStreamingApi,
+  StreamingTestHelper,
+  createMockContext,
+} from '../../../../tests/helpers/test-transport.js'
+import { StreamableHTTPTransport } from '../../src/streamableHttp.js'
 
 describe('StreamableHTTPTransport', () => {
   let transport: StreamableHTTPTransport
@@ -383,7 +383,7 @@ describe('StreamableHTTPTransport', () => {
         body: JSON.stringify(JSONRPCMessageFactory.createInitializeRequest()),
       })
 
-      const response = await transport.handleRequest(ctx)
+      const _response = await transport.handleRequest(ctx)
 
       // エラーハンドラーが呼ばれることを確認
       expect(errorSpy).toHaveBeenCalled()
@@ -426,7 +426,7 @@ describe('StreamableHTTPTransport', () => {
     it('should replay events on resumable connections', async () => {
       const mockEventStore = {
         storeEvent: vi.fn().mockResolvedValue('event-123'),
-        replayEventsAfter: vi.fn().mockImplementation(async (lastEventId, sender) => {
+        replayEventsAfter: vi.fn().mockImplementation(async (_lastEventId, sender) => {
           // 過去のイベントを再生
           await sender.send('event-1', JSONRPCMessageFactory.createNotification('old-event', {}))
           return 'stream-456'

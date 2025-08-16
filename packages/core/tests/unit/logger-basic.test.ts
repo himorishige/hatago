@@ -3,8 +3,8 @@
  * 軽量なモックベースのテストでコンソール出力を最小化
  */
 
-import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest'
-import { createLogger, setLogLevel, getLogLevel } from '../../src/logger-advanced.js'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { createLogger, getLogLevel, setLogLevel } from '../../src/logger-advanced.js'
 
 describe('Logger Basic', () => {
   let mockStdout: any
@@ -78,7 +78,7 @@ describe('Logger Basic', () => {
     it('should support child logger creation', () => {
       const parent = createLogger({ level: 'info' })
       const child = parent.child({ service: 'test' })
-      
+
       expect(child).toBeDefined()
       expect(child.isLevelEnabled('info')).toBe(true)
     })

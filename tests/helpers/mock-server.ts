@@ -3,7 +3,7 @@
  * HTTP リクエストのモック化と制御
  */
 
-import { vi, type MockedFunction } from 'vitest'
+import { type MockedFunction, vi } from 'vitest'
 
 export interface MockEndpoint {
   method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'OPTIONS'
@@ -101,7 +101,7 @@ export class MockServer {
     )
   }
 
-  mcpCallTool(toolName: string, result: unknown, options?: { progressNotifications?: unknown[] }) {
+  mcpCallTool(_toolName: string, result: unknown, options?: { progressNotifications?: unknown[] }) {
     const response = {
       jsonrpc: '2.0',
       id: expect.any(Number),

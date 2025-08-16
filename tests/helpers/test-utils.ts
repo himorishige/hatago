@@ -2,10 +2,10 @@
  * テスト用共通ユーティリティ
  */
 
-import { type MockedFunction, vi } from 'vitest'
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { HatagoContext } from '@hatago/core'
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { Hono } from 'hono'
+import { type MockedFunction, vi } from 'vitest'
 
 /**
  * モックコンテキストの作成
@@ -148,7 +148,7 @@ export function mockFetch(responses: Array<{ url?: string; response: Response | 
   const originalFetch = global.fetch
   let callIndex = 0
 
-  global.fetch = vi.fn(async (url: string | URL, init?: RequestInit) => {
+  global.fetch = vi.fn(async (url: string | URL, _init?: RequestInit) => {
     const urlString = url.toString()
 
     // URLマッチングまたは順次実行

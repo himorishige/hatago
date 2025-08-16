@@ -3,22 +3,22 @@
  * 設定ファイルの読み込み、マージ、バリデーションをテスト
  */
 
-import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest'
-import { writeFileSync, mkdirSync, rmSync, existsSync } from 'node:fs'
-import { resolve, join } from 'node:path'
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { join, resolve } from 'node:path'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { createTempDir, mockEnv } from '../../../../tests/helpers/test-utils.js'
 import { loadConfig } from '../../../src/config/loader.js'
 import type { HatagoConfig } from '../../../src/config/types.js'
-import { createTempDir, mockEnv } from '../../../../tests/helpers/test-utils.js'
 
 describe('ConfigLoader', () => {
   let tempDir: string
-  let originalEnv: typeof process.env
+  let _originalEnv: typeof process.env
   let envMock: { restore: () => void }
 
   beforeEach(() => {
     tempDir = createTempDir()
     mkdirSync(tempDir, { recursive: true })
-    originalEnv = { ...process.env }
+    _originalEnv = { ...process.env }
     envMock = mockEnv({})
   })
 

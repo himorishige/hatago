@@ -3,7 +3,7 @@
  * しきい値チェックによる退行検知
  */
 
-import { describe, expect, it, beforeAll, afterAll } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 describe('Performance Smoke Tests', () => {
   let serverUrl: string
@@ -135,7 +135,7 @@ describe('Performance Smoke Tests', () => {
           try {
             const response = await fetch(`${serverUrl}/health`)
             if (!response.ok) errorCount++
-          } catch (error) {
+          } catch (_error) {
             errorCount++
           }
         })

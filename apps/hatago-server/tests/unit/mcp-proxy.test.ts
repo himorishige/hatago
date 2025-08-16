@@ -3,7 +3,7 @@
  * TODO: enhanced-mcp-proxy.ts の実装に合わせて詳細なテストを追加
  */
 
-import { describe, expect, it, beforeEach, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe('Enhanced MCP Proxy', () => {
   describe('Server Connection and Handshake', () => {

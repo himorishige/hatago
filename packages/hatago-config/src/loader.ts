@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { cosmiconfig } from 'cosmiconfig'
 import { config as loadDotenv } from 'dotenv'
-import { parse as parseJsonc, type ParseError } from 'jsonc-parser'
+import { type ParseError, parse as parseJsonc } from 'jsonc-parser'
 import type { ZodError } from 'zod'
 import { type HatagoConfig, HatagoConfigSchema } from './schema.js'
 

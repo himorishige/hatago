@@ -3,7 +3,7 @@
  * TODO: 実装が完了したら詳細なテストケースを追加
  */
 
-import { describe, expect, it, beforeEach, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe('OAuth Authentication & Authorization', () => {
   describe('Token Validation', () => {

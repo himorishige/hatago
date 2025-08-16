@@ -3,7 +3,7 @@
  * 全テストの実行前に実行される共通処理
  */
 
-import { beforeAll, afterAll, beforeEach, afterEach } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, vi } from 'vitest'
 
 // グローバル設定
 beforeAll(async () => {
@@ -36,7 +36,7 @@ afterEach(() => {
   vi.useRealTimers()
 
   // 環境変数のクリーンアップ
-  delete process.env.TEST_CONFIG_PATH
-  delete process.env.TEST_AUTH_TOKEN
-  delete process.env.TEST_SERVER_URL
+  process.env.TEST_CONFIG_PATH = undefined
+  process.env.TEST_AUTH_TOKEN = undefined
+  process.env.TEST_SERVER_URL = undefined
 })

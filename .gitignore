@@ -14,6 +14,7 @@ server/dist/
 examples/**/dist/
 
 # test coverage
+test-results.json
 coverage/
 packages/*/coverage/
 *.lcov

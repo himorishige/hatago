@@ -2,18 +2,20 @@ import { defineConfig } from 'vitest/config'
 
 // CI環境では重いテストを除外
 const isCI = process.env.CI === 'true'
-const ciExclude = isCI ? [
-  '**/tests/performance/**',    // パフォーマンステスト（環境依存）
-  '**/tests/e2e/**',           // E2Eテスト（サーバー起動が必要）
-  '**/logger.test.ts',         // メモリ集約的なコンソール出力テスト
-] : []
+const ciExclude = isCI
+  ? [
+      '**/tests/performance/**', // パフォーマンステスト（環境依存）
+      '**/tests/e2e/**', // E2Eテスト（サーバー起動が必要）
+      '**/logger.test.ts', // メモリ集約的なコンソール出力テスト
+    ]
+  : []
 
 // ローカル環境でもメモリリーク問題となるテストを除外
 const alwaysExclude = [
-  '**/tests/performance/**',    // パフォーマンステスト
-  '**/tests/e2e/**',           // E2Eテスト
-  '**/logger.test.ts',         // メモリ集約的なログテスト
-  '**/hello-hatago.test.ts',   // メモリリークする進捗通知テスト
+  '**/tests/performance/**', // パフォーマンステスト
+  '**/tests/e2e/**', // E2Eテスト
+  '**/logger.test.ts', // メモリ集約的なログテスト
+  '**/hello-hatago.test.ts', // メモリリークする進捗通知テスト
 ]
 
 export default defineConfig({
@@ -22,8 +24,8 @@ export default defineConfig({
     include: [
       'packages/*/tests/**/*.test.ts',
       'packages/*/src/**/*.test.ts',
-      'server/tests/**/*.test.ts',
-      'server/src/**/*.test.ts',
+      'apps/*/tests/**/*.test.ts',
+      'apps/*/src/**/*.test.ts',
     ],
     exclude: [
       '**/node_modules/**',
@@ -33,13 +35,13 @@ export default defineConfig({
       '**/.nuxt/**',
       '**/.vercel/**',
       '**/.wrangler/**',
-      ...alwaysExclude,          // 常に除外するテスト（メモリリーク対策）
-      ...ciExclude,              // CI環境での追加除外テスト
+      ...alwaysExclude, // 常に除外するテスト（メモリリーク対策）
+      ...ciExclude, // CI環境での追加除外テスト
     ],
 
     // 環境設定
     environment: 'node',
-    
+
     // 環境変数設定
     env: {
       NODE_ENV: 'test',

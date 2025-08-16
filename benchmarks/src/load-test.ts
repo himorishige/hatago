@@ -229,7 +229,9 @@ async function runAllLoadTests() {
       {
         name: 'Success Rate (> 99%)',
         target: 99,
-        actual: results[0]?.result ? (results[0].result.successfulRequests / results[0].result.totalRequests) * 100 : 0,
+        actual: results[0]?.result
+          ? (results[0].result.successfulRequests / results[0].result.totalRequests) * 100
+          : 0,
       },
     ]
 

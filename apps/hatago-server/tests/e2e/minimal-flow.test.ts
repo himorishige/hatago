@@ -3,10 +3,10 @@
  * 起動 → ハンドシェイク → 最小ルート成功
  */
 
-import { describe, expect, it, beforeAll, afterAll } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 describe('E2E: Minimal Flow', () => {
-  let serverProcess: any
+  let _serverProcess: any
   let serverUrl: string
 
   beforeAll(async () => {
