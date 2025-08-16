@@ -36,7 +36,7 @@ export async function serveApp(options: ServeOptions = {}) {
   console.log(`   MCP:    http://${hostname}:${port}/mcp`)
 
   const server = serve({
-    fetch: app!.fetch,
+    fetch: app?.fetch,
     port,
     hostname,
   })

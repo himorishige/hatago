@@ -36,7 +36,7 @@ export async function createApp(options: CreateNodeAppOptions = {}) {
   if (app) {
     app.all('/mcp', async c => {
       const transport = new StreamableHTTPTransport()
-      await server.connect(transport as any) // Type assertion for optional sessionId compatibility
+      await server.connect(transport as any) // Temporary fix for sessionId type mismatch
       return transport.handleRequest(c)
     })
   }

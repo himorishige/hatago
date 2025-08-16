@@ -9,11 +9,11 @@ import type {
 } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js'
 import {
-  JSONRPCMessageSchema,
   isInitializeRequest,
   isJSONRPCError,
   isJSONRPCRequest,
   isJSONRPCResponse,
+  JSONRPCMessageSchema,
 } from '@modelcontextprotocol/sdk/types.js'
 import type { JSONRPCMessage, RequestId } from '@modelcontextprotocol/sdk/types.js'
 import type { Context } from 'hono'
@@ -118,7 +118,7 @@ export class StreamableHTTPTransport implements Transport {
       if (this.#eventStore) {
         const lastEventId = ctx.req.header('last-event-id')
         if (lastEventId) {
-          streamId = stream =>
+          streamId = (stream) =>
             this.#eventStore!.replayEventsAfter(lastEventId, {
               send: async (eventId: string, message: JSONRPCMessage) => {
                 try {
@@ -153,7 +153,7 @@ export class StreamableHTTPTransport implements Transport {
         })
       }
 
-      return streamSSE(ctx, async stream => {
+      return streamSSE(ctx, async (stream) => {
         const resolvedStreamId = typeof streamId === 'string' ? streamId : await streamId(stream)
 
         // Assign the response to the standalone SSE stream
@@ -249,7 +249,7 @@ export class StreamableHTTPTransport implements Transport {
 
       // handle batch and single messages
       if (Array.isArray(rawMessage)) {
-        messages = rawMessage.map(msg => JSONRPCMessageSchema.parse(msg))
+        messages = rawMessage.map((msg) => JSONRPCMessageSchema.parse(msg))
       } else {
         messages = [JSONRPCMessageSchema.parse(rawMessage)]
       }
@@ -315,65 +315,66 @@ export class StreamableHTTPTransport implements Transport {
         return ctx.body(null, 202)
       }
 
-      // All remaining cases have requests
-      // The default behavior is to use SSE streaming
-      // but in some cases server will return JSON responses
-      const streamId = crypto.randomUUID()
+      if (hasRequests) {
+        // The default behavior is to use SSE streaming
+        // but in some cases server will return JSON responses
+        const streamId = crypto.randomUUID()
 
-      if (!this.#enableJsonResponse && this.sessionId !== undefined) {
-        ctx.header('mcp-session-id', this.sessionId)
-      }
+        if (!this.#enableJsonResponse && this.sessionId !== undefined) {
+          ctx.header('mcp-session-id', this.sessionId)
+        }
 
-      if (this.#enableJsonResponse) {
-        // Store the response for this request to send messages back through this connection
-        // We need to track by request ID to maintain the connection
-        const result = await new Promise<any>(resolve => {
+        if (this.#enableJsonResponse) {
+          // Store the response for this request to send messages back through this connection
+          // We need to track by request ID to maintain the connection
+          const result = await new Promise<any>((resolve) => {
+            for (const message of messages) {
+              if (isJSONRPCRequest(message)) {
+                this.#streamMapping.set(streamId, {
+                  ctx: {
+                    header: ctx.header,
+                    json: resolve,
+                  },
+                })
+                this.#requestToStreamMapping.set(message.id, streamId)
+              }
+            }
+
+            // handle each message
+            for (const message of messages) {
+              this.onmessage?.(message, { authInfo })
+            }
+          })
+
+          return ctx.json(result)
+        }
+
+        return streamSSE(ctx, async (stream) => {
+          // Store the response for this request to send messages back through this connection
+          // We need to track by request ID to maintain the connection
           for (const message of messages) {
             if (isJSONRPCRequest(message)) {
               this.#streamMapping.set(streamId, {
-                ctx: {
-                  header: ctx.header,
-                  json: resolve,
-                },
+                ctx,
+                stream,
               })
               this.#requestToStreamMapping.set(message.id, streamId)
             }
           }
 
+          // Set up close handler for client disconnects
+          stream.onAbort(() => {
+            this.#streamMapping.delete(streamId)
+          })
+
           // handle each message
           for (const message of messages) {
             this.onmessage?.(message, { authInfo })
           }
+          // The server SHOULD NOT close the SSE stream before sending all JSON-RPC responses
+          // This will be handled by the send() method when responses are ready
         })
-
-        return ctx.json(result)
       }
-
-      return streamSSE(ctx, async stream => {
-        // Store the response for this request to send messages back through this connection
-        // We need to track by request ID to maintain the connection
-        for (const message of messages) {
-          if (isJSONRPCRequest(message)) {
-            this.#streamMapping.set(streamId, {
-              ctx,
-              stream,
-            })
-            this.#requestToStreamMapping.set(message.id, streamId)
-          }
-        }
-
-        // Set up close handler for client disconnects
-        stream.onAbort(() => {
-          this.#streamMapping.delete(streamId)
-        })
-
-        // handle each message
-        for (const message of messages) {
-          this.onmessage?.(message, { authInfo })
-        }
-        // The server SHOULD NOT close the SSE stream before sending all JSON-RPC responses
-        // This will be handled by the send() method when responses are ready
-      })
     } catch (error) {
       if (error instanceof HTTPException) {
         throw error
@@ -584,7 +585,7 @@ export class StreamableHTTPTransport implements Transport {
         .map(([id]) => id)
 
       // Check if we have responses for all requests using this connection
-      const allResponsesReady = relatedIds.every(id => this.#requestResponseMap.has(id))
+      const allResponsesReady = relatedIds.every((id) => this.#requestResponseMap.has(id))
 
       if (allResponsesReady) {
         if (!response) {
@@ -596,7 +597,7 @@ export class StreamableHTTPTransport implements Transport {
             response.ctx.header('mcp-session-id', this.sessionId)
           }
 
-          const responses = relatedIds.map(id => this.#requestResponseMap.get(id)!)
+          const responses = relatedIds.map((id) => this.#requestResponseMap.get(id)!)
 
           response.ctx.json(responses.length === 1 ? responses[0] : responses)
           return

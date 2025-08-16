@@ -26,7 +26,7 @@ export const nodeAdapter = createAdapter('node', {
     })
   },
 
-  async build(options) {
+  async build(_options) {
     // Node.js doesn't need a build step for development
     // This could be implemented for production bundles
     console.log('Build not implemented for Node.js adapter')

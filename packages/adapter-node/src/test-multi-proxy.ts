@@ -49,7 +49,7 @@ async function testMultiProxy() {
   console.log('     - server-b at http://localhost:8789')
 
   return serve({
-    fetch: app!.fetch,
+    fetch: app?.fetch,
     port,
   })
 }

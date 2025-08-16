@@ -20,7 +20,6 @@
   "dependencies": {
     "@hatago/core": "workspace:*",
     "@hatago/adapter-node": "workspace:*",
-    "@hono/mcp": "file:../docs/dist",
     "@modelcontextprotocol/sdk": "^1.17.3",
     "@himorishige/noren-core": "^0.6.2",
     "@himorishige/noren-plugin-security": "^0.6.2",

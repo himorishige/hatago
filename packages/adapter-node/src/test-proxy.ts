@@ -36,7 +36,7 @@ async function testProxy() {
   console.log('   Proxying: original-hatago at http://localhost:8788')
 
   return serve({
-    fetch: app!.fetch,
+    fetch: app?.fetch,
     port,
   })
 }
