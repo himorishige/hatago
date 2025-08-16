@@ -68,22 +68,42 @@ export interface GeneratedFile {
 }
 
 /**
- * Template engine class
+ * Template engine instance interface
  */
-export class TemplateEngine {
-  private handlebars: typeof Handlebars
+interface TemplateEngineInstance {
+  loadTemplateConfig(templateDir: string): TemplateConfig
+  renderTemplate(templatePath: string, context: TemplateContext): string
+  generateFromTemplate(
+    templateDir: string,
+    outputDir: string,
+    context: TemplateContext,
+    options?: {
+      includeOptional?: boolean
+      dryRun?: boolean
+    }
+  ): TemplateResult
+  listTemplates(templatesDir: string): TemplateConfig[]
+  findTemplate(templatesDir: string, name: string): string | null
+  validateTemplate(templateDir: string): { valid: boolean; errors: string[] }
+  createTemplate(
+    templateDir: string,
+    config: Partial<TemplateConfig>,
+    files: { [filename: string]: string }
+  ): void
+}
 
-  constructor() {
-    this.handlebars = Handlebars.create()
-    this.registerHelpers()
-  }
+/**
+ * Create a template engine instance
+ */
+export function createTemplateEngine(): TemplateEngineInstance {
+  const handlebars = Handlebars.create()
 
   /**
    * Register custom Handlebars helpers
    */
-  private registerHelpers(): void {
+  const registerHelpers = (): void => {
     // String transformation helpers
-    this.handlebars.registerHelper('camelCase', (str: string) => {
+    handlebars.registerHelper('camelCase', (str: string) => {
       return str
         .replace(/(?:^\w|[A-Z]|\b\w)/g, (word, index) => {
           return index === 0 ? word.toLowerCase() : word.toUpperCase()
@@ -91,40 +111,40 @@ export class TemplateEngine {
         .replace(/\s+/g, '')
     })
 
-    this.handlebars.registerHelper('kebabCase', (str: string) => {
+    handlebars.registerHelper('kebabCase', (str: string) => {
       return str
         .replace(/([a-z])([A-Z])/g, '$1-$2')
         .replace(/\s+/g, '-')
         .toLowerCase()
     })
 
-    this.handlebars.registerHelper('snakeCase', (str: string) => {
+    handlebars.registerHelper('snakeCase', (str: string) => {
       return str
         .replace(/([a-z])([A-Z])/g, '$1_$2')
         .replace(/\s+/g, '_')
         .toLowerCase()
     })
 
-    this.handlebars.registerHelper('titleCase', (str: string) => {
+    handlebars.registerHelper('titleCase', (str: string) => {
       return str.replace(/\w\S*/g, txt => {
         return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
       })
     })
 
-    this.handlebars.registerHelper('toUpperCase', (str: string) => {
+    handlebars.registerHelper('toUpperCase', (str: string) => {
       return str.toUpperCase()
     })
 
-    this.handlebars.registerHelper('toLowerCase', (str: string) => {
+    handlebars.registerHelper('toLowerCase', (str: string) => {
       return str.toLowerCase()
     })
 
     // Date helpers
-    this.handlebars.registerHelper('timestamp', () => {
+    handlebars.registerHelper('timestamp', () => {
       return new Date().toISOString()
     })
 
-    this.handlebars.registerHelper('date', (format?: string) => {
+    handlebars.registerHelper('date', (format?: string) => {
       const date = new Date()
       if (format === 'short') {
         return date.toLocaleDateString()
@@ -133,41 +153,44 @@ export class TemplateEngine {
     })
 
     // Conditional helpers
-    this.handlebars.registerHelper('eq', (a: any, b: any) => {
+    handlebars.registerHelper('eq', (a: any, b: any) => {
       return a === b
     })
 
-    this.handlebars.registerHelper('ne', (a: any, b: any) => {
+    handlebars.registerHelper('ne', (a: any, b: any) => {
       return a !== b
     })
 
-    this.handlebars.registerHelper('gt', (a: number, b: number) => {
+    handlebars.registerHelper('gt', (a: number, b: number) => {
       return a > b
     })
 
-    this.handlebars.registerHelper('lt', (a: number, b: number) => {
+    handlebars.registerHelper('lt', (a: number, b: number) => {
       return a < b
     })
 
     // Array helpers
-    this.handlebars.registerHelper('length', (array: any[]) => {
+    handlebars.registerHelper('length', (array: any[]) => {
       return Array.isArray(array) ? array.length : 0
     })
 
-    this.handlebars.registerHelper('join', (array: any[], separator = ', ') => {
+    handlebars.registerHelper('join', (array: any[], separator = ', ') => {
       return Array.isArray(array) ? array.join(separator) : ''
     })
 
     // JSON helper
-    this.handlebars.registerHelper('json', (obj: any, indent = 2) => {
+    handlebars.registerHelper('json', (obj: any, indent = 2) => {
       return JSON.stringify(obj, null, indent)
     })
   }
 
+  // Initialize helpers
+  registerHelpers()
+
   /**
    * Load template configuration from directory
    */
-  loadTemplateConfig(templateDir: string): TemplateConfig {
+  const loadTemplateConfig = (templateDir: string): TemplateConfig => {
     const configPath = join(templateDir, 'template.config.json')
 
     if (!existsSync(configPath)) {
@@ -185,14 +208,14 @@ export class TemplateEngine {
   /**
    * Render template with context
    */
-  renderTemplate(templatePath: string, context: TemplateContext): string {
+  const renderTemplate = (templatePath: string, context: TemplateContext): string => {
     if (!existsSync(templatePath)) {
       throw new Error(`Template file not found: ${templatePath}`)
     }
 
     try {
       const templateContent = readFileSync(templatePath, 'utf-8')
-      const template = this.handlebars.compile(templateContent)
+      const template = handlebars.compile(templateContent)
       return template(context)
     } catch (error) {
       throw new Error(`Failed to render template ${templatePath}: ${error}`)
@@ -202,7 +225,7 @@ export class TemplateEngine {
   /**
    * Generate files from template
    */
-  generateFromTemplate(
+  const generateFromTemplate = (
     templateDir: string,
     outputDir: string,
     context: TemplateContext,
@@ -210,10 +233,10 @@ export class TemplateEngine {
       includeOptional?: boolean
       dryRun?: boolean
     } = {}
-  ): TemplateResult {
+  ): TemplateResult => {
     const { includeOptional = true, dryRun = false } = options
 
-    const config = this.loadTemplateConfig(templateDir)
+    const config = loadTemplateConfig(templateDir)
     const files: GeneratedFile[] = []
 
     // Process each template file
@@ -223,12 +246,12 @@ export class TemplateEngine {
       }
 
       const templatePath = join(templateDir, fileConfig.template)
-      const outputPathTemplate = this.handlebars.compile(fileConfig.output)
+      const outputPathTemplate = handlebars.compile(fileConfig.output)
       const outputPath = outputPathTemplate(context)
       const resolvedOutputPath = join(outputDir, outputPath)
 
       try {
-        const renderedContent = this.renderTemplate(templatePath, context)
+        const renderedContent = renderTemplate(templatePath, context)
 
         files.push({
           path: resolvedOutputPath,
@@ -258,7 +281,7 @@ export class TemplateEngine {
   /**
    * List available templates
    */
-  listTemplates(templatesDir: string): TemplateConfig[] {
+  const listTemplates = (templatesDir: string): TemplateConfig[] => {
     const templates: TemplateConfig[] = []
 
     if (!existsSync(templatesDir)) {
@@ -278,7 +301,7 @@ export class TemplateEngine {
           if (entry.isDirectory()) {
             const templateDir = join(categoryDir, entry.name)
             try {
-              const config = this.loadTemplateConfig(templateDir)
+              const config = loadTemplateConfig(templateDir)
               config.category = category
               templates.push(config)
             } catch {
@@ -297,8 +320,8 @@ export class TemplateEngine {
   /**
    * Find template by name
    */
-  findTemplate(templatesDir: string, name: string): string | null {
-    const templates = this.listTemplates(templatesDir)
+  const findTemplate = (templatesDir: string, name: string): string | null => {
+    const templates = listTemplates(templatesDir)
     const template = templates.find(t => t.name === name)
 
     if (template) {
@@ -311,11 +334,11 @@ export class TemplateEngine {
   /**
    * Validate template directory
    */
-  validateTemplate(templateDir: string): { valid: boolean; errors: string[] } {
+  const validateTemplate = (templateDir: string): { valid: boolean; errors: string[] } => {
     const errors: string[] = []
 
     try {
-      const config = this.loadTemplateConfig(templateDir)
+      const config = loadTemplateConfig(templateDir)
 
       // Validate required fields
       if (!config.name) errors.push('Template name is required')
@@ -345,11 +368,11 @@ export class TemplateEngine {
   /**
    * Create a new template
    */
-  createTemplate(
+  const createTemplate = (
     templateDir: string,
     config: Partial<TemplateConfig>,
     files: { [filename: string]: string }
-  ): void {
+  ): void => {
     // Ensure template directory exists
     mkdirSync(templateDir, { recursive: true })
 
@@ -377,5 +400,67 @@ export class TemplateEngine {
     for (const [filename, content] of Object.entries(files)) {
       writeFileSync(join(templateDir, filename), content, 'utf-8')
     }
+  }
+
+  return {
+    loadTemplateConfig,
+    renderTemplate,
+    generateFromTemplate,
+    listTemplates,
+    findTemplate,
+    validateTemplate,
+    createTemplate,
+  }
+}
+
+/**
+ * Legacy class wrapper for backward compatibility
+ * @deprecated Use createTemplateEngine() instead
+ */
+export class TemplateEngine {
+  private engine: TemplateEngineInstance
+
+  constructor() {
+    this.engine = createTemplateEngine()
+  }
+
+  loadTemplateConfig(templateDir: string): TemplateConfig {
+    return this.engine.loadTemplateConfig(templateDir)
+  }
+
+  renderTemplate(templatePath: string, context: TemplateContext): string {
+    return this.engine.renderTemplate(templatePath, context)
+  }
+
+  generateFromTemplate(
+    templateDir: string,
+    outputDir: string,
+    context: TemplateContext,
+    options: {
+      includeOptional?: boolean
+      dryRun?: boolean
+    } = {}
+  ): TemplateResult {
+    return this.engine.generateFromTemplate(templateDir, outputDir, context, options)
+  }
+
+  listTemplates(templatesDir: string): TemplateConfig[] {
+    return this.engine.listTemplates(templatesDir)
+  }
+
+  findTemplate(templatesDir: string, name: string): string | null {
+    return this.engine.findTemplate(templatesDir, name)
+  }
+
+  validateTemplate(templateDir: string): { valid: boolean; errors: string[] } {
+    return this.engine.validateTemplate(templateDir)
+  }
+
+  createTemplate(
+    templateDir: string,
+    config: Partial<TemplateConfig>,
+    files: { [filename: string]: string }
+  ): void {
+    this.engine.createTemplate(templateDir, config, files)
   }
 }

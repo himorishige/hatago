@@ -4,8 +4,14 @@ export * from './plugins.js'
 export * from './plugins/index.js'
 export * from './plugin-host.js'
 export * from './adapter.js'
-export { createLogger, createDefaultLogger, DEFAULT_LOGGER_CONFIG } from './logger.js'
-export { LogLevel as LoggerLevel } from './logger.js'
+export {
+  createLogger,
+  createDefaultLogger,
+  DEFAULT_LOGGER_CONFIG,
+  createSecureLogger,
+  createEnvironmentLogger,
+} from './logger/index.js'
+export { LogLevel as LoggerLevel } from './logger/index.js'
 export {
   PluginVerifier,
   InMemoryKeyRegistry,

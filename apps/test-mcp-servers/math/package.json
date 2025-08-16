@@ -1,0 +1,28 @@
+{
+  "name": "@hatago/test-mcp-math",
+  "version": "1.0.1",
+  "private": true,
+  "description": "Test MCP server providing math functionality for Hatago proxy testing",
+  "type": "module",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.2",
+    "@hono/node-server": "^1.18.2",
+    "@hatago/hono-mcp": "workspace:*",
+    "hono": "^4.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.10",
+    "typescript": "^5.9.2",
+    "tsx": "^4.19.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

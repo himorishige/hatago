@@ -4,11 +4,11 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createLogger, getLogLevel, setLogLevel } from '../../src/logger-advanced.js'
+import { createSecureLogger, getLogLevel, setLogLevel } from '../../src/logger/index.js'
 
 describe('Logger Basic', () => {
-  let mockStdout: any
-  let mockStderr: any
+  let mockStdout: ReturnType<typeof vi.spyOn>
+  let mockStderr: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
     // stdout/stderr のモック
@@ -24,7 +24,7 @@ describe('Logger Basic', () => {
 
   describe('Log Level Management', () => {
     it('should respect log level hierarchy', () => {
-      const logger = createLogger({ level: 'info' })
+      const logger = createSecureLogger({ level: 'info' })
 
       expect(logger.isLevelEnabled('trace')).toBe(false)
       expect(logger.isLevelEnabled('debug')).toBe(false)
@@ -45,7 +45,7 @@ describe('Logger Basic', () => {
 
   describe('Output Routing', () => {
     it('should route to stderr in stdio mode', async () => {
-      const logger = createLogger({ level: 'info', transport: 'stdio' })
+      const logger = createSecureLogger({ level: 'info', transport: 'stdio' })
 
       await logger.info('test message')
       await logger.error('error message')
@@ -56,7 +56,7 @@ describe('Logger Basic', () => {
     })
 
     it('should route appropriately in HTTP mode', async () => {
-      const logger = createLogger({ level: 'info', transport: 'http' })
+      const logger = createSecureLogger({ level: 'info', transport: 'http' })
 
       await logger.info('info message')
       await logger.error('error message')
@@ -69,14 +69,14 @@ describe('Logger Basic', () => {
 
   describe('Basic Functionality', () => {
     it('should create logger with default options', () => {
-      const logger = createLogger()
+      const logger = createSecureLogger()
       expect(logger).toBeDefined()
       // デフォルトレベルの確認（envに依存するのでチェック方法を変更）
       expect(logger.isLevelEnabled).toBeDefined()
     })
 
     it('should support child logger creation', () => {
-      const parent = createLogger({ level: 'info' })
+      const parent = createSecureLogger({ level: 'info' })
       const child = parent.child({ service: 'test' })
 
       expect(child).toBeDefined()
@@ -84,7 +84,7 @@ describe('Logger Basic', () => {
     })
 
     it('should handle JSON format configuration', () => {
-      const logger = createLogger({ level: 'info', format: 'json' })
+      const logger = createSecureLogger({ level: 'info', format: 'json' })
       expect(logger).toBeDefined()
     })
   })

@@ -1,26 +1,18 @@
 #!/usr/bin/env node
 
-import { helloHatago, mcpProxy } from '@hatago/core'
+import { helloHatago } from '@hatago/core'
 import { serve } from '@hono/node-server'
 import { createApp } from './app.js'
 
 async function testProxy() {
-  // Create app with MCP proxy configuration
+  // Create app with basic configuration (proxy disabled for now)
   const { app } = await createApp({
     name: 'hatago-proxy-test',
     version: '0.1.0',
     plugins: [
       // Include local hello plugin
-      helloHatago(),
-
-      // Add MCP proxy to existing server
-      mcpProxy({
-        server: {
-          id: 'original-hatago',
-          endpoint: 'http://localhost:8788',
-          timeout: 10000,
-        },
-      }),
+      helloHatago,
+      // TODO: Re-implement MCP proxy plugin
     ],
   })
 
@@ -33,7 +25,7 @@ async function testProxy() {
   console.log(`🚀 Hatago Proxy Test starting on http://localhost:${port}`)
   console.log(`   Health: http://localhost:${port}/health`)
   console.log(`   MCP:    http://localhost:${port}/mcp`)
-  console.log('   Proxying: original-hatago at http://localhost:8788')
+  console.log('   Note: Proxy functionality temporarily disabled during refactoring')
 
   return serve({
     fetch: app?.fetch,

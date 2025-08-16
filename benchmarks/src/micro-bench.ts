@@ -87,6 +87,9 @@ async function runMicroBenchmarks() {
 
   // 3. Request handling benchmark
   const { app } = await createApp({ name: 'bench', plugins: [] })
+  if (!app) {
+    throw new Error('Failed to create app for benchmarks')
+  }
   results.push(
     await benchmark(
       'Health endpoint',

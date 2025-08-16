@@ -10,8 +10,7 @@ node_modules
 # build artifacts
 packages/**/dist/
 packages/**/dist-test/
-server/dist/
-examples/**/dist/
+apps/**/dist/
 
 # test coverage
 test-results.json
