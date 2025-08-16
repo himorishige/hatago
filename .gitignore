@@ -8,10 +8,10 @@ node_modules
 .mcp.json
 
 # build artifacts
-packages/*/dist/
-packages/*/dist-test/
+packages/**/dist/
+packages/**/dist-test/
 server/dist/
-examples/*/dist/
+examples/**/dist/
 
 # test coverage
 coverage/
