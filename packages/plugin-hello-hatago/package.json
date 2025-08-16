@@ -1,6 +1,6 @@
 {
   "name": "@hatago/plugin-hello-hatago",
-  "version": "1.0.0",
+  "version": "0.3.0",
   "type": "module",
   "description": "Hello Hatago test plugin with streaming progress notifications",
   "license": "MIT",

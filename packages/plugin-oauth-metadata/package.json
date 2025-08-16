@@ -1,6 +1,6 @@
 {
   "name": "@hatago/plugin-oauth-metadata",
-  "version": "1.0.0",
+  "version": "0.3.0",
   "type": "module",
   "description": "OAuth 2.1 Protected Resource Metadata (RFC 9728) plugin for Hatago",
   "license": "MIT",
