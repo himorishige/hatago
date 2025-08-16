@@ -213,7 +213,7 @@ class GitHubOAuthClient {
 
   private async startCallbackServer(): Promise<string> {
     return new Promise((resolve, reject) => {
-      const server = createServer((_req, res) => {
+      const server = createServer((_req: any, res: any) => {
         res.writeHead(200, { 'Content-Type': 'text/html' })
         res.end('<h1>OAuth callback received</h1><p>You can close this window.</p>')
         server.close()
@@ -455,7 +455,7 @@ export const githubOAuthTestPlugin: HatagoPlugin = async ctx => {
 
   // Add HTTP health endpoint (only in http mode)
   if (app && ctx.mode === 'http') {
-    app.get('/github/health', async c => {
+    app.get('/github/health', async (c: any) => {
       try {
         const needsAuth = await githubClient.needsAuthentication()
 
@@ -485,7 +485,7 @@ export const githubOAuthTestPlugin: HatagoPlugin = async ctx => {
     })
 
     // Add OAuth setup endpoint
-    app.get('/github/auth/setup', async c => {
+    app.get('/github/auth/setup', async (c: any) => {
       return c.json({
         message: 'GitHub OAuth Setup',
         steps: [

@@ -1,10 +1,5 @@
-export { helloHatago } from './hello-hatago.js'
-export { oauthMetadata, type OAuthMetadataOptions } from './oauth-metadata.js'
-export { mcpProxy, type MCPProxyPluginOptions } from './mcp-proxy.js'
-export { healthEndpoints, type HealthEndpointsConfig } from './health-endpoints.js'
-export { metrics, type MetricsConfig } from './metrics.js'
-export { sloMetrics, type SLOMetricsConfig } from './slo-metrics.js'
-export { structuredLogging, type StructuredLoggingConfig, LogLevel } from './structured-logging.js'
-export { pluginSecurity, type PluginSecurityConfig } from './plugin-security.js'
+/**
+ * Plugin exports
+ */
 
-export * as defaultPlugins from './defaults.js'
+export { helloHatago } from './hello-hatago.js'

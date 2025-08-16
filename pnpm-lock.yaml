@@ -36,6 +36,102 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@20.19.11)(@vitest/ui@2.1.9)(msw@2.10.5)
 
+  apps/hatago-server:
+    dependencies:
+      '@hatago/adapter-node':
+        specifier: workspace:*
+        version: link:../../packages/adapter-node
+      '@hatago/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@hatago/plugin-github-oauth':
+        specifier: workspace:*
+        version: link:../../packages/plugin-github-oauth
+      '@hatago/plugin-hello-hatago':
+        specifier: workspace:*
+        version: link:../../packages/plugin-hello-hatago
+      '@hatago/plugin-oauth-metadata':
+        specifier: workspace:*
+        version: link:../../packages/plugin-oauth-metadata
+      '@himorishige/noren-core':
+        specifier: ^0.6.2
+        version: 0.6.3
+      '@himorishige/noren-plugin-security':
+        specifier: ^0.6.2
+        version: 0.6.3
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.17.3
+        version: 1.17.3
+      hono:
+        specifier: ^4.9.1
+        version: 4.9.2
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^20.19.11
+        version: 20.19.11
+      tsx:
+        specifier: ^4.20.4
+        version: 4.20.4
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.2
+      wrangler:
+        specifier: ^3.114.13
+        version: 3.114.13(@cloudflare/workers-types@4.20250816.0)
+
+  apps/test-mcp-servers/clock:
+    dependencies:
+      '@hatago/hono-mcp':
+        specifier: workspace:*
+        version: link:../../../packages/hono-mcp
+      '@hono/node-server':
+        specifier: ^1.18.2
+        version: 1.18.2(hono@4.9.2)
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.17.2
+        version: 1.17.3
+      hono:
+        specifier: ^4.9.1
+        version: 4.9.2
+    devDependencies:
+      '@types/node':
+        specifier: ^20.19.10
+        version: 20.19.11
+      tsx:
+        specifier: ^4.19.2
+        version: 4.20.4
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.2
+
+  apps/test-mcp-servers/math:
+    dependencies:
+      '@hatago/hono-mcp':
+        specifier: workspace:*
+        version: link:../../../packages/hono-mcp
+      '@hono/node-server':
+        specifier: ^1.18.2
+        version: 1.18.2(hono@4.9.2)
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.17.2
+        version: 1.17.3
+      hono:
+        specifier: ^4.9.1
+        version: 4.9.2
+    devDependencies:
+      '@types/node':
+        specifier: ^20.19.10
+        version: 20.19.11
+      tsx:
+        specifier: ^4.19.2
+        version: 4.20.4
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.2
+
   benchmarks:
     dependencies:
       '@hatago/adapter-node':
@@ -61,60 +157,10 @@ importers:
         specifier: ^5.9.2
         version: 5.9.2
 
-  examples/external-mcp-clock:
-    dependencies:
-      '@hatago/hono-mcp':
-        specifier: workspace:*
-        version: link:../../packages/hono-mcp
-      '@hono/node-server':
-        specifier: ^1.18.2
-        version: 1.18.2(hono@4.9.2)
-      '@modelcontextprotocol/sdk':
-        specifier: ^1.17.2
-        version: 1.17.3
-      hono:
-        specifier: ^4.9.1
-        version: 4.9.2
-    devDependencies:
-      '@types/node':
-        specifier: ^20.19.10
-        version: 20.19.11
-      tsx:
-        specifier: ^4.19.2
-        version: 4.20.4
-      typescript:
-        specifier: ^5.9.2
-        version: 5.9.2
-
-  examples/external-mcp-math:
-    dependencies:
-      '@hatago/hono-mcp':
-        specifier: workspace:*
-        version: link:../../packages/hono-mcp
-      '@hono/node-server':
-        specifier: ^1.18.2
-        version: 1.18.2(hono@4.9.2)
-      '@modelcontextprotocol/sdk':
-        specifier: ^1.17.2
-        version: 1.17.3
-      hono:
-        specifier: ^4.9.1
-        version: 4.9.2
-    devDependencies:
-      '@types/node':
-        specifier: ^20.19.10
-        version: 20.19.11
-      tsx:
-        specifier: ^4.19.2
-        version: 4.20.4
-      typescript:
-        specifier: ^5.9.2
-        version: 5.9.2
-
   packages/adapter-node:
     dependencies:
       '@hatago/core':
-        specifier: ^0.2.0
+        specifier: ^0.3.0
         version: link:../core
       '@hatago/hono-mcp':
         specifier: workspace:*
@@ -145,7 +191,7 @@ importers:
   packages/adapter-workers:
     dependencies:
       '@hatago/core':
-        specifier: ^0.2.0
+        specifier: ^0.3.0
         version: link:../core
       '@hatago/hono-mcp':
         specifier: workspace:*
@@ -176,7 +222,7 @@ importers:
   packages/cli:
     dependencies:
       '@hatago/config':
-        specifier: ^0.2.0
+        specifier: ^0.3.0
         version: link:../hatago-config
       chokidar:
         specifier: ^4.0.1
@@ -317,7 +363,7 @@ importers:
   packages/plugin-concurrency-limiter:
     dependencies:
       '@hatago/core':
-        specifier: ^0.2.0
+        specifier: ^0.3.0
         version: link:../core
     devDependencies:
       '@modelcontextprotocol/sdk':
@@ -336,7 +382,7 @@ importers:
   packages/plugin-github-oauth:
     dependencies:
       '@hatago/core':
-        specifier: ^0.2.0
+        specifier: ^0.3.0
         version: link:../core
       zod:
         specifier: ^3.25.76
@@ -364,7 +410,7 @@ importers:
   packages/plugin-hello-hatago:
     dependencies:
       '@hatago/core':
-        specifier: ^0.2.0
+        specifier: ^0.3.0
         version: link:../core
       zod:
         specifier: ^3.25.76
@@ -386,7 +432,7 @@ importers:
   packages/plugin-kv:
     dependencies:
       '@hatago/core':
-        specifier: ^0.2.0
+        specifier: ^0.3.0
         version: link:../core
     devDependencies:
       '@types/node':
@@ -399,7 +445,7 @@ importers:
   packages/plugin-logger:
     dependencies:
       '@hatago/core':
-        specifier: ^0.2.0
+        specifier: ^0.3.0
         version: link:../core
     devDependencies:
       '@types/node':
@@ -412,7 +458,7 @@ importers:
   packages/plugin-oauth-metadata:
     dependencies:
       '@hatago/core':
-        specifier: ^0.2.0
+        specifier: ^0.3.0
         version: link:../core
     devDependencies:
       '@types/node':
@@ -434,7 +480,7 @@ importers:
   packages/plugin-rate-limit:
     dependencies:
       '@hatago/core':
-        specifier: ^0.2.0
+        specifier: ^0.3.0
         version: link:../core
     devDependencies:
       '@types/node':
@@ -2689,12 +2735,14 @@ packages:
   /color-convert@2.0.1:
     resolution: {integrity: sha512-RRECPsj7iu/xb5oKYcsFHSppFNnsj/52OVTRKb4zP5onXwVF3zVmmToNcOfGC+CRDpfK/U584fMg38ZHCaElKQ==}
     engines: {node: '>=7.0.0'}
+    requiresBuild: true
     dependencies:
       color-name: 1.1.4
     dev: true
 
   /color-name@1.1.4:
     resolution: {integrity: sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==}
+    requiresBuild: true
     dev: true
 
   /color-string@1.9.1:
@@ -4522,6 +4570,7 @@ packages:
     resolution: {integrity: sha512-RF0Fw+rO5AMf9MAyaRXI4AV0Ulj5lMHqVxxdSgiVbixSCXoEmmX/jk0CuJw4+3SqroYO9VoUh+HcuJivvtJemA==}
     engines: {node: '>=10'}
     hasBin: true
+    requiresBuild: true
 
   /send@1.2.0:
     resolution: {integrity: sha512-uaW0WwXKpL9blXE2o0bRhoL2EGXIrZxQ2ZQ4mgcfoBxdFmQold+qWsD2jLrfZ0trjKL6vOw0j//eAwcALFjKSw==}

@@ -44,7 +44,9 @@ describe('applyPlugins', () => {
   it('should handle async plugins', async () => {
     const asyncPlugin: HatagoPlugin = async ctx => {
       await new Promise(resolve => setTimeout(resolve, 10))
-      ctx.env!.asyncCompleted = true
+      if (ctx.env) {
+        ctx.env.asyncCompleted = true
+      }
     }
 
     const ctx = createMockContext()
@@ -76,7 +78,9 @@ describe('applyPlugins', () => {
     const plugin2 = vi.fn()
 
     const ctx = createMockContext()
-    ctx.env!.customValue = 'test'
+    if (ctx.env) {
+      ctx.env.customValue = 'test'
+    }
 
     await applyPlugins([plugin1, plugin2], ctx)
 
@@ -103,7 +107,9 @@ describe('applyPlugins', () => {
 
   it('should allow plugins to modify context', async () => {
     const modifyingPlugin: HatagoPlugin = ctx => {
-      ctx.env!.modified = true
+      if (ctx.env) {
+        ctx.env.modified = true
+      }
       ctx.server.registerTool(
         'test_tool',
         {
