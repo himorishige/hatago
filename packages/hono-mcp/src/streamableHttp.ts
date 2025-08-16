@@ -344,7 +344,7 @@ export class StreamableHTTPTransport implements Transport {
                   await this.#writeSSEEvent(stream, message, eventId)
                 },
               })
-              return resolvedStreamId
+              return resolvedStreamId ?? '_unknown_stream'
             } catch (_error) {
               this.onerror?.(new Error('Failed replay events'))
               throw new HTTPException(500, {

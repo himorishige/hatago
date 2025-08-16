@@ -20,7 +20,12 @@ export interface MockServerOptions {
 
 export class MockServer {
   private endpoints: Map<string, MockEndpoint> = new Map()
-  private calls: Array<{ method: string; path: string; body?: unknown; headers?: Record<string, string> }> = []
+  private calls: Array<{
+    method: string
+    path: string
+    body?: unknown
+    headers?: Record<string, string>
+  }> = []
   private originalFetch: typeof fetch
   private baseUrl: string
   private defaultDelay: number
@@ -65,23 +70,35 @@ export class MockServer {
    * MCP固有のエンドポイント
    */
   mcpInitialize(response?: Partial<{ serverInfo: { name: string; version: string } }>) {
-    return this.post('/mcp', new Response(JSON.stringify({
-      jsonrpc: '2.0',
-      id: 1,
-      result: {
-        protocolVersion: '2025-06-18',
-        capabilities: {},
-        serverInfo: { name: 'test-server', version: '1.0.0', ...response?.serverInfo }
-      }
-    }), { headers: { 'content-type': 'application/json' } }))
+    return this.post(
+      '/mcp',
+      new Response(
+        JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          result: {
+            protocolVersion: '2025-06-18',
+            capabilities: {},
+            serverInfo: { name: 'test-server', version: '1.0.0', ...response?.serverInfo },
+          },
+        }),
+        { headers: { 'content-type': 'application/json' } }
+      )
+    )
   }
 
   mcpListTools(tools: Array<{ name: string; title?: string; description?: string }> = []) {
-    return this.post('/mcp', new Response(JSON.stringify({
-      jsonrpc: '2.0',
-      id: 2,
-      result: { tools }
-    }), { headers: { 'content-type': 'application/json' } }))
+    return this.post(
+      '/mcp',
+      new Response(
+        JSON.stringify({
+          jsonrpc: '2.0',
+          id: 2,
+          result: { tools },
+        }),
+        { headers: { 'content-type': 'application/json' } }
+      )
+    )
   }
 
   mcpCallTool(toolName: string, result: unknown, options?: { progressNotifications?: unknown[] }) {
@@ -89,12 +106,17 @@ export class MockServer {
       jsonrpc: '2.0',
       id: expect.any(Number),
       result,
-      ...(options?.progressNotifications && { _progressNotifications: options.progressNotifications })
+      ...(options?.progressNotifications && {
+        _progressNotifications: options.progressNotifications,
+      }),
     }
-    
-    return this.post('/mcp', new Response(JSON.stringify(response), {
-      headers: { 'content-type': 'application/json' }
-    }))
+
+    return this.post(
+      '/mcp',
+      new Response(JSON.stringify(response), {
+        headers: { 'content-type': 'application/json' },
+      })
+    )
   }
 
   /**
@@ -105,22 +127,34 @@ export class MockServer {
     resource?: string
     scopes_supported?: string[]
   }) {
-    return this.get('/.well-known/oauth-protected-resource', new Response(JSON.stringify({
-      authorization_servers: ['https://auth.example.com'],
-      resource: 'https://api.example.com',
-      scopes_supported: ['read', 'write'],
-      ...config
-    }), { headers: { 'content-type': 'application/json' } }))
+    return this.get(
+      '/.well-known/oauth-protected-resource',
+      new Response(
+        JSON.stringify({
+          authorization_servers: ['https://auth.example.com'],
+          resource: 'https://api.example.com',
+          scopes_supported: ['read', 'write'],
+          ...config,
+        }),
+        { headers: { 'content-type': 'application/json' } }
+      )
+    )
   }
 
   oauthTokenError(error: string, error_description?: string) {
-    return this.post('/oauth/token', new Response(JSON.stringify({
-      error,
-      error_description
-    }), { 
-      status: 400,
-      headers: { 'content-type': 'application/json' }
-    }))
+    return this.post(
+      '/oauth/token',
+      new Response(
+        JSON.stringify({
+          error,
+          error_description,
+        }),
+        {
+          status: 400,
+          headers: { 'content-type': 'application/json' },
+        }
+      )
+    )
   }
 
   /**
@@ -130,17 +164,20 @@ export class MockServer {
     return this.addEndpoint({
       method,
       path,
-      response: new Response(JSON.stringify({
-        jsonrpc: '2.0',
-        error: {
-          code: status === 400 ? -32600 : -32000,
-          message
-        },
-        id: null
-      }), {
-        status,
-        headers: { 'content-type': 'application/json' }
-      })
+      response: new Response(
+        JSON.stringify({
+          jsonrpc: '2.0',
+          error: {
+            code: status === 400 ? -32600 : -32000,
+            message,
+          },
+          id: null,
+        }),
+        {
+          status,
+          headers: { 'content-type': 'application/json' },
+        }
+      ),
     })
   }
 
@@ -151,7 +188,7 @@ export class MockServer {
     return this.addEndpoint({
       method,
       path,
-      response: new Error('Network Error')
+      response: new Error('Network Error'),
     })
   }
 
@@ -163,7 +200,7 @@ export class MockServer {
       method,
       path,
       response: new Response('', { status: 200 }),
-      delay
+      delay,
     })
   }
 
@@ -175,34 +212,32 @@ export class MockServer {
       const urlObj = new URL(url)
       const method = (init?.method || 'GET').toUpperCase()
       const path = urlObj.pathname + urlObj.search
-      
+
       // リクエストを記録
       const body = init?.body ? JSON.parse(init.body as string) : undefined
-      const headers = Object.fromEntries(
-        Object.entries(init?.headers || {})
-      )
-      
+      const headers = Object.fromEntries(Object.entries(init?.headers || {}))
+
       this.calls.push({ method, path, body, headers })
-      
+
       // エンドポイントを検索
       const key = `${method}:${path}`
       const endpoint = this.endpoints.get(key)
-      
+
       if (!endpoint) {
         throw new Error(`No mock endpoint found for ${method} ${path}`)
       }
-      
+
       // 遅延処理
       const delay = endpoint.delay ?? this.defaultDelay
       if (delay > 0) {
         await new Promise(resolve => setTimeout(resolve, delay))
       }
-      
+
       // レスポンスを返す
       if (endpoint.response instanceof Error) {
         throw endpoint.response
       }
-      
+
       // timesが設定されている場合、呼び出し回数を管理
       if (endpoint.times !== undefined) {
         endpoint.times--
@@ -210,7 +245,7 @@ export class MockServer {
           this.endpoints.delete(key)
         }
       }
-      
+
       return endpoint.response.clone()
     }) as MockedFunction<typeof fetch>
   }
@@ -225,7 +260,12 @@ export class MockServer {
   /**
    * リクエスト履歴を取得
    */
-  getCalls(): Array<{ method: string; path: string; body?: unknown; headers?: Record<string, string> }> {
+  getCalls(): Array<{
+    method: string
+    path: string
+    body?: unknown
+    headers?: Record<string, string>
+  }> {
     return [...this.calls]
   }
 

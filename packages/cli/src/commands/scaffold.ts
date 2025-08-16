@@ -186,14 +186,14 @@ async function interactivePrompt(prompts: unknown[]): Promise<TemplateContext> {
   const { createInterface } = require('node:readline')
 
   for (const promptItem of prompts) {
-    const prompt = promptItem as { 
+    const prompt = promptItem as {
       when?: string
       type?: string
       name?: string
       message?: string
       default?: string | boolean
       choices?: string[]
-      [key: string]: unknown 
+      [key: string]: unknown
     }
     if (prompt.when && !context[prompt.when]) {
       continue
@@ -238,7 +238,8 @@ async function interactivePrompt(prompts: unknown[]): Promise<TemplateContext> {
               rl.question('Select option: ', resolve)
             })
             const selectedIndex = Number.parseInt(selectAnswer, 10) - 1
-            context[prompt.name as string] = (prompt.choices as string[])[selectedIndex] ?? (prompt.choices as string[])[0] ?? ''
+            context[prompt.name as string] =
+              (prompt.choices as string[])[selectedIndex] ?? (prompt.choices as string[])[0] ?? ''
           }
           break
 

@@ -31,7 +31,7 @@ describe('E2E: Minimal Flow', () => {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        'accept': 'application/json, text/event-stream',
+        accept: 'application/json, text/event-stream',
       },
       body: JSON.stringify({
         jsonrpc: '2.0',
@@ -47,13 +47,13 @@ describe('E2E: Minimal Flow', () => {
 
     expect(initResponse.ok).toBe(true)
     // TODO: SSE response parsing
-    
+
     // 3. List tools
     const toolsResponse = await fetch(`${serverUrl}/mcp`, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        'accept': 'application/json, text/event-stream',
+        accept: 'application/json, text/event-stream',
       },
       body: JSON.stringify({
         jsonrpc: '2.0',
@@ -70,7 +70,7 @@ describe('E2E: Minimal Flow', () => {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        'accept': 'application/json, text/event-stream',
+        accept: 'application/json, text/event-stream',
       },
       body: JSON.stringify({
         jsonrpc: '2.0',

@@ -21,10 +21,10 @@ export default defineConfig({
 
     // 環境設定
     environment: 'node',
-    
+
     // グローバル設定
     globals: true,
-    
+
     // TypeScript設定
     typecheck: {
       enabled: true,
@@ -99,7 +99,7 @@ export default defineConfig({
 
     // ログ設定
     logLevel: 'info',
-    
+
     // レポーター設定
     reporter: ['verbose', 'json'],
     outputFile: {
@@ -108,7 +108,7 @@ export default defineConfig({
 
     // 監視設定
     watch: false,
-    
+
     // セットアップファイル
     setupFiles: ['./tests/setup.ts'],
   },

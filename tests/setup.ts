@@ -12,7 +12,7 @@ beforeAll(async () => {
   process.env.LOG_LEVEL = 'error' // テスト中はログを抑制
   process.env.LOG_FORMAT = 'json'
   process.env.NOREN_MASKING = 'false' // テスト中はマスキング無効
-  
+
   // stdio mode でのstdout汚染防止
   if (process.env.HATAGO_TRANSPORT === 'stdio') {
     // console.log を無効化
@@ -34,7 +34,7 @@ afterEach(() => {
   // 各テスト後のクリーンアップ
   vi.restoreAllMocks()
   vi.useRealTimers()
-  
+
   // 環境変数のクリーンアップ
   delete process.env.TEST_CONFIG_PATH
   delete process.env.TEST_AUTH_TOKEN

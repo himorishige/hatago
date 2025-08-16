@@ -171,9 +171,7 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
 
     app.get(`${endpoint}/keys`, c => {
       // Get list of trusted keys if default registry is used
-      const keys =
-        (verifier as any).defaultRegistry?.listKeys() ||
-        []
+      const keys = (verifier as any).defaultRegistry?.listKeys() || []
       return c.json({
         trustedKeys: keys.length,
         keys: keys.map((keyId: any) => ({ keyId: keyId as string })),

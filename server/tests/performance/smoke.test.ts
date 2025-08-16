@@ -63,7 +63,7 @@ describe('Performance Smoke Tests', () => {
     it('should not leak memory under load', async () => {
       // TODO: メモリ使用量の測定
       const initialMemory = process.memoryUsage().heapUsed
-      
+
       // 1000回のリクエストを送信
       for (let i = 0; i < 100; i++) {
         await fetch(`${serverUrl}/health`)
@@ -86,12 +86,12 @@ describe('Performance Smoke Tests', () => {
     it('should complete 1MB stream within acceptable time', async () => {
       // TODO: 大きなストリームのテスト
       const start = Date.now()
-      
+
       const response = await fetch(`${serverUrl}/mcp`, {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
-          'accept': 'application/json, text/event-stream',
+          accept: 'application/json, text/event-stream',
         },
         body: JSON.stringify({
           jsonrpc: '2.0',
@@ -106,7 +106,7 @@ describe('Performance Smoke Tests', () => {
       })
 
       expect(response.ok).toBe(true)
-      
+
       // ストリーム完了まで待機
       if (response.body) {
         const reader = response.body.getReader()
@@ -129,7 +129,7 @@ describe('Performance Smoke Tests', () => {
       let errorCount = 0
 
       const batches = Math.ceil(totalRequests / concurrency)
-      
+
       for (let batch = 0; batch < batches; batch++) {
         const promises = Array.from({ length: concurrency }, async () => {
           try {
@@ -162,7 +162,7 @@ describe('Performance Smoke Tests', () => {
       const durationWithLogs = Date.now() - start1
 
       console.log(`With logs: ${durationWithLogs}ms for ${iterations} requests`)
-      
+
       // ログオーバーヘッドが10%以下であることを確認
       // （実際の測定は環境変数でログレベルを変更して行う）
       expect(durationWithLogs).toBeLessThan(iterations * 50) // 1リクエスト50ms以内の平均

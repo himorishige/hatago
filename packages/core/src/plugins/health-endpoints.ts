@@ -150,7 +150,7 @@ export const healthEndpoints: HatagoPluginFactory<HealthEndpointsConfig> =
 
         // Check memory pressure (warn if heap > 80% of total)
         if (memUsage && memUsage.heapUsed > memUsage.heapTotal * 0.8) {
-          (checks.memory as any).status = 'warn'
+          ;(checks.memory as any).status = 'warn'
           ;(checks.memory as any).details.warning = 'High memory usage'
         }
 

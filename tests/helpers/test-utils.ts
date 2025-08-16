@@ -59,14 +59,14 @@ export async function waitForCondition(
   interval = 50
 ): Promise<void> {
   const start = Date.now()
-  
+
   while (Date.now() - start < timeout) {
     if (await condition()) {
       return
     }
     await waitFor(interval)
   }
-  
+
   throw new Error(`Condition not met within ${timeout}ms`)
 }
 
@@ -82,7 +82,9 @@ export async function expectThrowsAsync<T extends Error>(
     throw new Error('Expected function to throw, but it did not')
   } catch (error) {
     if (errorClass && !(error instanceof errorClass)) {
-      throw new Error(`Expected error of type ${errorClass.name}, but got ${error.constructor.name}`)
+      throw new Error(
+        `Expected error of type ${errorClass.name}, but got ${error.constructor.name}`
+      )
     }
     return error as T
   }
@@ -95,15 +97,15 @@ export function captureConsole() {
   const originalLog = console.log
   const originalError = console.error
   const originalWarn = console.warn
-  
+
   const logs: string[] = []
   const errors: string[] = []
   const warnings: string[] = []
-  
+
   console.log = vi.fn((...args) => logs.push(args.join(' ')))
   console.error = vi.fn((...args) => errors.push(args.join(' ')))
   console.warn = vi.fn((...args) => warnings.push(args.join(' ')))
-  
+
   return {
     logs,
     errors,
@@ -112,7 +114,7 @@ export function captureConsole() {
       console.log = originalLog
       console.error = originalError
       console.warn = originalWarn
-    }
+    },
   }
 }
 
@@ -121,7 +123,7 @@ export function captureConsole() {
  */
 export function mockEnv(envVars: Record<string, string | undefined>) {
   const originalEnv = { ...process.env }
-  
+
   // 環境変数を設定
   for (const [key, value] of Object.entries(envVars)) {
     if (value === undefined) {
@@ -130,12 +132,12 @@ export function mockEnv(envVars: Record<string, string | undefined>) {
       process.env[key] = value
     }
   }
-  
+
   return {
     restore: () => {
       // 元の環境変数を復元
       process.env = originalEnv
-    }
+    },
   }
 }
 
@@ -145,10 +147,10 @@ export function mockEnv(envVars: Record<string, string | undefined>) {
 export function mockFetch(responses: Array<{ url?: string; response: Response | Error }>) {
   const originalFetch = global.fetch
   let callIndex = 0
-  
+
   global.fetch = vi.fn(async (url: string | URL, init?: RequestInit) => {
     const urlString = url.toString()
-    
+
     // URLマッチングまたは順次実行
     for (const mock of responses) {
       if (!mock.url || urlString.includes(mock.url)) {
@@ -158,7 +160,7 @@ export function mockFetch(responses: Array<{ url?: string; response: Response | 
         return mock.response
       }
     }
-    
+
     // フォールバック：順次実行
     if (callIndex < responses.length) {
       const mock = responses[callIndex++]
@@ -167,14 +169,14 @@ export function mockFetch(responses: Array<{ url?: string; response: Response | 
       }
       return mock.response
     }
-    
+
     throw new Error(`Unexpected fetch call: ${urlString}`)
   }) as MockedFunction<typeof fetch>
-  
+
   return {
     restore: () => {
       global.fetch = originalFetch
-    }
+    },
   }
 }
 
@@ -194,7 +196,7 @@ export function createMockResponse(data: unknown, options: ResponseInit = {}) {
  */
 export function createMockStreamResponse(events: Array<{ event?: string; data: unknown }>) {
   const encoder = new TextEncoder()
-  
+
   const stream = new ReadableStream({
     start(controller) {
       for (const event of events) {
@@ -204,11 +206,11 @@ export function createMockStreamResponse(events: Array<{ event?: string; data: u
         controller.enqueue(chunk)
       }
       controller.close()
-    }
+    },
   })
-  
+
   return new Response(stream, {
-    headers: { 'content-type': 'text/event-stream' }
+    headers: { 'content-type': 'text/event-stream' },
   })
 }
 
@@ -216,15 +218,18 @@ export function createMockStreamResponse(events: Array<{ event?: string; data: u
  * テスト用のエラーレスポンスを作成
  */
 export function createMockErrorResponse(code: number, message: string) {
-  return new Response(JSON.stringify({
-    jsonrpc: '2.0',
-    error: {
-      code,
-      message,
-    },
-    id: null,
-  }), {
-    status: code >= 400 && code < 500 ? code : 500,
-    headers: { 'content-type': 'application/json' },
-  })
+  return new Response(
+    JSON.stringify({
+      jsonrpc: '2.0',
+      error: {
+        code,
+        message,
+      },
+      id: null,
+    }),
+    {
+      status: code >= 400 && code < 500 ? code : 500,
+      headers: { 'content-type': 'application/json' },
+    }
+  )
 }
