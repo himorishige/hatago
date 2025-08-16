@@ -1,19 +1,29 @@
 name: Release
 
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches:
       - main
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
+        with:
+          # This makes Actions fetch all Git history so that Changesets can generate changelogs with the correct commits
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
@@ -29,10 +39,8 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Setup NPM auth
-        run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Run Linting
+        run: pnpm check
 
       - name: Build packages
         run: pnpm build
@@ -45,55 +53,15 @@ jobs:
         uses: changesets/action@v1
         with:
           # This expects you to have a script called release which does a build for your packages and calls changeset publish
-          publish: pnpm release
-          version: pnpm changeset version
-          commit: 'chore: version packages'
-          title: 'chore: version packages'
+          publish: pnpm changeset:publish
+          version: pnpm changeset:version
+          commit: 'chore: release packages'
+          title: 'chore: release packages'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Create GitHub Release
+      - name: Send a notification if a publish happens
         if: steps.changesets.outputs.published == 'true'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const releases = JSON.parse('${{ steps.changesets.outputs.publishedPackages }}');
-
-            for (const release of releases) {
-              const tagName = `${release.name}@${release.version}`;
-              
-              try {
-                await github.rest.repos.createRelease({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  tag_name: tagName,
-                  name: `${release.name} v${release.version}`,
-                  body: `🎉 **${release.name}** has been released!\n\n**Version:** ${release.version}\n\n[View on npm](https://www.npmjs.com/package/${release.name}/v/${release.version})`,
-                  draft: false,
-                  prerelease: false
-                });
-                
-                console.log(`Created release for ${tagName}`);
-              } catch (error) {
-                console.error(`Failed to create release for ${tagName}:`, error);
-              }
-            }
-
-      - name: Send Slack notification
-        if: steps.changesets.outputs.published == 'true'
-        uses: 8398a7/action-slack@v3
-        with:
-          status: custom
-          custom_payload: |
-            {
-              attachments: [{
-                color: 'good',
-                title: '🎉 New packages published!',
-                text: `The following packages have been published to npm:\n${JSON.parse('${{ steps.changesets.outputs.publishedPackages }}').map(pkg => `• ${pkg.name}@${pkg.version}`).join('\n')}`,
-                footer: 'Hatago Release',
-                ts: ${{ github.event.head_commit.timestamp }}
-              }]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # Optional: add if you want Slack notifications
+        # You can do something when a publish happens.
+        run: echo "A new version of packages was published!"
