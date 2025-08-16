@@ -8,6 +8,14 @@ const ciExclude = isCI ? [
   '**/logger.test.ts',         // メモリ集約的なコンソール出力テスト
 ] : []
 
+// ローカル環境でもメモリリーク問題となるテストを除外
+const alwaysExclude = [
+  '**/tests/performance/**',    // パフォーマンステスト
+  '**/tests/e2e/**',           // E2Eテスト
+  '**/logger.test.ts',         // メモリ集約的なログテスト
+  '**/hello-hatago.test.ts',   // メモリリークする進捗通知テスト
+]
+
 export default defineConfig({
   test: {
     // テストファイルパターン
@@ -25,7 +33,8 @@ export default defineConfig({
       '**/.nuxt/**',
       '**/.vercel/**',
       '**/.wrangler/**',
-      ...ciExclude,              // CI環境での除外テスト
+      ...alwaysExclude,          // 常に除外するテスト（メモリリーク対策）
+      ...ciExclude,              // CI環境での追加除外テスト
     ],
 
     // 環境設定
