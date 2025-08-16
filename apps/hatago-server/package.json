@@ -20,6 +20,9 @@
   "dependencies": {
     "@hatago/adapter-node": "workspace:*",
     "@hatago/core": "workspace:*",
+    "@hatago/plugin-hello-hatago": "workspace:*",
+    "@hatago/plugin-oauth-metadata": "workspace:*",
+    "@hatago/plugin-github-oauth": "workspace:*",
     "@himorishige/noren-core": "^0.6.2",
     "@himorishige/noren-plugin-security": "^0.6.2",
     "@modelcontextprotocol/sdk": "^1.17.3",

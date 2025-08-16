@@ -43,6 +43,15 @@ importers:
       '@hatago/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@hatago/plugin-github-oauth':
+        specifier: workspace:*
+        version: link:../../packages/plugin-github-oauth
+      '@hatago/plugin-hello-hatago':
+        specifier: workspace:*
+        version: link:../../packages/plugin-hello-hatago
+      '@hatago/plugin-oauth-metadata':
+        specifier: workspace:*
+        version: link:../../packages/plugin-oauth-metadata
       '@himorishige/noren-core':
         specifier: ^0.6.2
         version: 0.6.3
