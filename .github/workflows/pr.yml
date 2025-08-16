@@ -1,0 +1,101 @@
+name: PR Check
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  changeset-check:
+    runs-on: ubuntu-latest
+    name: Check Changeset
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check for changeset
+        id: changeset-check
+        run: |
+          if pnpm changeset status --output=json | jq -e '.releases | length > 0' > /dev/null; then
+            echo "has_changeset=true" >> $GITHUB_OUTPUT
+            echo "📦 Changeset found - version changes will be made"
+          else
+            echo "has_changeset=false" >> $GITHUB_OUTPUT
+            echo "⚠️ No changeset found"
+          fi
+
+      - name: Preview version changes
+        if: steps.changeset-check.outputs.has_changeset == 'true'
+        run: |
+          echo "## 📦 Package Version Changes" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The following packages will be updated:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```json' >> $GITHUB_STEP_SUMMARY
+          pnpm changeset status --output=json | jq '.releases[] | {name: .name, type: .type, oldVersion: .oldVersion, newVersion: .newVersion}' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Comment PR (no changeset)
+        if: steps.changeset-check.outputs.has_changeset == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `⚠️ **No changeset found**
+              
+              This PR doesn't include a changeset. If this PR contains changes that should be released, please run:
+              
+              \`\`\`bash
+              pnpm changeset
+              \`\`\`
+              
+              Then commit the generated changeset file.
+              
+              If this is a documentation-only change or doesn't require a version bump, you can ignore this message.`
+            })
+
+      - name: Comment PR (with changeset)
+        if: steps.changeset-check.outputs.has_changeset == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const status = JSON.parse(fs.readFileSync('changeset-status.json', 'utf8'));
+
+            let body = `📦 **Changeset detected**\n\nThe following packages will be updated when this PR is merged:\n\n`;
+
+            status.releases.forEach(release => {
+              body += `- **${release.name}**: ${release.oldVersion} → ${release.newVersion} (${release.type})\n`;
+            });
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            })
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Save changeset status
+        if: steps.changeset-check.outputs.has_changeset == 'true'
+        run: pnpm changeset status --output=json > changeset-status.json

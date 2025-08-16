@@ -25,6 +25,7 @@
     "url": "git+https://github.com/himorishige/hatago.git",
     "directory": "packages/hono-mcp"
   },
+  "private": true,
   "peerDependencies": {
     "@modelcontextprotocol/sdk": "^1.17.2",
     "hono": ">=4.0.0"

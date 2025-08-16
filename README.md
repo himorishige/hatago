@@ -230,6 +230,55 @@ hatago/
 └── tests/                    # Integration tests
 ```
 
+## 🚀 Release Process
+
+Hatago uses [Changesets](https://github.com/changesets/changesets) for version management and automated releases.
+
+### Creating a Release
+
+1. **Make your changes** and create a PR
+2. **Add a changeset** describing your changes:
+
+   ```bash
+   pnpm changeset
+   ```
+
+   - Select which packages are affected
+   - Choose the appropriate version bump (major/minor/patch)
+   - Write a clear description of the changes
+   - Note: `@hatago/hono-mcp` is excluded from releases (temporary package until @hono/mcp update)
+
+3. **Submit your PR** - the CI will automatically check for changesets
+4. **Merge to main** - this triggers the release workflow:
+   - Creates a "Version Packages" PR with updated versions and changelogs
+   - When the Version PR is merged, packages are automatically published to npm
+   - GitHub releases are created automatically
+
+### Manual Release (if needed)
+
+```bash
+# Build packages
+pnpm build
+
+# Create version bump and update changelogs
+pnpm changeset version
+
+# Install updated dependencies
+pnpm install
+
+# Publish to npm
+pnpm changeset publish
+```
+
+### Release Notes
+
+All releases include:
+
+- 📦 **Automated changelogs** with GitHub links
+- 🏷️ **Git tags** for each published package
+- 📝 **GitHub releases** with package links
+- 🔔 **Slack notifications** (if configured)
+
 ## 🤝 Contributing
 
 We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md) for details.
@@ -239,10 +288,11 @@ We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md)
 1. Fork the repository
 2. Create feature branch: `git checkout -b feature/amazing-feature`
 3. Make changes and add tests
-4. Run tests: `pnpm test`
-5. Commit changes: `git commit -m 'Add amazing feature'`
-6. Push to branch: `git push origin feature/amazing-feature`
-7. Submit pull request
+4. **Add a changeset**: `pnpm changeset` (if your changes affect packages)
+5. Run tests: `pnpm test`
+6. Commit changes: `git commit -m 'Add amazing feature'`
+7. Push to branch: `git push origin feature/amazing-feature`
+8. Submit pull request
 
 ## 📖 Documentation
 
