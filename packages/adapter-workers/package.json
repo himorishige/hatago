@@ -1,6 +1,6 @@
 {
   "name": "@hatago/adapter-workers",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "description": "Hatago Cloudflare Workers adapter",
   "license": "MIT",
@@ -51,7 +51,7 @@
     "@modelcontextprotocol/sdk": "^1.17.2"
   },
   "dependencies": {
-    "@hatago/core": "^0.1.1",
+    "@hatago/core": "^0.1.2",
     "@hatago/hono-mcp": "workspace:*"
   },
   "devDependencies": {

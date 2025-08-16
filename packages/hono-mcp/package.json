@@ -1,6 +1,6 @@
 {
   "name": "@hatago/hono-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP StreamableHTTP Transport for Hatago (enhanced version based on @hono/mcp)",
   "type": "module",
   "module": "dist/index.js",
