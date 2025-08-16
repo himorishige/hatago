@@ -3,6 +3,14 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Hatago Node.js adapter",
+  "license": "MIT",
+  "author": "Hatago Contributors",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/himorishige/hatago.git",
+    "directory": "packages/adapter-node"
+  },
+  "keywords": ["hatago", "mcp", "nodejs", "adapter"],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {

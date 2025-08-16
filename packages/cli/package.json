@@ -1,8 +1,16 @@
 {
-  "name": "hatago-cli",
+  "name": "@hatago/cli",
   "version": "0.1.0",
   "description": "Command line interface for Hatago MCP server",
   "type": "module",
+  "license": "MIT",
+  "author": "Hatago Contributors",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/himorishige/hatago.git",
+    "directory": "packages/cli"
+  },
+  "keywords": ["hatago", "mcp", "cli", "scaffold"],
   "bin": {
     "hatago": "dist/index.js"
   },

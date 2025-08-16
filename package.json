@@ -17,7 +17,10 @@
     "format": "prettier -c .",
     "format:fix": "prettier -w .",
     "check": "biome check .",
-    "check:fix": "biome check --write ."
+    "check:fix": "biome check --write .",
+    "changeset": "changeset",
+    "version": "changeset version && pnpm install --lockfile-only",
+    "release": "pnpm build && changeset publish"
   },
   "workspaces": [
     "packages/*",
@@ -28,6 +31,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "@changesets/cli": "^2.29.5",
     "prettier": "^3.3.3",
     "typescript": "^5.9.2"
   }

@@ -16,9 +16,13 @@ Hatago is a lightweight, fast, and simple remote MCP (Model Context Protocol) se
 # Install dependencies
 pnpm i
 
-# Start development server (Node.js)
+# Start development server (Node.js HTTP mode)
 pnpm dev
 # → Access http://localhost:8787/health to verify
+
+# Start development server (stdio mode for Claude Desktop)
+pnpm dev:stdio
+# → Use in Claude Desktop MCP configuration
 
 # Start development server (Cloudflare Workers)
 pnpm dev:cf
@@ -29,8 +33,11 @@ pnpm build
 # Type checking
 pnpm typecheck
 
-# Start production server
+# Start production server (HTTP mode)
 pnpm start
+
+# Start production server (stdio mode)
+pnpm start:stdio
 ```
 
 ## Architecture Overview
@@ -38,13 +45,22 @@ pnpm start
 ### Core Components
 
 - **`src/app.ts`**: Main application entry point that creates Hono app and MCP server
+- **`src/stdio-server.ts`**: stdio transport server for direct Claude Desktop integration
 - **`src/system/`**: Core system components
   - `plugins.ts`: Plugin loader that applies plugins to the context
   - `types.ts`: Core type definitions including `HatagoContext` and `HatagoPlugin`
+- **`src/config/`**: Configuration management system
+  - `loader.ts`: Configuration file loader for hatago.config.json
+  - `namespace-manager.ts`: Namespace management for MCP proxy functionality
+  - `types.ts`: Configuration type definitions
+- **`src/utils/`**: Utility components
+  - `logger.ts`: Noren-integrated structured logger with PII masking
 - **`src/plugins/`**: Plugin implementations
   - `index.ts`: Default plugin configuration
   - `hello-hatago.ts`: Demo plugin that streams "Hello Hatago" with progress notifications
   - `oauth-metadata.ts`: OAuth Protected Resource Metadata (RFC 9728) support
+  - `enhanced-mcp-proxy.ts`: MCP proxy with namespace management and configuration
+  - `github-oauth-test.ts`: GitHub OAuth integration test plugin (development only)
 
 ### Plugin System
 
@@ -76,10 +92,14 @@ To add new plugins:
 
 ### Key Features
 
-- **Streamable HTTP**: Uses MCP's latest transport specification
+- **Dual Transport Support**: Both stdio and Streamable HTTP transports fully supported
 - **Progress Notifications**: Supports `_meta.progressToken` for streaming updates
 - **OAuth Integration**: Built-in OAuth PRM support with Bearer token validation
 - **Multi-Runtime**: Works across Node.js, Cloudflare Workers, Deno, and Bun
+- **Advanced Logging**: Noren v0.6.2 integrated PII masking with 70%+ detection rate
+- **MCP Proxy**: Enhanced MCP proxy with namespace management and configuration
+- **Claude Desktop Ready**: Direct stdio integration without HTTP bridge required
+- **Security-First**: Implements MCP security best practices and RFC compliance
 
 ## Testing MCP Functionality
 
@@ -107,15 +127,30 @@ curl -sS http://localhost:8787/mcp -H 'content-type: application/json' -d '{
 ```bash
 curl -sS http://localhost:8787/mcp -H 'content-type: application/json' -d '{
   "jsonrpc":"2.0","id":3,"method":"tools/call",
-  "params":{"name":"hello.hatago","arguments":{},"_meta":{"progressToken":"hello-1"}}
+  "params":{"name":"hello_hatago","arguments":{},"_meta":{"progressToken":"hello-1"}}
 }'
 ```
 
+> **Note**: Tool name uses underscores (`hello_hatago`) for MCP naming compliance
+
 ## Environment Variables
 
+### OAuth Configuration
 - `AUTH_ISSUER`: Authorization Server issuer URL (e.g., `https://auth.example.com`)
 - `RESOURCE`: Resource identifier URL (defaults to request origin)
 - `REQUIRE_AUTH`: Set to `"true"` to enforce Bearer token authentication on `/mcp`
+
+### Logging Configuration
+- `LOG_LEVEL`: Log level (`trace` | `debug` | `info` | `warn` | `error` | `fatal`) - default: `info`
+- `LOG_FORMAT`: Log format (`json` | `pretty`) - default: `pretty`
+- `NOREN_MASKING`: Enable PII masking (`true` | `false`) - default: `true`
+- `LOG_SAMPLE_RATE`: Sampling rate for non-error logs (0.0-1.0) - default: `1.0`
+
+### Transport Configuration
+- `HATAGO_TRANSPORT`: Transport mode (`stdio` | `http`) - default: `http`
+
+### Development Configuration
+- `LOG_REDACT`: Comma-separated list of additional keys to redact in logs
 
 ## Project Structure
 
@@ -124,19 +159,27 @@ server/
 ├── src/
 │   ├── app.ts              # Main application factory
 │   ├── dev-node.ts         # Node.js development server
+│   ├── stdio-server.ts     # stdio transport server (Claude Desktop integration)
 │   ├── worker.ts           # Cloudflare Workers entry point
-│   ├── middleware/
-│   │   └── mcp.ts          # Custom MCP middleware
+│   ├── config/             # Configuration management system
+│   │   ├── loader.ts       # Configuration file loader
+│   │   ├── namespace-manager.ts # Namespace management for MCP proxy
+│   │   └── types.ts        # Configuration type definitions
 │   ├── plugins/
 │   │   ├── index.ts        # Plugin registry
 │   │   ├── hello-hatago.ts # Demo streaming tool
-│   │   └── oauth-metadata.ts # OAuth PRM support
-│   └── system/
-│       ├── plugins.ts      # Plugin application logic
-│       └── types.ts        # Core type definitions
+│   │   ├── oauth-metadata.ts # OAuth PRM support (RFC 9728)
+│   │   ├── enhanced-mcp-proxy.ts # MCP proxy with namespace management
+│   │   └── github-oauth-test.ts # GitHub OAuth integration test
+│   ├── system/
+│   │   ├── plugins.ts      # Plugin application logic
+│   │   └── types.ts        # Core type definitions
+│   └── utils/
+│       └── logger.ts       # Noren-integrated structured logger
+├── hatago.config.json      # Configuration file for MCP proxy and server settings
 ├── package.json
 ├── tsconfig.json
-└── wrangler.jsonc         # Cloudflare Workers config
+└── wrangler.jsonc          # Cloudflare Workers config
 ```
 
 ## Development Notes
@@ -145,6 +188,11 @@ server/
 - When adding new tools, consider progress notification support for better UX
 - OAuth authentication is optional but follows RFC 9728 standards when enabled
 - The project supports both single-file and streaming responses based on client capabilities
+- **Claude Desktop Integration**: Use `pnpm dev:stdio` for direct integration without HTTP bridge
+- **Production Logging**: Always use `LOG_FORMAT=json` and `NOREN_MASKING=true` in production
+- **Tool Naming**: Use underscores in tool names for MCP compliance (e.g., `hello_hatago`)
+- **Test Plugins**: `github-oauth-test.ts` is for development only - disable in production
+- **Configuration**: MCP proxy settings are managed via `hatago.config.json`
 
 ## MCP Security Best Practices
 

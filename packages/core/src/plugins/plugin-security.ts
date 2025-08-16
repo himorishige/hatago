@@ -54,7 +54,7 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
       endpoint = '/security',
     } = config
 
-    if (!enabled) {
+    if (!enabled || !app) {
       return
     }
 

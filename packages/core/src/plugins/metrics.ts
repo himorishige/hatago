@@ -28,7 +28,7 @@ interface MetricData {
 export const metrics: HatagoPluginFactory<MetricsConfig> =
   (config: MetricsConfig = {}): HatagoPlugin =>
   ({ app }) => {
-    if (config.enabled === false) {
+    if (config.enabled === false || !app) {
       return
     }
 

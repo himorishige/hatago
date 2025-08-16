@@ -2,12 +2,17 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { Hono } from 'hono'
 
 /**
+ * Hatago transport mode
+ */
+export type HatagoMode = 'stdio' | 'http'
+
+/**
  * Runtime-agnostic context provided to plugins
  * Only uses Web Standard APIs to ensure compatibility across all runtimes
  */
 export interface HatagoContext {
-  /** Hono app instance for HTTP routes */
-  app: Hono
+  /** Hono app instance for HTTP routes (null in stdio mode) */
+  app: Hono | null
 
   /** MCP server instance for tools/resources */
   server: McpServer
@@ -15,8 +20,11 @@ export interface HatagoContext {
   /** Environment variables (runtime-specific) */
   env?: Record<string, unknown>
 
-  /** Base URL helper */
+  /** Base URL helper (only available in HTTP mode) */
   getBaseUrl: (req: Request) => URL
+  
+  /** Transport mode */
+  mode?: HatagoMode
 }
 
 /**

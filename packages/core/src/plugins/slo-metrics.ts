@@ -43,7 +43,7 @@ interface SLOMetricData {
 export const sloMetrics: HatagoPluginFactory<SLOMetricsConfig> =
   (config: SLOMetricsConfig = {}): HatagoPlugin =>
   ({ app }) => {
-    if (config.enabled === false) {
+    if (config.enabled === false || !app) {
       return
     }
 

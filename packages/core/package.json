@@ -3,6 +3,14 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Hatago core: runtime-agnostic MCP server with plugin architecture",
+  "license": "MIT",
+  "author": "Hatago Contributors",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/himorishige/hatago.git",
+    "directory": "packages/core"
+  },
+  "keywords": ["mcp", "model-context-protocol", "ai", "plugin", "framework"],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -26,7 +34,9 @@
   "dependencies": {
     "hono": "^4.9.1",
     "@modelcontextprotocol/sdk": "^1.17.2",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "@himorishige/noren-core": "^0.6.2",
+    "@himorishige/noren-plugin-security": "^0.6.2"
   },
   "devDependencies": {
     "@types/node": "^20.19.10",

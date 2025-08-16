@@ -24,7 +24,7 @@ export interface HealthEndpointsConfig {
 export const healthEndpoints: HatagoPluginFactory<HealthEndpointsConfig> =
   (config: HealthEndpointsConfig = {}): HatagoPlugin =>
   ({ app }) => {
-    if (config.enabled === false) {
+    if (config.enabled === false || !app) {
       return
     }
 

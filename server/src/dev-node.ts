@@ -1,12 +1,18 @@
-import { serve } from '@hono/node-server'
-import { createApp } from './app.js'
-import { logger } from './utils/logger.js'
+/**
+ * Reference server using @hatago/adapter-node
+ */
+import { serve } from '@hatago/adapter-node'
+import { createApp, LoggerLevel } from '@hatago/core'
+import { createDefaultLogger } from '@hatago/core'
 
 const port = Number(process.env.PORT || 8787)
+const logger = createDefaultLogger()
+
 const { app } = await createApp({ env: process.env, mode: 'http' })
 
 if (!app) {
-  logger.fatal('Failed to create HTTP app')
+  logger.error('Failed to create HTTP app')
+  process.exit(1)
 }
 
 logger.info('Hatago HTTP server starting', { 
@@ -15,4 +21,4 @@ logger.info('Hatago HTTP server starting', {
   url: `http://localhost:${port}` 
 })
 
-serve({ fetch: app!.fetch, port })
+serve({ app, port })

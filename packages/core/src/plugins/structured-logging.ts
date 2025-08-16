@@ -71,7 +71,7 @@ export const structuredLogging: HatagoPluginFactory<StructuredLoggingConfig> =
       redactFields = ['password', 'token', 'secret', 'key', 'authorization'],
     } = config
 
-    if (!enabled) {
+    if (!enabled || !app) {
       return
     }
 

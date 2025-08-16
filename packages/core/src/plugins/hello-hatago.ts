@@ -4,13 +4,13 @@ import type { HatagoPlugin, HatagoPluginFactory } from '../types.js'
  * POC: streams "Hello Hatago" via MCP progress notifications
  * and returns the final text as tool result.
  *
- * Tool name: hello.hatago
+ * Tool name: hello_hatago
  */
 export const helloHatago: HatagoPluginFactory =
   (): HatagoPlugin =>
   ({ server }) => {
     server.registerTool(
-      'hello.hatago',
+      'hello_hatago',
       {
         title: 'Hello Hatago',
         description: 'Emit progress that spells Hello Hatago, then return the text',
