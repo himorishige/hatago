@@ -12,7 +12,7 @@
 
 import { Registry, redactText } from '@himorishige/noren-core'
 import * as securityPlugin from '@himorishige/noren-plugin-security'
-import type { SecureLogEntry, SecureLoggerConfig, SecureLogLevel, HatagoMode } from './types.js'
+import type { HatagoMode, SecureLogEntry, SecureLogLevel, SecureLoggerConfig } from './types.js'
 
 const LOG_LEVELS: Record<SecureLogLevel, number> = {
   fatal: 60,

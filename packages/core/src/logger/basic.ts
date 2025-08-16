@@ -5,7 +5,7 @@
 
 import type { SafeValue } from '../types/utils.types.js'
 import { TypeGuards } from '../types/utils.types.js'
-import type { Logger, LoggerConfig, LogEntry, LogLevel } from './types.js'
+import type { LogEntry, LogLevel, Logger, LoggerConfig } from './types.js'
 import { LogLevel as LogLevelEnum } from './types.js'
 
 /**
