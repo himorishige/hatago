@@ -2,7 +2,7 @@
 
 /**
  * Hatago stdio MCP Server
- * 
+ *
  * This server runs in stdio mode for direct integration with MCP clients
  * like Claude Desktop that prefer process-based communication.
  */
@@ -17,9 +17,9 @@ import { logger } from './utils/logger.js'
 async function main() {
   try {
     // Create the Hatago app in stdio mode
-    const { server } = await createApp({ 
+    const { server } = await createApp({
       mode: 'stdio',
-      env: process.env as any 
+      env: process.env as any,
     })
 
     // Create stdio transport
@@ -31,10 +31,9 @@ async function main() {
     // Log server startup
     logger.info('Hatago stdio MCP server started', { mode: 'stdio' })
     logger.info('Ready for MCP client connections')
-
   } catch (error) {
-    logger.fatal('Failed to start stdio server', { 
-      error: { message: (error as Error).message, stack: (error as Error).stack } 
+    logger.fatal('Failed to start stdio server', {
+      error: { message: (error as Error).message, stack: (error as Error).stack },
     })
   }
 }
@@ -51,8 +50,8 @@ process.on('SIGTERM', () => {
 })
 
 // Start the server
-main().catch((error) => {
-  logger.fatal('Unexpected error in stdio server', { 
-    error: { message: (error as Error).message, stack: (error as Error).stack } 
+main().catch(error => {
+  logger.fatal('Unexpected error in stdio server', {
+    error: { message: (error as Error).message, stack: (error as Error).stack },
   })
 })

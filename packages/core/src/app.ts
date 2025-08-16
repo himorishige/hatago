@@ -14,7 +14,7 @@ export interface CreateAppOptions {
   /** App name and version */
   name?: string
   version?: string
-  
+
   /** Transport mode */
   mode?: HatagoMode
 }
@@ -41,7 +41,9 @@ export async function createApp(options: CreateAppOptions = {}) {
 
   // Health check endpoint (only in HTTP mode)
   if (app) {
-    app.get('/health', c => c.json({ ok: true, name, version, timestamp: new Date().toISOString() }))
+    app.get('/health', c =>
+      c.json({ ok: true, name, version, timestamp: new Date().toISOString() })
+    )
   }
 
   // Create MCP server (capabilities auto-inferred by the SDK from registrations)

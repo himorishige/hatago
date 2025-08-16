@@ -32,7 +32,7 @@ export const helloHatago =
         if (token && typeof sendNotification === 'function') {
           logger.debug('Testing extended StreamableHTTPTransport progress notifications', {
             tool: 'hello_hatago',
-            progressToken: token
+            progressToken: token,
           })
 
           // Send progress notifications for each character
@@ -53,7 +53,7 @@ export const helloHatago =
               logger.warn(`Progress notification ${i + 1} failed`, {
                 tool: 'hello_hatago',
                 notification_index: i + 1,
-                error: { message: (error as Error).message, stack: (error as Error).stack }
+                error: { message: (error as Error).message, stack: (error as Error).stack },
               })
             }
           }
@@ -72,7 +72,7 @@ export const helloHatago =
           } catch (error) {
             logger.warn('Final progress notification failed', {
               tool: 'hello_hatago',
-              error: { message: (error as Error).message, stack: (error as Error).stack }
+              error: { message: (error as Error).message, stack: (error as Error).stack },
             })
           }
         }

@@ -21,20 +21,20 @@ const defaultConfig: HatagoConfig = {
       maxLength: 64,
       autoPrefix: {
         enabled: true,
-        format: '{server}_{index}'
-      }
-    }
+        format: '{server}_{index}',
+      },
+    },
   },
   server: {
     port: 8787,
     hostname: 'localhost',
     cors: true,
-    timeout: 30000
+    timeout: 30000,
   },
   logging: {
     level: 'info',
     format: 'pretty',
-    output: 'console'
+    output: 'console',
   },
   security: {
     requireAuth: false,
@@ -42,9 +42,9 @@ const defaultConfig: HatagoConfig = {
     rateLimit: {
       enabled: false,
       windowMs: 60000,
-      maxRequests: 100
-    }
-  }
+      maxRequests: 100,
+    },
+  },
 }
 
 /**
@@ -57,18 +57,18 @@ export async function loadConfig(configPath?: string): Promise<HatagoConfig> {
     configPath,
     resolve(process.cwd(), 'hatago.config.json'),
     resolve(process.cwd(), 'hatago.config.jsonc'),
-    resolve(process.cwd(), '.hatagorc.json')
+    resolve(process.cwd(), '.hatagorc.json'),
   ].filter(Boolean) as string[]
 
   for (const path of paths) {
     try {
       logger.debug(`Attempting to load configuration from: ${path}`)
       const content = await readFile(path, 'utf-8')
-      
+
       // Simple JSONC support (remove comments)
       const cleaned = content.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')
       const userConfig = JSON.parse(cleaned) as Partial<HatagoConfig>
-      
+
       logger.info('Configuration loaded successfully', { config_path: path })
       return mergeConfig(defaultConfig, userConfig)
     } catch (error) {
@@ -97,7 +97,7 @@ function mergeConfig(base: HatagoConfig, override: Partial<HatagoConfig>): Hatag
     if (value && typeof value === 'object' && !Array.isArray(value)) {
       result[key as keyof HatagoConfig] = {
         ...result[key as keyof HatagoConfig],
-        ...value
+        ...value,
       } as any
     } else {
       result[key as keyof HatagoConfig] = value as any

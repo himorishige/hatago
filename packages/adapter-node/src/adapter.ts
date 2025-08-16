@@ -13,23 +13,19 @@ export const nodeAdapter = createAdapter('node', {
     edge: false,
     staticFiles: true,
   },
-  
+
   async serve(options: ServeOptions) {
-    const {
-      app,
-      port = 8787,
-      hostname = 'localhost',
-    } = options
-    
+    const { app, port = 8787, hostname = 'localhost' } = options
+
     console.log(`🚀 Hatago Node.js adapter starting on http://${hostname}:${port}`)
-    
+
     return honoServe({
       fetch: app.fetch,
       port,
       hostname,
     })
   },
-  
+
   async build(options) {
     // Node.js doesn't need a build step for development
     // This could be implemented for production bundles

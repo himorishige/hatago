@@ -10,7 +10,13 @@
     "url": "https://github.com/himorishige/hatago.git",
     "directory": "packages/core"
   },
-  "keywords": ["mcp", "model-context-protocol", "ai", "plugin", "framework"],
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "plugin",
+    "framework"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {

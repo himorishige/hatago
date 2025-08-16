@@ -10,7 +10,12 @@
     "url": "https://github.com/himorishige/hatago.git",
     "directory": "packages/adapter-node"
   },
-  "keywords": ["hatago", "mcp", "nodejs", "adapter"],
+  "keywords": [
+    "hatago",
+    "mcp",
+    "nodejs",
+    "adapter"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {

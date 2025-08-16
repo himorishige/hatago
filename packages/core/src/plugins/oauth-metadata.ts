@@ -26,7 +26,7 @@ export const oauthMetadata: HatagoPluginFactory<OAuthMetadataOptions> =
   (opts: OAuthMetadataOptions = {}): HatagoPlugin =>
   ({ app, getBaseUrl }) => {
     if (!app) return
-    
+
     const scopes = opts.scopes ?? ['mcp:read', 'mcp:invoke']
 
     // Protected Resource Metadata (RFC 9728)

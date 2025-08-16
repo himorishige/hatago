@@ -10,7 +10,12 @@
     "url": "https://github.com/himorishige/hatago.git",
     "directory": "packages/cli"
   },
-  "keywords": ["hatago", "mcp", "cli", "scaffold"],
+  "keywords": [
+    "hatago",
+    "mcp",
+    "cli",
+    "scaffold"
+  ],
   "bin": {
     "hatago": "dist/index.js"
   },

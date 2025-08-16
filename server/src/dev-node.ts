@@ -15,10 +15,10 @@ if (!app) {
   process.exit(1)
 }
 
-logger.info('Hatago HTTP server starting', { 
-  port, 
+logger.info('Hatago HTTP server starting', {
+  port,
   mode: 'http',
-  url: `http://localhost:${port}` 
+  url: `http://localhost:${port}`,
 })
 
 serve({ app, port })

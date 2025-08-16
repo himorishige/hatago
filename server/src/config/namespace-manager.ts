@@ -49,18 +49,18 @@ export class NamespaceManager {
       const conflict: ToolConflict = {
         toolName: originalName,
         existing,
-        attempted: { server: serverConfig.id, tool }
+        attempted: { server: serverConfig.id, tool },
       }
 
       switch (this.config.conflictResolution) {
         case 'error':
           this.conflicts.push(conflict)
           throw new Error(`Tool name conflict: ${finalName} already exists from ${existing.server}`)
-        
+
         case 'skip':
           this.conflicts.push(conflict)
           throw new Error(`Tool ${finalName} skipped due to conflict`)
-        
+
         case 'rename':
           finalName = this.resolveConflict(serverConfig, originalName, finalName)
           conflict.suggestion = finalName
@@ -70,9 +70,9 @@ export class NamespaceManager {
     }
 
     // Register the tool
-    this.registeredTools.set(finalName, { 
-      server: serverConfig.id, 
-      tool: { ...tool, name: finalName } 
+    this.registeredTools.set(finalName, {
+      server: serverConfig.id,
+      tool: { ...tool, name: finalName },
     })
 
     return finalName
@@ -84,17 +84,17 @@ export class NamespaceManager {
   private generateToolName(serverConfig: MCPServerConfig, toolName: string): string {
     const namespace = this.config.namespace || {}
     const separator = namespace.separator || '_'
-    
+
     // Sanitize names (replace dots with separators for Claude Desktop compatibility)
     const cleanToolName = toolName.replace(/\./g, separator)
-    
+
     switch (this.config.namespaceStrategy) {
       case 'prefix':
         return `${serverConfig.id}${separator}${cleanToolName}`
-      
+
       case 'suffix':
         return `${cleanToolName}${separator}${serverConfig.id}`
-      
+
       case 'none':
       default:
         return cleanToolName
@@ -104,10 +104,14 @@ export class NamespaceManager {
   /**
    * Resolve naming conflict by generating alternative name
    */
-  private resolveConflict(serverConfig: MCPServerConfig, originalName: string, conflictName: string): string {
+  private resolveConflict(
+    serverConfig: MCPServerConfig,
+    originalName: string,
+    conflictName: string
+  ): string {
     const namespace = this.config.namespace || {}
     const separator = namespace.separator || '_'
-    
+
     for (let i = 2; i <= 10; i++) {
       const alternative = `${conflictName}${separator}${i}`
       if (!this.registeredTools.has(alternative)) {
@@ -127,11 +131,11 @@ export class NamespaceManager {
     if (serverConfig.includedTools && !serverConfig.includedTools.includes(toolName)) {
       return true
     }
-    
+
     if (serverConfig.excludedTools && serverConfig.excludedTools.includes(toolName)) {
       return true
     }
-    
+
     return false
   }
 
@@ -147,7 +151,7 @@ export class NamespaceManager {
    */
   getStatistics(): NamespaceStats {
     const serverCounts: Record<string, number> = {}
-    
+
     for (const { server } of this.registeredTools.values()) {
       serverCounts[server] = (serverCounts[server] || 0) + 1
     }
@@ -155,7 +159,7 @@ export class NamespaceManager {
     return {
       totalTools: this.registeredTools.size,
       totalConflicts: this.conflicts.length,
-      serverCounts
+      serverCounts,
     }
   }
 

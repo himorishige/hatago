@@ -22,7 +22,7 @@ export interface HatagoContext {
 
   /** Base URL helper (only available in HTTP mode) */
   getBaseUrl: (req: Request) => URL
-  
+
   /** Transport mode */
   mode?: HatagoMode
 }

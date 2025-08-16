@@ -2,9 +2,9 @@
  * Hatago Logger Utility
  * MCP仕様準拠の構造化ログ出力
  * stdio: stderrのみ使用, HTTP: stdout/stderr適切に使い分け
- * 
+ *
  * Advanced PII masking powered by Noren v0.6.0
- * - Security plugin: 70%+ token detection rate  
+ * - Security plugin: 70%+ token detection rate
  * - JWT, API keys, HTTP headers, cookies
  * - Environment controls: NOREN_MASKING=false to disable
  * - Fallback: Traditional key-based masking if Noren fails
@@ -48,7 +48,7 @@ const LOG_LEVELS: Record<LogLevel, number> = {
   warn: 40,
   info: 30,
   debug: 20,
-  trace: 10
+  trace: 10,
 }
 
 // ANSIカラーコード
@@ -63,22 +63,29 @@ const COLORS = {
   magenta: '\x1b[35m',
   cyan: '\x1b[36m',
   white: '\x1b[37m',
-  gray: '\x1b[90m'
+  gray: '\x1b[90m',
 }
 
 // レベル別カラー設定
 const LEVEL_COLORS: Record<LogLevel, string> = {
-  fatal: COLORS.red + COLORS.bright,      // 明るい赤
-  error: COLORS.red,                      // 赤
-  warn: COLORS.yellow,                    // 黄色
-  info: COLORS.green,                     // 緑
-  debug: COLORS.cyan,                     // シアン
-  trace: COLORS.gray                      // グレー
+  fatal: COLORS.red + COLORS.bright, // 明るい赤
+  error: COLORS.red, // 赤
+  warn: COLORS.yellow, // 黄色
+  info: COLORS.green, // 緑
+  debug: COLORS.cyan, // シアン
+  trace: COLORS.gray, // グレー
 }
 
 const DEFAULT_REDACT_KEYS = [
-  'password', 'token', 'api_key', 'authorization', 'bearer',
-  'secret', 'credential', 'access_token', 'refresh_token'
+  'password',
+  'token',
+  'api_key',
+  'authorization',
+  'bearer',
+  'secret',
+  'credential',
+  'access_token',
+  'refresh_token',
 ]
 
 // Noren registry (lazy initialization)
@@ -90,9 +97,9 @@ async function getNorenRegistry(): Promise<Registry> {
     norenRegistry = new Registry({
       defaultAction: 'mask',
       contextHints: ['password', 'token', 'api', 'secret', 'auth'],
-      validationStrictness: 'balanced'
+      validationStrictness: 'balanced',
     })
-    
+
     // Load security plugin: JWT, API keys, HTTP headers, cookies (70%+ detection rate)
     try {
       norenRegistry.use(securityPlugin.detectors, securityPlugin.maskers)
@@ -116,7 +123,7 @@ class Logger {
       transport: (process.env.HATAGO_TRANSPORT as HatagoMode) || 'http',
       redactKeys: process.env.LOG_REDACT?.split(',') || DEFAULT_REDACT_KEYS,
       sampleRate: parseFloat(process.env.LOG_SAMPLE_RATE || '1.0'),
-      ...config
+      ...config,
     }
 
     // Noren masking (default: enabled, disable with NOREN_MASKING=false)
@@ -150,7 +157,7 @@ class Logger {
    */
   private async log(level: LogLevel, msg: string, meta: Record<string, any> = {}) {
     if (!this.isLevelEnabled(level)) return
-    
+
     // サンプリング
     if (Math.random() > this.config.sampleRate && level !== 'fatal' && level !== 'error') {
       return
@@ -162,7 +169,7 @@ class Logger {
       msg,
       transport: this.config.transport,
       ...this.context,
-      ...(await this.redact(meta))
+      ...(await this.redact(meta)),
     }
 
     const output = this.format(entry)
@@ -191,12 +198,12 @@ class Logger {
       }
       return obj
     }
-    
+
     const result: any = Array.isArray(obj) ? [] : {}
-    
+
     for (const [key, value] of Object.entries(obj)) {
       const keyLower = key.toLowerCase()
-      
+
       // キーベースの従来マスキング
       if (this.config.redactKeys.some(redactKey => keyLower.includes(redactKey.toLowerCase()))) {
         result[key] = '[REDACTED]'
@@ -215,7 +222,7 @@ class Logger {
         result[key] = value
       }
     }
-    
+
     return result
   }
 
@@ -230,41 +237,43 @@ class Logger {
     // Pretty format for development with colors
     const timestamp = entry.time.substring(11, 23) // HH:mm:ss.SSS
     const level = entry.level.toUpperCase().padEnd(5)
-    
+
     // カラー対応かチェック（TTYかつNO_COLORが設定されていない）
     const useColors = this.shouldUseColors()
-    
+
     const levelColor = useColors ? LEVEL_COLORS[entry.level] : ''
     const reset = useColors ? COLORS.reset : ''
     const dimColor = useColors ? COLORS.dim : ''
     const brightColor = useColors ? COLORS.bright : ''
-    
+
     // タイムスタンプとレベルをカラー化
     const coloredTimestamp = `${dimColor}[${timestamp}]${reset}`
     const coloredLevel = `${levelColor}${level}${reset}`
     const prefix = `${coloredTimestamp} ${coloredLevel}`
-    
+
     // メッセージ本体（重要なメッセージは太字）
-    const messageText = entry.level === 'fatal' || entry.level === 'error' 
-      ? `${brightColor}${entry.msg}${reset}`
-      : entry.msg
-    
+    const messageText =
+      entry.level === 'fatal' || entry.level === 'error'
+        ? `${brightColor}${entry.msg}${reset}`
+        : entry.msg
+
     let message = `${prefix} ${messageText}`
-    
+
     // メタデータ情報（暗い色で表示）
     const metaColor = useColors ? COLORS.gray : ''
     if (entry.session_id) message += ` ${metaColor}session=${entry.session_id}${reset}`
     if (entry.request_id) message += ` ${metaColor}req=${entry.request_id}${reset}`
     if (entry.tool) message += ` ${metaColor}tool=${entry.tool}${reset}`
     if (entry.method) message += ` ${metaColor}method=${entry.method}${reset}`
-    if (entry.duration_ms !== undefined) message += ` ${metaColor}duration=${entry.duration_ms}ms${reset}`
-    
+    if (entry.duration_ms !== undefined)
+      message += ` ${metaColor}duration=${entry.duration_ms}ms${reset}`
+
     // スタック情報（赤色で表示）
     if (entry.error?.stack && this.config.level === 'debug') {
       const stackColor = useColors ? COLORS.red : ''
       message += `\n${stackColor}${entry.error.stack}${reset}`
     }
-    
+
     return message
   }
 
@@ -274,10 +283,10 @@ class Logger {
   private shouldUseColors(): boolean {
     // NO_COLOR環境変数が設定されている場合はカラー無効
     if (process.env.NO_COLOR) return false
-    
+
     // FORCE_COLOR環境変数が設定されている場合は強制有効
     if (process.env.FORCE_COLOR) return true
-    
+
     // TTYでない場合（ファイルリダイレクト等）はカラー無効
     if (this.config.transport === 'stdio') {
       return process.stderr.isTTY || false
@@ -319,19 +328,31 @@ class Logger {
 
     // process.stdout.write を監視
     const originalWrite = process.stdout.write
-    process.stdout.write = function(chunk: any, ...args: any[]) {
+    process.stdout.write = function (chunk: any, ...args: any[]) {
       process.stderr.write('[STDOUT-GUARD] Prevented stdout write: ' + String(chunk))
       return true
     }
   }
 
   // ログレベルメソッド
-  fatal(msg: string, meta?: Record<string, any>) { return this.log('fatal', msg, meta) }
-  error(msg: string, meta?: Record<string, any>) { return this.log('error', msg, meta) }
-  warn(msg: string, meta?: Record<string, any>) { return this.log('warn', msg, meta) }
-  info(msg: string, meta?: Record<string, any>) { return this.log('info', msg, meta) }
-  debug(msg: string, meta?: Record<string, any>) { return this.log('debug', msg, meta) }
-  trace(msg: string, meta?: Record<string, any>) { return this.log('trace', msg, meta) }
+  fatal(msg: string, meta?: Record<string, any>) {
+    return this.log('fatal', msg, meta)
+  }
+  error(msg: string, meta?: Record<string, any>) {
+    return this.log('error', msg, meta)
+  }
+  warn(msg: string, meta?: Record<string, any>) {
+    return this.log('warn', msg, meta)
+  }
+  info(msg: string, meta?: Record<string, any>) {
+    return this.log('info', msg, meta)
+  }
+  debug(msg: string, meta?: Record<string, any>) {
+    return this.log('debug', msg, meta)
+  }
+  trace(msg: string, meta?: Record<string, any>) {
+    return this.log('trace', msg, meta)
+  }
 }
 
 // デフォルトロガーインスタンス

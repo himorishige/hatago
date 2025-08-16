@@ -40,7 +40,7 @@ class GitHubOAuthClient {
     this.config = {
       scope: 'repo read:user',
       userAgent: 'Hatago-GitHub-Plugin/1.0',
-      ...config
+      ...config,
     }
   }
 
@@ -53,13 +53,13 @@ class GitHubOAuthClient {
     if (envToken) {
       this.token = {
         access_token: envToken,
-        token_type: 'token'
+        token_type: 'token',
       }
       return false
     }
 
     // Check stored OAuth token
-    return !this.token || await this.isTokenExpired()
+    return !this.token || (await this.isTokenExpired())
   }
 
   /**
@@ -67,29 +67,33 @@ class GitHubOAuthClient {
    */
   async authenticate(): Promise<void> {
     if (!this.config.clientId || !this.config.clientSecret) {
-      throw new Error('GitHub OAuth requires clientId and clientSecret. Set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET environment variables.')
+      throw new Error(
+        'GitHub OAuth requires clientId and clientSecret. Set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET environment variables.'
+      )
     }
 
     logger.info('Starting GitHub OAuth authentication flow', { tool: 'github_oauth' })
 
     // Generate PKCE challenge
     const pkce = this.generatePKCE()
-    
+
     // Start local callback server
     const callbackUrl = await this.startCallbackServer()
-    
+
     // Build authorization URL
     const authUrl = this.buildAuthorizationUrl(callbackUrl, pkce.challenge)
-    
-    logger.info('GitHub OAuth authorization URL generated', { 
+
+    logger.info('GitHub OAuth authorization URL generated', {
       tool: 'github_oauth',
-      auth_url: authUrl 
+      auth_url: authUrl,
     })
     logger.info('Waiting for OAuth callback', { tool: 'github_oauth' })
-    
+
     // In a real implementation, this would open the browser
     // For testing, we'll simulate the flow
-    throw new Error('OAuth flow requires manual browser interaction. Please set GITHUB_PERSONAL_ACCESS_TOKEN for testing.')
+    throw new Error(
+      'OAuth flow requires manual browser interaction. Please set GITHUB_PERSONAL_ACCESS_TOKEN for testing.'
+    )
   }
 
   /**
@@ -101,15 +105,15 @@ class GitHubOAuthClient {
     }
 
     const url = endpoint.startsWith('http') ? endpoint : `https://api.github.com${endpoint}`
-    
+
     const response = await fetch(url, {
       ...options,
       headers: {
-        'Authorization': this.getAuthHeader(),
-        'Accept': 'application/vnd.github.v3+json',
+        Authorization: this.getAuthHeader(),
+        Accept: 'application/vnd.github.v3+json',
         'User-Agent': this.config.userAgent,
-        ...options.headers
-      }
+        ...options.headers,
+      },
     })
 
     if (!response.ok) {
@@ -133,9 +137,9 @@ class GitHubOAuthClient {
   async listRepositories(options: { per_page?: number; sort?: string } = {}): Promise<any[]> {
     const params = new URLSearchParams({
       per_page: String(options.per_page || 30),
-      sort: options.sort || 'updated'
+      sort: options.sort || 'updated',
     })
-    
+
     return this.apiRequest(`/user/repos?${params}`)
   }
 
@@ -145,9 +149,9 @@ class GitHubOAuthClient {
   async searchRepositories(query: string, options: { per_page?: number } = {}): Promise<any> {
     const params = new URLSearchParams({
       q: query,
-      per_page: String(options.per_page || 30)
+      per_page: String(options.per_page || 30),
     })
-    
+
     return this.apiRequest(`/search/repositories?${params}`)
   }
 
@@ -161,12 +165,16 @@ class GitHubOAuthClient {
   /**
    * List repository issues
    */
-  async listIssues(owner: string, repo: string, options: { state?: string; per_page?: number } = {}): Promise<any[]> {
+  async listIssues(
+    owner: string,
+    repo: string,
+    options: { state?: string; per_page?: number } = {}
+  ): Promise<any[]> {
     const params = new URLSearchParams({
       state: options.state || 'open',
-      per_page: String(options.per_page || 30)
+      per_page: String(options.per_page || 30),
     })
-    
+
     return this.apiRequest(`/repos/${owner}/${repo}/issues?${params}`)
   }
 
@@ -176,11 +184,11 @@ class GitHubOAuthClient {
     if (!this.token) {
       throw new Error('No GitHub token available')
     }
-    
+
     if (this.token.token_type === 'token') {
       return `token ${this.token.access_token}`
     }
-    
+
     return `Bearer ${this.token.access_token}`
   }
 
@@ -197,7 +205,7 @@ class GitHubOAuthClient {
       scope: this.config.scope!,
       state: crypto.randomBytes(16).toString('hex'),
       code_challenge: challenge,
-      code_challenge_method: 'S256'
+      code_challenge_method: 'S256',
     })
 
     return `https://github.com/login/oauth/authorize?${params}`
@@ -217,7 +225,7 @@ class GitHubOAuthClient {
           reject(new Error('Failed to start callback server'))
           return
         }
-        
+
         const port = address.port
         resolve(`http://localhost:${port}/callback`)
       })
@@ -230,7 +238,7 @@ class GitHubOAuthClient {
     if (!this.token?.expires_at) {
       return false // Personal access tokens don't expire
     }
-    
+
     return Date.now() >= this.token.expires_at
   }
 }
@@ -238,14 +246,14 @@ class GitHubOAuthClient {
 /**
  * GitHub OAuth Test Plugin
  */
-export const githubOAuthTestPlugin: HatagoPlugin = async (ctx) => {
+export const githubOAuthTestPlugin: HatagoPlugin = async ctx => {
   const { app, server } = ctx
 
   // Initialize GitHub client
   const githubClient = new GitHubOAuthClient({
     clientId: process.env.GITHUB_CLIENT_ID,
     clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    scope: 'repo read:user read:org'
+    scope: 'repo read:user read:org',
   })
 
   // Register MCP tools with handlers
@@ -254,24 +262,28 @@ export const githubOAuthTestPlugin: HatagoPlugin = async (ctx) => {
     {
       title: 'Get GitHub User',
       description: 'Get current GitHub user information',
-      inputSchema: {}
+      inputSchema: {},
     },
     async (args, extra) => {
       try {
         const user = await githubClient.getCurrentUser()
         return {
-          content: [{
-            type: 'text',
-            text: JSON.stringify(user, null, 2)
-          }]
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(user, null, 2),
+            },
+          ],
         }
       } catch (error) {
         return {
-          content: [{
-            type: 'text',
-            text: `Error: ${(error as Error).message}`
-          }],
-          isError: true
+          content: [
+            {
+              type: 'text',
+              text: `Error: ${(error as Error).message}`,
+            },
+          ],
+          isError: true,
         }
       }
     }
@@ -283,26 +295,40 @@ export const githubOAuthTestPlugin: HatagoPlugin = async (ctx) => {
       title: 'List GitHub Repositories',
       description: 'List user repositories',
       inputSchema: {
-        per_page: z.number().min(1).max(100).default(30).optional().describe('Number of repositories per page (max 100)'),
-        sort: z.enum(['created', 'updated', 'pushed', 'full_name']).default('updated').optional().describe('Sort repositories by')
-      }
+        per_page: z
+          .number()
+          .min(1)
+          .max(100)
+          .default(30)
+          .optional()
+          .describe('Number of repositories per page (max 100)'),
+        sort: z
+          .enum(['created', 'updated', 'pushed', 'full_name'])
+          .default('updated')
+          .optional()
+          .describe('Sort repositories by'),
+      },
     },
     async (args, extra) => {
       try {
         const repos = await githubClient.listRepositories(args)
         return {
-          content: [{
-            type: 'text',
-            text: JSON.stringify(repos, null, 2)
-          }]
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(repos, null, 2),
+            },
+          ],
         }
       } catch (error) {
         return {
-          content: [{
-            type: 'text',
-            text: `Error: ${(error as Error).message}`
-          }],
-          isError: true
+          content: [
+            {
+              type: 'text',
+              text: `Error: ${(error as Error).message}`,
+            },
+          ],
+          isError: true,
         }
       }
     }
@@ -315,25 +341,35 @@ export const githubOAuthTestPlugin: HatagoPlugin = async (ctx) => {
       description: 'Search GitHub repositories',
       inputSchema: {
         query: z.string().describe('Search query'),
-        per_page: z.number().min(1).max(100).default(30).optional().describe('Number of results per page (max 100)')
-      }
+        per_page: z
+          .number()
+          .min(1)
+          .max(100)
+          .default(30)
+          .optional()
+          .describe('Number of results per page (max 100)'),
+      },
     },
     async (args, extra) => {
       try {
         const results = await githubClient.searchRepositories(args.query, args)
         return {
-          content: [{
-            type: 'text',
-            text: JSON.stringify(results, null, 2)
-          }]
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(results, null, 2),
+            },
+          ],
         }
       } catch (error) {
         return {
-          content: [{
-            type: 'text',
-            text: `Error: ${(error as Error).message}`
-          }],
-          isError: true
+          content: [
+            {
+              type: 'text',
+              text: `Error: ${(error as Error).message}`,
+            },
+          ],
+          isError: true,
         }
       }
     }
@@ -346,25 +382,29 @@ export const githubOAuthTestPlugin: HatagoPlugin = async (ctx) => {
       description: 'Get repository information',
       inputSchema: {
         owner: z.string().describe('Repository owner'),
-        repo: z.string().describe('Repository name')
-      }
+        repo: z.string().describe('Repository name'),
+      },
     },
     async (args, extra) => {
       try {
         const repo = await githubClient.getRepository(args.owner, args.repo)
         return {
-          content: [{
-            type: 'text',
-            text: JSON.stringify(repo, null, 2)
-          }]
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(repo, null, 2),
+            },
+          ],
         }
       } catch (error) {
         return {
-          content: [{
-            type: 'text',
-            text: `Error: ${(error as Error).message}`
-          }],
-          isError: true
+          content: [
+            {
+              type: 'text',
+              text: `Error: ${(error as Error).message}`,
+            },
+          ],
+          isError: true,
         }
       }
     }
@@ -379,25 +419,35 @@ export const githubOAuthTestPlugin: HatagoPlugin = async (ctx) => {
         owner: z.string().describe('Repository owner'),
         repo: z.string().describe('Repository name'),
         state: z.enum(['open', 'closed', 'all']).default('open').optional().describe('Issue state'),
-        per_page: z.number().min(1).max(100).default(30).optional().describe('Number of issues per page (max 100)')
-      }
+        per_page: z
+          .number()
+          .min(1)
+          .max(100)
+          .default(30)
+          .optional()
+          .describe('Number of issues per page (max 100)'),
+      },
     },
     async (args, extra) => {
       try {
         const issues = await githubClient.listIssues(args.owner, args.repo, args)
         return {
-          content: [{
-            type: 'text',
-            text: JSON.stringify(issues, null, 2)
-          }]
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(issues, null, 2),
+            },
+          ],
         }
       } catch (error) {
         return {
-          content: [{
-            type: 'text',
-            text: `Error: ${(error as Error).message}`
-          }],
-          isError: true
+          content: [
+            {
+              type: 'text',
+              text: `Error: ${(error as Error).message}`,
+            },
+          ],
+          isError: true,
         }
       }
     }
@@ -405,32 +455,37 @@ export const githubOAuthTestPlugin: HatagoPlugin = async (ctx) => {
 
   // Add HTTP health endpoint (only in http mode)
   if (app && ctx.mode === 'http') {
-    app.get('/github/health', async (c) => {
+    app.get('/github/health', async c => {
       try {
         const needsAuth = await githubClient.needsAuthentication()
-        
+
         return c.json({
           status: 'ok',
           plugin: 'github-oauth-test',
           authentication: {
             required: needsAuth,
-            configured: !!(process.env.GITHUB_PERSONAL_ACCESS_TOKEN || 
-                          process.env.GITHUB_TOKEN || 
-                          (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET))
+            configured: !!(
+              process.env.GITHUB_PERSONAL_ACCESS_TOKEN ||
+              process.env.GITHUB_TOKEN ||
+              (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET)
+            ),
           },
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         })
       } catch (error) {
-        return c.json({
-          status: 'error',
-          error: (error as Error).message,
-          timestamp: new Date().toISOString()
-        }, 500)
+        return c.json(
+          {
+            status: 'error',
+            error: (error as Error).message,
+            timestamp: new Date().toISOString(),
+          },
+          500
+        )
       }
     })
 
-    // Add OAuth setup endpoint  
-    app.get('/github/auth/setup', async (c) => {
+    // Add OAuth setup endpoint
+    app.get('/github/auth/setup', async c => {
       return c.json({
         message: 'GitHub OAuth Setup',
         steps: [
@@ -440,28 +495,28 @@ export const githubOAuthTestPlugin: HatagoPlugin = async (ctx) => {
           '   GITHUB_CLIENT_ID=your_client_id',
           '   GITHUB_CLIENT_SECRET=your_client_secret',
           '4. Or use Personal Access Token:',
-          '   GITHUB_PERSONAL_ACCESS_TOKEN=your_token'
+          '   GITHUB_PERSONAL_ACCESS_TOKEN=your_token',
         ],
         currentConfig: {
           hasClientId: !!process.env.GITHUB_CLIENT_ID,
           hasClientSecret: !!process.env.GITHUB_CLIENT_SECRET,
           hasPersonalToken: !!process.env.GITHUB_PERSONAL_ACCESS_TOKEN,
-          hasGenericToken: !!process.env.GITHUB_TOKEN
-        }
+          hasGenericToken: !!process.env.GITHUB_TOKEN,
+        },
       })
     })
   }
 
   const pluginLogger = logger.child({ plugin: 'github-oauth-test' })
-  
+
   pluginLogger.info('GitHub OAuth Plugin loaded successfully')
-  pluginLogger.info('Available tools registered', { 
-    tools: ['github_user', 'github_repos', 'github_search', 'github_repo', 'github_issues'] 
+  pluginLogger.info('Available tools registered', {
+    tools: ['github_user', 'github_repos', 'github_search', 'github_repo', 'github_issues'],
   })
-  
+
   if (ctx.mode === 'http') {
-    pluginLogger.info('HTTP endpoints available', { 
-      endpoints: ['/github/health', '/github/auth/setup'] 
+    pluginLogger.info('HTTP endpoints available', {
+      endpoints: ['/github/health', '/github/auth/setup'],
     })
   } else {
     pluginLogger.info('Running in stdio mode - HTTP endpoints disabled')

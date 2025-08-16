@@ -92,7 +92,7 @@ class EnhancedMCPClient {
     } catch (error) {
       logger.warn('Health check failed', {
         server_id: this.config.id,
-        error: { message: (error as Error).message }
+        error: { message: (error as Error).message },
       })
       return false
     }
@@ -238,7 +238,7 @@ export const enhancedMcpProxy =
         logger.info('Enhanced MCP Proxy using configuration file')
       } catch (error) {
         logger.warn('Enhanced MCP Proxy failed to load config file, falling back to options', {
-          error: { message: (error as Error).message }
+          error: { message: (error as Error).message },
         })
         proxyConfig = createLegacyConfig(options)
       }
@@ -256,7 +256,7 @@ export const enhancedMcpProxy =
 
     logger.info('Enhanced MCP Proxy: Connecting to servers', {
       server_count: proxyConfig.servers.length,
-      servers: proxyConfig.servers.map(s => ({ id: s.id, endpoint: s.endpoint }))
+      servers: proxyConfig.servers.map(s => ({ id: s.id, endpoint: s.endpoint })),
     })
 
     // Connect to each server and register their tools
@@ -272,7 +272,7 @@ export const enhancedMcpProxy =
     logger.info('Enhanced MCP Proxy: Registration complete', {
       total_tools: stats.totalTools,
       conflicts: stats.totalConflicts,
-      server_counts: stats.serverCounts
+      server_counts: stats.serverCounts,
     })
 
     // Log conflicts if any
@@ -284,8 +284,8 @@ export const enhancedMcpProxy =
           tool_name: conflict.toolName,
           existing_server: conflict.existing.server,
           attempted_server: conflict.attempted.server,
-          suggestion: conflict.suggestion
-        }))
+          suggestion: conflict.suggestion,
+        })),
       })
     }
 
@@ -308,13 +308,13 @@ async function connectToEnhancedServer(
     // Initialize connection
     serverLogger.info('Initializing connection to MCP server')
     const startTime = Date.now()
-    
+
     const initResult = await client.initialize()
     const duration = Date.now() - startTime
-    
+
     serverLogger.info('Connection established successfully', {
       duration_ms: duration,
-      server_info: initResult?.result?.serverInfo
+      server_info: initResult?.result?.serverInfo,
     })
 
     // List available tools
@@ -326,7 +326,7 @@ async function connectToEnhancedServer(
     serverLogger.info('Retrieved tools from server', {
       tool_count: remoteTools.length,
       duration_ms: toolsDuration,
-      tools: remoteTools.map((t: any) => t.name)
+      tools: remoteTools.map((t: any) => t.name),
     })
 
     // Register each remote tool through namespace manager
@@ -370,7 +370,7 @@ async function connectToEnhancedServer(
 
         serverLogger.debug('Tool registered successfully', {
           tool: remoteTool.name,
-          mapped_name: mappedToolName
+          mapped_name: mappedToolName,
         })
       } catch (error) {
         if (error instanceof Error && error.message.includes('excluded')) {
@@ -378,14 +378,14 @@ async function connectToEnhancedServer(
         } else {
           serverLogger.error('Failed to register tool', {
             tool: remoteTool.name,
-            error: { message: (error as Error).message, stack: (error as Error).stack }
+            error: { message: (error as Error).message, stack: (error as Error).stack },
           })
         }
       }
     }
   } catch (error) {
     serverLogger.error('Failed to connect to MCP server', {
-      error: { message: (error as Error).message, stack: (error as Error).stack }
+      error: { message: (error as Error).message, stack: (error as Error).stack },
     })
   }
 }
@@ -437,7 +437,7 @@ function setupHealthChecks(servers: CoreMCPServerConfig[]) {
         if (!isHealthy) {
           logger.warn('Health check failed for server', {
             server_id: serverConfig.id,
-            endpoint: serverConfig.endpoint
+            endpoint: serverConfig.endpoint,
           })
           // Could emit events or take corrective action here
         }
@@ -445,7 +445,7 @@ function setupHealthChecks(servers: CoreMCPServerConfig[]) {
 
       logger.info('Health check enabled for server', {
         server_id: serverConfig.id,
-        interval_ms: interval
+        interval_ms: interval,
       })
     }
   }
