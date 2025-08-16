@@ -186,7 +186,15 @@ async function interactivePrompt(prompts: unknown[]): Promise<TemplateContext> {
   const { createInterface } = require('node:readline')
 
   for (const promptItem of prompts) {
-    const prompt = promptItem as { when?: string; [key: string]: unknown }
+    const prompt = promptItem as { 
+      when?: string
+      type?: string
+      name?: string
+      message?: string
+      default?: string | boolean
+      choices?: string[]
+      [key: string]: unknown 
+    }
     if (prompt.when && !context[prompt.when]) {
       continue
     }
@@ -201,42 +209,42 @@ async function interactivePrompt(prompts: unknown[]): Promise<TemplateContext> {
         case 'input': {
           const defaultText = prompt.default ? ` (${prompt.default})` : ''
           const answer = await new Promise<string>(resolve => {
-            rl.question(`${prompt.message}${defaultText}: `, resolve)
+            rl.question(`${prompt.message as string}${defaultText}: `, resolve)
           })
-          context[prompt.name] = answer.trim() || prompt.default || ''
+          context[prompt.name as string] = answer.trim() || prompt.default || ''
           break
         }
 
         case 'confirm': {
           const defaultConfirm = prompt.default ? 'Y/n' : 'y/N'
           const confirmAnswer = await new Promise<string>(resolve => {
-            rl.question(`${prompt.message} (${defaultConfirm}): `, resolve)
+            rl.question(`${prompt.message as string} (${defaultConfirm}): `, resolve)
           })
           const isYes =
             confirmAnswer.toLowerCase() === 'y' ||
             confirmAnswer.toLowerCase() === 'yes' ||
             (confirmAnswer === '' && prompt.default)
-          context[prompt.name] = isYes
+          context[prompt.name as string] = isYes
           break
         }
 
         case 'select':
           if (prompt.choices) {
-            console.log(`\\n${prompt.message}`)
-            prompt.choices.forEach((choice: string, index: number) => {
+            console.log(`\\n${prompt.message as string}`)
+            ;(prompt.choices as string[]).forEach((choice: string, index: number) => {
               console.log(`  ${index + 1}. ${choice}`)
             })
             const selectAnswer = await new Promise<string>(resolve => {
               rl.question('Select option: ', resolve)
             })
             const selectedIndex = Number.parseInt(selectAnswer, 10) - 1
-            context[prompt.name] = prompt.choices[selectedIndex] || prompt.choices[0]
+            context[prompt.name as string] = (prompt.choices as string[])[selectedIndex] ?? (prompt.choices as string[])[0] ?? ''
           }
           break
 
         default:
           console.log(`${yellow('Warning:')} Unsupported prompt type: ${prompt.type}`)
-          context[prompt.name] = prompt.default
+          context[prompt.name as string] = prompt.default
       }
     } finally {
       rl.close()
@@ -349,7 +357,7 @@ async function handleScaffold(
 
     const result = engine.generateFromTemplate(templateDir, outputDir, context, {
       includeOptional: true,
-      dryRun: options.dry,
+      dryRun: options.dry ?? false,
     })
 
     // Show results

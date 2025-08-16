@@ -55,7 +55,7 @@ function generatePackageJson(projectName: string, template: ProjectTemplate): st
     dependencies: {
       '@hono/mcp': 'file:../../docs/dist',
       hono: '^4.6.0',
-    },
+    } as Record<string, string>,
     devDependencies: {
       '@types/node': '^20.0.0',
       typescript: '^5.0.0',

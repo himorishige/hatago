@@ -3,7 +3,7 @@ import { resolve } from 'node:path'
 import {
   ConfigValidationError,
   type HatagoConfig,
-  type ProxyServerConfig,
+  type MCPServerConfig,
   loadConfig,
   validateConfig,
 } from '@hatago/config'
@@ -46,7 +46,7 @@ function outputResult(data: unknown, message?: string): void {
 /**
  * Test MCP server connectivity
  */
-async function testMcpServer(endpoint: string, auth?: ProxyServerConfig['auth']): Promise<boolean> {
+async function testMcpServer(endpoint: string, auth?: MCPServerConfig['auth']): Promise<boolean> {
   try {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -125,11 +125,11 @@ async function promptInput(question: string, defaultValue?: string): Promise<str
 /**
  * Interactive server configuration
  */
-async function interactiveConfig(endpoint: string): Promise<Partial<ProxyServerConfig>> {
+async function interactiveConfig(endpoint: string): Promise<Partial<MCPServerConfig>> {
   console.log(`\\n🔧 ${cyan('Interactive Configuration')}`)
   console.log('='.repeat(40))
 
-  const config: Partial<ProxyServerConfig> = {
+  const config: Partial<MCPServerConfig> = {
     endpoint,
   }
 
@@ -189,7 +189,7 @@ function generateServerId(endpoint: string): string {
 /**
  * Update configuration file
  */
-async function updateConfigFile(newServer: ProxyServerConfig, dryRun = false): Promise<void> {
+async function updateConfigFile(newServer: MCPServerConfig, dryRun = false): Promise<void> {
   const { config, filepath } = await loadConfig()
 
   if (!config.proxy) {
@@ -274,7 +274,7 @@ async function handleAddServer(endpoint: string, options: AddServerOptions): Pro
     console.log('='.repeat(40))
     console.log(`📡 Endpoint: ${endpoint}`)
 
-    let serverConfig: Partial<ProxyServerConfig>
+    let serverConfig: Partial<MCPServerConfig>
 
     if (options.interactive) {
       serverConfig = await interactiveConfig(endpoint)
@@ -331,7 +331,7 @@ async function handleAddServer(endpoint: string, options: AddServerOptions): Pro
     }
 
     // Update configuration
-    await updateConfigFile(serverConfig as ProxyServerConfig, options.dry)
+    await updateConfigFile(serverConfig as MCPServerConfig, options.dry)
 
     if (!options.dry) {
       console.log('\\n🎯 Next steps:')
