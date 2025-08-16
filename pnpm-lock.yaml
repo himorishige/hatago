@@ -116,9 +116,9 @@ importers:
       '@hatago/core':
         specifier: ^0.1.1
         version: link:../core
-      '@hatago/mcp-transport-internal':
-        specifier: file:../hono-mcp
-        version: file:packages/hono-mcp(@modelcontextprotocol/sdk@1.17.3)(hono@4.9.1)
+      '@hatago/hono-mcp':
+        specifier: workspace:*
+        version: link:../hono-mcp
       '@hono/node-server':
         specifier: ^1.18.2
         version: 1.18.2(hono@4.9.1)
@@ -147,9 +147,9 @@ importers:
       '@hatago/core':
         specifier: ^0.1.1
         version: link:../core
-      '@hatago/mcp-transport-internal':
-        specifier: file:../hono-mcp
-        version: file:packages/hono-mcp(@modelcontextprotocol/sdk@1.17.3)(hono@4.9.1)
+      '@hatago/hono-mcp':
+        specifier: workspace:*
+        version: link:../hono-mcp
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^4.20241224.0
@@ -221,9 +221,9 @@ importers:
 
   packages/core:
     dependencies:
-      '@hatago/mcp-transport-internal':
-        specifier: file:../hono-mcp
-        version: file:packages/hono-mcp(@modelcontextprotocol/sdk@1.17.3)(hono@4.9.1)
+      '@hatago/hono-mcp':
+        specifier: workspace:*
+        version: link:../hono-mcp
       '@himorishige/noren-core':
         specifier: ^0.6.2
         version: 0.6.2
@@ -5687,15 +5687,3 @@ packages:
 
   /zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
-
-  file:packages/hono-mcp(@modelcontextprotocol/sdk@1.17.3)(hono@4.9.1):
-    resolution: {directory: packages/hono-mcp, type: directory}
-    id: file:packages/hono-mcp
-    name: '@hatago/hono-mcp'
-    peerDependencies:
-      '@modelcontextprotocol/sdk': ^1.17.2
-      hono: '>=4.0.0'
-    dependencies:
-      '@modelcontextprotocol/sdk': 1.17.3
-      hono: 4.9.1
-    dev: false

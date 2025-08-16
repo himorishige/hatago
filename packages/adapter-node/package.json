@@ -62,7 +62,7 @@
   "dependencies": {
     "@hatago/core": "^0.1.1",
     "@hono/node-server": "^1.18.2",
-    "@hatago/mcp-transport-internal": "file:../hono-mcp"
+    "@hatago/hono-mcp": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.19.10",
