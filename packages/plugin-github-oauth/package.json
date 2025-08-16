@@ -1,6 +1,6 @@
 {
   "name": "@hatago/plugin-github-oauth",
-  "version": "1.0.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "GitHub OAuth integration plugin for Hatago with API access tools",
   "license": "MIT",

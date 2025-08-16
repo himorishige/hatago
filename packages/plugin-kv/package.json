@@ -1,6 +1,6 @@
 {
   "name": "@hatago/plugin-kv",
-  "version": "1.0.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "Key-value storage abstraction plugin for Hatago",
   "license": "MIT",

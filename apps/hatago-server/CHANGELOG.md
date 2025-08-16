@@ -1,6 +1,10 @@
 # @hatago/reference-server
 
-## 0.1.2
+## 0.2.0
+
+### Minor Changes
+
+- 2e9ebdf: Enhanced packages
 
 ### Patch Changes
 
