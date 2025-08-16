@@ -25,6 +25,7 @@ function createApp(config: AppConfig): Promise<{
 #### Returns
 
 Promise resolving to:
+
 - `app: Hono` - Hono web framework instance
 - `server: McpServer` - MCP server instance
 
@@ -33,7 +34,7 @@ Promise resolving to:
 ```typescript
 const { app, server } = await createApp({
   name: 'my-mcp-server',
-  version: '1.0.0'
+  version: '1.0.0',
 })
 ```
 
@@ -42,10 +43,7 @@ const { app, server } = await createApp({
 Loads and applies plugins to the application.
 
 ```typescript
-function loadPlugins(
-  plugins: HatagoPlugin[],
-  context: HatagoContext
-): Promise<void>
+function loadPlugins(plugins: HatagoPlugin[], context: HatagoContext): Promise<void>
 ```
 
 #### Parameters
@@ -59,7 +57,7 @@ function loadPlugins(
 await loadPlugins([myPlugin, anotherPlugin], {
   app,
   server,
-  env: process.env
+  env: process.env,
 })
 ```
 
@@ -83,7 +81,7 @@ type HatagoPlugin = (ctx: HatagoContext) => void | Promise<void>
 #### Example
 
 ```typescript
-const myPlugin: HatagoPlugin = (ctx) => {
+const myPlugin: HatagoPlugin = ctx => {
   ctx.server.registerTool('my_tool', schema, handler)
   ctx.app.get('/my-route', routeHandler)
 }
@@ -131,8 +129,8 @@ function createNodeAdapter(options: NodeAdapterOptions): NodeAdapter
 ```typescript
 interface NodeAdapterOptions {
   app: Hono
-  port?: number           // Default: 8787
-  hostname?: string       // Default: 'localhost'
+  port?: number // Default: 8787
+  hostname?: string // Default: 'localhost'
   onListen?: (info: AddressInfo) => void
 }
 ```
@@ -143,7 +141,7 @@ interface NodeAdapterOptions {
 interface NodeAdapter {
   start(): Promise<void>
   stop(): Promise<void>
-  server: Server  // Node.js HTTP server instance
+  server: Server // Node.js HTTP server instance
 }
 ```
 
@@ -153,9 +151,9 @@ interface NodeAdapter {
 const adapter = createNodeAdapter({
   app,
   port: 3000,
-  onListen: (info) => {
+  onListen: info => {
     console.log(`Server running on port ${info.port}`)
-  }
+  },
 })
 
 await adapter.start()
@@ -199,7 +197,7 @@ function createLogger(config?: LoggerConfig): Logger
 
 ```typescript
 interface LoggerConfig {
-  level: LogLevel  // 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal'
+  level: LogLevel // 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal'
   format?: 'json' | 'pretty'
 }
 ```
@@ -266,9 +264,12 @@ interface ToolSchema {
 #### Handler
 
 ```typescript
-type ToolHandler = (args: any, meta?: {
-  progressToken?: string
-}) => Promise<ToolResult>
+type ToolHandler = (
+  args: any,
+  meta?: {
+    progressToken?: string
+  }
+) => Promise<ToolResult>
 
 interface ToolResult {
   content: Array<{
@@ -292,18 +293,20 @@ server.registerTool(
       type: 'object',
       properties: {
         a: { type: 'number' },
-        b: { type: 'number' }
+        b: { type: 'number' },
       },
-      required: ['a', 'b']
-    }
+      required: ['a', 'b'],
+    },
   },
-  async (args) => {
+  async args => {
     const sum = args.a + args.b
     return {
-      content: [{
-        type: 'text',
-        text: `The sum is ${sum}`
-      }]
+      content: [
+        {
+          type: 'text',
+          text: `The sum is ${sum}`,
+        },
+      ],
     }
   }
 )
@@ -349,13 +352,15 @@ server.registerResource(
   {
     name: 'Application Config',
     description: 'Current app configuration',
-    mimeType: 'application/json'
+    mimeType: 'application/json',
   },
   async () => ({
-    contents: [{
-      type: 'text',
-      text: JSON.stringify(config, null, 2)
-    }]
+    contents: [
+      {
+        type: 'text',
+        text: JSON.stringify(config, null, 2),
+      },
+    ],
   })
 )
 ```
@@ -420,14 +425,14 @@ type Handler = (c: Context) => Response | Promise<Response>
 
 ```typescript
 interface Context {
-  req: HonoRequest       // Request object
+  req: HonoRequest // Request object
   json(object: any): Response
   text(text: string): Response
   html(html: string): Response
   redirect(url: string, status?: number): Response
   header(name: string, value: string): void
   status(code: number): void
-  get(key: string): any  // Get context variable
+  get(key: string): any // Get context variable
   set(key: string, value: any): void
 }
 ```
@@ -435,11 +440,11 @@ interface Context {
 #### Example
 
 ```typescript
-app.get('/health', (c) => {
+app.get('/health', c => {
   return c.json({ status: 'healthy' })
 })
 
-app.post('/api/data', async (c) => {
+app.post('/api/data', async c => {
   const body = await c.req.json()
   // Process data
   return c.json({ success: true })
@@ -459,11 +464,7 @@ function compose<T>(...fns: Array<(arg: T) => T>): (arg: T) => T
 #### Example
 
 ```typescript
-const process = compose(
-  validate,
-  transform,
-  format
-)
+const process = compose(validate, transform, format)
 
 const result = process(input)
 ```
@@ -479,12 +480,7 @@ function pipe<T>(value: T, ...fns: Array<(arg: T) => T>): T
 #### Example
 
 ```typescript
-const result = pipe(
-  input,
-  validate,
-  transform,
-  format
-)
+const result = pipe(input, validate, transform, format)
 ```
 
 ### `memoize`
@@ -492,18 +488,15 @@ const result = pipe(
 Memoizes function results.
 
 ```typescript
-function memoize<T extends (...args: any[]) => any>(
-  fn: T,
-  options?: MemoizeOptions
-): T
+function memoize<T extends (...args: any[]) => any>(fn: T, options?: MemoizeOptions): T
 ```
 
 #### Options
 
 ```typescript
 interface MemoizeOptions {
-  maxSize?: number      // Maximum cache size
-  ttl?: number         // Time to live in ms
+  maxSize?: number // Maximum cache size
+  ttl?: number // Time to live in ms
   keyGenerator?: (...args: any[]) => string
 }
 ```
@@ -525,7 +518,7 @@ Plugins may use additional environment variables:
 ```typescript
 const config = {
   apiKey: process.env.API_KEY,
-  endpoint: process.env.API_ENDPOINT || 'https://api.example.com'
+  endpoint: process.env.API_ENDPOINT || 'https://api.example.com',
 }
 ```
 
@@ -535,7 +528,10 @@ const config = {
 
 ```typescript
 class HatagoError extends Error {
-  constructor(message: string, public code: string) {
+  constructor(
+    message: string,
+    public code: string
+  ) {
     super(message)
   }
 }
@@ -556,25 +552,23 @@ class PluginError extends HatagoError {
 ### Error Handling in Plugins
 
 ```typescript
-const myPlugin: HatagoPlugin = (ctx) => {
-  ctx.server.registerTool(
-    'my_tool',
-    schema,
-    async (args) => {
-      try {
-        // Tool logic
-        return { content: [{ type: 'text', text: 'Success' }] }
-      } catch (error) {
-        return {
-          content: [{
+const myPlugin: HatagoPlugin = ctx => {
+  ctx.server.registerTool('my_tool', schema, async args => {
+    try {
+      // Tool logic
+      return { content: [{ type: 'text', text: 'Success' }] }
+    } catch (error) {
+      return {
+        content: [
+          {
             type: 'text',
-            text: `Error: ${error.message}`
-          }],
-          isError: true
-        }
+            text: `Error: ${error.message}`,
+          },
+        ],
+        isError: true,
       }
     }
-  )
+  })
 }
 ```
 

@@ -19,7 +19,7 @@ Hatago plugins are **pure functions** that extend the framework's capabilities. 
 import type { HatagoPlugin } from '@hatago/core'
 
 // Plugin is a pure function
-export const myPlugin: HatagoPlugin = (ctx) => {
+export const myPlugin: HatagoPlugin = ctx => {
   const { app, server, env } = ctx
 
   // Register an MCP tool
@@ -30,17 +30,19 @@ export const myPlugin: HatagoPlugin = (ctx) => {
       inputSchema: {
         type: 'object',
         properties: {
-          message: { type: 'string' }
+          message: { type: 'string' },
         },
-        required: ['message']
-      }
+        required: ['message'],
+      },
     },
-    async (args) => {
+    async args => {
       return {
-        content: [{
-          type: 'text',
-          text: `You said: ${args.message}`
-        }]
+        content: [
+          {
+            type: 'text',
+            text: `You said: ${args.message}`,
+          },
+        ],
       }
     }
   )
@@ -55,7 +57,7 @@ import { myPlugin } from './my-plugin'
 
 const { app, server } = await createApp({
   name: 'my-server',
-  version: '1.0.0'
+  version: '1.0.0',
 })
 
 // Apply the plugin
@@ -72,10 +74,10 @@ Every plugin is a function that receives a context:
 type HatagoPlugin = (ctx: HatagoContext) => void | Promise<void>
 
 interface HatagoContext {
-  app: Hono              // HTTP framework instance
-  server: McpServer      // MCP server instance
-  env?: Record<string, unknown>  // Environment variables
-  getBaseUrl?: (req: Request) => URL  // URL helper
+  app: Hono // HTTP framework instance
+  server: McpServer // MCP server instance
+  env?: Record<string, unknown> // Environment variables
+  getBaseUrl?: (req: Request) => URL // URL helper
 }
 ```
 
@@ -90,22 +92,21 @@ export function createMyPlugin(config?: MyPluginConfig): HatagoPlugin {
   const finalConfig = {
     enabled: true,
     timeout: 5000,
-    ...config
+    ...config,
   }
 
   // Return the actual plugin function
-  return (ctx) => {
+  return ctx => {
     if (!finalConfig.enabled) return
 
     ctx.server.registerTool(
       'configured_tool',
-      { /* schema */ },
-      async (args) => {
+      {
+        /* schema */
+      },
+      async args => {
         // Use configuration
-        const result = await processWithTimeout(
-          args,
-          finalConfig.timeout
-        )
+        const result = await processWithTimeout(args, finalConfig.timeout)
         return { content: [{ type: 'text', text: result }] }
       }
     )
@@ -135,11 +136,13 @@ function validateInput(input: unknown): input is string {
 }
 
 // Plugin uses pure functions
-export const purePlugin: HatagoPlugin = (ctx) => {
+export const purePlugin: HatagoPlugin = ctx => {
   ctx.server.registerTool(
     'pure_tool',
-    { /* schema */ },
-    async (args) => {
+    {
+      /* schema */
+    },
+    async args => {
       // Validate with pure function
       if (!validateInput(args.input)) {
         throw new Error('Invalid input')
@@ -149,7 +152,7 @@ export const purePlugin: HatagoPlugin = (ctx) => {
       const result = calculateResult(args.input)
 
       return {
-        content: [{ type: 'text', text: result }]
+        content: [{ type: 'text', text: result }],
       }
     }
   )
@@ -186,20 +189,20 @@ const withRetry = (fn: Function, retries = 3) => {
 
 // Compose functions
 const processData = withLogging(
-  withRetry(
-    async (data: string) => {
-      // Process data
-      return data.toUpperCase()
-    }
-  )
+  withRetry(async (data: string) => {
+    // Process data
+    return data.toUpperCase()
+  })
 )
 
 // Use in plugin
-export const composedPlugin: HatagoPlugin = (ctx) => {
+export const composedPlugin: HatagoPlugin = ctx => {
   ctx.server.registerTool(
     'composed_tool',
-    { /* schema */ },
-    async (args) => {
+    {
+      /* schema */
+    },
+    async args => {
       const result = await processData(args.input)
       return { content: [{ type: 'text', text: result }] }
     }
@@ -223,27 +226,31 @@ function addItem(state: PluginState, item: string): PluginState {
   return {
     ...state,
     count: state.count + 1,
-    items: [...state.items, item]
+    items: [...state.items, item],
   }
 }
 
 // Plugin with immutable state
 export function createStatefulPlugin(): HatagoPlugin {
-  return (ctx) => {
+  return ctx => {
     let state: PluginState = { count: 0, items: [] }
 
     ctx.server.registerTool(
       'add_item',
-      { /* schema */ },
-      async (args) => {
+      {
+        /* schema */
+      },
+      async args => {
         // Update state immutably
         state = addItem(state, args.item)
-        
+
         return {
-          content: [{
-            type: 'text',
-            text: `Added item. Total: ${state.count}`
-          }]
+          content: [
+            {
+              type: 'text',
+              text: `Added item. Total: ${state.count}`,
+            },
+          ],
         }
       }
     )
@@ -260,7 +267,7 @@ Create plugins that enhance other plugins:
 ```typescript
 // Higher-order plugin adds logging
 function withPluginLogging(plugin: HatagoPlugin): HatagoPlugin {
-  return (ctx) => {
+  return ctx => {
     console.log(`Applying plugin...`)
     const result = plugin(ctx)
     console.log(`Plugin applied`)
@@ -278,7 +285,7 @@ Combine multiple plugins:
 
 ```typescript
 function combinePlugins(...plugins: HatagoPlugin[]): HatagoPlugin {
-  return async (ctx) => {
+  return async ctx => {
     for (const plugin of plugins) {
       await plugin(ctx)
     }
@@ -286,11 +293,7 @@ function combinePlugins(...plugins: HatagoPlugin[]): HatagoPlugin {
 }
 
 // Usage
-const megaPlugin = combinePlugins(
-  plugin1,
-  plugin2,
-  plugin3
-)
+const megaPlugin = combinePlugins(plugin1, plugin2, plugin3)
 ```
 
 ### Dependency Injection
@@ -299,15 +302,14 @@ Use closures for dependency injection:
 
 ```typescript
 // Dependencies as parameters
-export function createDatabasePlugin(
-  database: Database,
-  cache: Cache
-): HatagoPlugin {
-  return (ctx) => {
+export function createDatabasePlugin(database: Database, cache: Cache): HatagoPlugin {
+  return ctx => {
     ctx.server.registerTool(
       'query_data',
-      { /* schema */ },
-      async (args) => {
+      {
+        /* schema */
+      },
+      async args => {
         // Check cache first
         const cached = await cache.get(args.query)
         if (cached) {
@@ -363,14 +365,14 @@ import { myPlugin } from './my-plugin'
 describe('MyPlugin', () => {
   it('should register tools', async () => {
     const mockServer = {
-      registerTool: vi.fn()
+      registerTool: vi.fn(),
     }
     const mockApp = {}
-    
+
     await myPlugin({
       server: mockServer as any,
       app: mockApp as any,
-      env: {}
+      env: {},
     })
 
     expect(mockServer.registerTool).toHaveBeenCalledWith(
@@ -395,7 +397,7 @@ function processData(input: string): string {
 // ❌ Bad - Side effects
 let cache = {}
 function processDataBad(input: string): string {
-  cache[input] = true  // Side effect!
+  cache[input] = true // Side effect!
   return input.trim().toLowerCase()
 }
 ```
@@ -405,12 +407,16 @@ function processDataBad(input: string): string {
 ```typescript
 // ✅ Good - Factory function
 export function createPlugin(config: Config): HatagoPlugin {
-  return (ctx) => { /* ... */ }
+  return ctx => {
+    /* ... */
+  }
 }
 
 // ❌ Bad - Class
 export class Plugin {
-  constructor(config: Config) { /* ... */ }
+  constructor(config: Config) {
+    /* ... */
+  }
 }
 ```
 
@@ -421,21 +427,23 @@ import { z } from 'zod'
 
 const inputSchema = z.object({
   name: z.string().min(1),
-  age: z.number().positive()
+  age: z.number().positive(),
 })
 
-export const validatedPlugin: HatagoPlugin = (ctx) => {
+export const validatedPlugin: HatagoPlugin = ctx => {
   ctx.server.registerTool(
     'validated_tool',
     { inputSchema: zodToJsonSchema(inputSchema) },
-    async (args) => {
+    async args => {
       const validated = inputSchema.parse(args)
       // Now TypeScript knows the types
       return {
-        content: [{
-          type: 'text',
-          text: `${validated.name} is ${validated.age} years old`
-        }]
+        content: [
+          {
+            type: 'text',
+            text: `${validated.name} is ${validated.age} years old`,
+          },
+        ],
       }
     }
   )
@@ -445,25 +453,29 @@ export const validatedPlugin: HatagoPlugin = (ctx) => {
 ### 4. Handle Errors Gracefully
 
 ```typescript
-export const errorHandlingPlugin: HatagoPlugin = (ctx) => {
+export const errorHandlingPlugin: HatagoPlugin = ctx => {
   ctx.server.registerTool(
     'safe_tool',
-    { /* schema */ },
-    async (args) => {
+    {
+      /* schema */
+    },
+    async args => {
       try {
         const result = await riskyOperation(args)
         return { content: [{ type: 'text', text: result }] }
       } catch (error) {
         // Log error
         console.error('Tool failed:', error)
-        
+
         // Return user-friendly error
         return {
-          content: [{
-            type: 'text',
-            text: 'Operation failed. Please try again.'
-          }],
-          isError: true
+          content: [
+            {
+              type: 'text',
+              text: 'Operation failed. Please try again.',
+            },
+          ],
+          isError: true,
         }
       }
     }
@@ -519,13 +531,13 @@ my-hatago-plugin/
 // src/index.ts
 
 // Named export for the plugin
-export const examplePlugin: HatagoPlugin = (ctx) => {
+export const examplePlugin: HatagoPlugin = ctx => {
   // Plugin implementation
 }
 
 // Factory function for configuration
 export function createExamplePlugin(config?: Config): HatagoPlugin {
-  return (ctx) => {
+  return ctx => {
     // Configurable plugin implementation
   }
 }
@@ -565,7 +577,7 @@ interface WeatherPluginConfig {
 // Input validation schema
 const weatherSchema = z.object({
   city: z.string().min(1),
-  country: z.string().length(2).optional()
+  country: z.string().length(2).optional(),
 })
 
 // Pure functions
@@ -586,14 +598,14 @@ export function createWeatherPlugin(config: WeatherPluginConfig): HatagoPlugin {
   // Simple cache
   const cache = new Map<string, { data: any; timestamp: number }>()
 
-  return (ctx) => {
+  return ctx => {
     ctx.server.registerTool(
       'get_weather',
       {
         description: 'Get weather for a city',
-        inputSchema: zodToJsonSchema(weatherSchema)
+        inputSchema: zodToJsonSchema(weatherSchema),
       },
-      async (args) => {
+      async args => {
         const { city, country } = weatherSchema.parse(args)
         const cacheKey = `${city}-${country}`
 
@@ -601,10 +613,12 @@ export function createWeatherPlugin(config: WeatherPluginConfig): HatagoPlugin {
         const cached = cache.get(cacheKey)
         if (cached && Date.now() - cached.timestamp < cacheTTL) {
           return {
-            content: [{
-              type: 'text',
-              text: formatWeatherResponse(cached.data, units)
-            }]
+            content: [
+              {
+                type: 'text',
+                text: formatWeatherResponse(cached.data, units),
+              },
+            ],
           }
         }
 
@@ -617,16 +631,18 @@ export function createWeatherPlugin(config: WeatherPluginConfig): HatagoPlugin {
         cache.set(cacheKey, { data, timestamp: Date.now() })
 
         return {
-          content: [{
-            type: 'text',
-            text: formatWeatherResponse(data, units)
-          }]
+          content: [
+            {
+              type: 'text',
+              text: formatWeatherResponse(data, units),
+            },
+          ],
         }
       }
     )
 
     // Optional HTTP endpoint
-    ctx.app.get('/weather/:city', async (c) => {
+    ctx.app.get('/weather/:city', async c => {
       const city = c.req.param('city')
       // Implementation
       return c.json({ city, weather: 'sunny' })

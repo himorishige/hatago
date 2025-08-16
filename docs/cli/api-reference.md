@@ -17,10 +17,7 @@ import { init, dev, createPlugin, scaffold } from '@hatago/cli'
 Initialize a new Hatago project programmatically.
 
 ```typescript
-function init(
-  projectName: string,
-  options?: InitOptions
-): Promise<void>
+function init(projectName: string, options?: InitOptions): Promise<void>
 ```
 
 #### Options
@@ -41,7 +38,7 @@ import { init } from '@hatago/cli'
 
 await init('my-project', {
   template: 'node-http',
-  skipInstall: false
+  skipInstall: false,
 })
 ```
 
@@ -84,7 +81,7 @@ import { dev } from '@hatago/cli'
 
 const server = await dev({
   port: 3000,
-  watch: true
+  watch: true,
 })
 
 // Later...
@@ -96,10 +93,7 @@ await server.stop()
 Generate a plugin programmatically.
 
 ```typescript
-function createPlugin(
-  name: string,
-  options?: CreatePluginOptions
-): Promise<void>
+function createPlugin(name: string, options?: CreatePluginOptions): Promise<void>
 ```
 
 #### Options
@@ -117,11 +111,7 @@ interface CreatePluginOptions {
 Generate boilerplate code.
 
 ```typescript
-function scaffold(
-  template: string,
-  name?: string,
-  options?: ScaffoldOptions
-): Promise<void>
+function scaffold(template: string, name?: string, options?: ScaffoldOptions): Promise<void>
 ```
 
 #### Options
@@ -172,10 +162,7 @@ function validateConfig(config: unknown): config is HatagoConfig
 Write configuration to file.
 
 ```typescript
-function writeConfig(
-  config: HatagoConfig,
-  path?: string
-): Promise<void>
+function writeConfig(config: HatagoConfig, path?: string): Promise<void>
 ```
 
 ## Templates
@@ -204,10 +191,7 @@ interface Template {
 Render a template with context.
 
 ```typescript
-function renderTemplate(
-  template: string,
-  context: Record<string, any>
-): Promise<string>
+function renderTemplate(template: string, context: Record<string, any>): Promise<string>
 ```
 
 ## Utilities
@@ -274,7 +258,7 @@ The CLI emits events during operations:
 ```typescript
 import { events } from '@hatago/cli'
 
-events.on('init:start', (project) => {
+events.on('init:start', project => {
   console.log(`Initializing ${project}...`)
 })
 
@@ -282,7 +266,7 @@ events.on('dev:restart', () => {
   console.log('Server restarting...')
 })
 
-events.on('error', (error) => {
+events.on('error', error => {
   console.error('CLI Error:', error)
 })
 ```
@@ -312,13 +296,7 @@ Variables that affect CLI behavior:
 ## Complete Example
 
 ```javascript
-import { 
-  init, 
-  dev, 
-  createPlugin, 
-  loadConfig,
-  events 
-} from '@hatago/cli'
+import { init, dev, createPlugin, loadConfig, events } from '@hatago/cli'
 
 async function setupProject() {
   // Listen for events
@@ -329,7 +307,7 @@ async function setupProject() {
   // Initialize project
   await init('my-app', {
     template: 'node-http',
-    skipInstall: false
+    skipInstall: false,
   })
 
   // Change to project directory
@@ -337,7 +315,7 @@ async function setupProject() {
 
   // Create a plugin
   await createPlugin('my-feature', {
-    template: 'basic'
+    template: 'basic',
   })
 
   // Load and modify config
@@ -348,7 +326,7 @@ async function setupProject() {
   // Start development server
   const server = await dev({
     port: 3000,
-    watch: true
+    watch: true,
   })
 
   console.log(`Server running at ${server.url}`)
@@ -368,13 +346,7 @@ setupProject().catch(console.error)
 All functions are fully typed. Import types:
 
 ```typescript
-import type {
-  InitOptions,
-  DevOptions,
-  HatagoConfig,
-  Template,
-  CLIError
-} from '@hatago/cli'
+import type { InitOptions, DevOptions, HatagoConfig, Template, CLIError } from '@hatago/cli'
 ```
 
 ## Related Documentation

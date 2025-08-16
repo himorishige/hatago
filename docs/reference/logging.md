@@ -5,6 +5,7 @@ Logging system for Hatago using functional programming patterns.
 ## Overview
 
 Hatago provides two logging implementations:
+
 - **Basic Logger** - Lightweight, pure functional logger
 - **Secure Logger** - Advanced logger with PII masking
 
@@ -19,7 +20,7 @@ import { createLogger } from '@hatago/core'
 
 const logger = createLogger({
   level: 'info',
-  format: 'pretty'
+  format: 'pretty',
 })
 
 // Use the logger
@@ -30,9 +31,9 @@ logger.info('Server started', { port: 8787 })
 
 ```typescript
 interface LoggerConfig {
-  level: LogLevel        // 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal'
+  level: LogLevel // 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal'
   format?: 'json' | 'pretty'
-  component?: string     // Component name for context
+  component?: string // Component name for context
 }
 ```
 
@@ -45,7 +46,7 @@ enum LogLevel {
   INFO = 2,
   WARN = 3,
   ERROR = 4,
-  FATAL = 5
+  FATAL = 5,
 }
 ```
 
@@ -67,19 +68,19 @@ interface Logger {
 ```typescript
 const logger = createLogger({ level: 'debug' })
 
-logger.debug('Processing request', { 
-  method: 'GET', 
-  path: '/api/users' 
+logger.debug('Processing request', {
+  method: 'GET',
+  path: '/api/users',
 })
 
 logger.info('Request completed', {
   status: 200,
-  duration: 42
+  duration: 42,
 })
 
 logger.error('Database connection failed', {
   error: 'Connection timeout',
-  retries: 3
+  retries: 3,
 })
 ```
 
@@ -93,13 +94,13 @@ import { createSecureLogger } from '@hatago/core'
 const logger = createSecureLogger({
   level: 'info',
   maskingEnabled: true,
-  redactKeys: ['password', 'token', 'secret']
+  redactKeys: ['password', 'token', 'secret'],
 })
 
 // PII is automatically masked
 logger.info('User login', {
-  email: 'user@example.com',    // Will be masked
-  password: 'secret123'          // Will be redacted
+  email: 'user@example.com', // Will be masked
+  password: 'secret123', // Will be redacted
 })
 ```
 
@@ -107,15 +108,16 @@ logger.info('User login', {
 
 ```typescript
 interface SecureLoggerConfig extends LoggerConfig {
-  maskingEnabled?: boolean      // Enable PII masking
-  redactKeys?: string[]         // Keys to redact
-  sampleRate?: number          // Log sampling (0-1)
+  maskingEnabled?: boolean // Enable PII masking
+  redactKeys?: string[] // Keys to redact
+  sampleRate?: number // Log sampling (0-1)
 }
 ```
 
 ### PII Masking
 
 The secure logger automatically masks:
+
 - Email addresses
 - Phone numbers
 - Credit card numbers
@@ -125,10 +127,10 @@ The secure logger automatically masks:
 
 ```typescript
 logger.info('User data', {
-  email: 'john@example.com',      // → 'j***@e******.com'
-  phone: '+1-555-123-4567',       // → '+*-***-***-****'
-  ssn: '123-45-6789',             // → '***-**-****'
-  apiKey: 'sk-1234567890'         // → 'sk-**********'
+  email: 'john@example.com', // → 'j***@e******.com'
+  phone: '+1-555-123-4567', // → '+*-***-***-****'
+  ssn: '123-45-6789', // → '***-**-****'
+  apiKey: 'sk-1234567890', // → 'sk-**********'
 })
 ```
 
@@ -147,8 +149,8 @@ LOG_SAMPLE_RATE=0.1     # Sample 10% of logs
 
 ```typescript
 const logger = createLogger({
-  level: process.env.LOG_LEVEL as LogLevel || 'info',
-  format: process.env.LOG_FORMAT as 'json' | 'pretty' || 'json'
+  level: (process.env.LOG_LEVEL as LogLevel) || 'info',
+  format: (process.env.LOG_FORMAT as 'json' | 'pretty') || 'json',
 })
 ```
 
@@ -161,20 +163,22 @@ import type { HatagoPlugin } from '@hatago/core'
 import { createLogger } from '@hatago/core'
 
 export function createLoggingPlugin(): HatagoPlugin {
-  const logger = createLogger({ 
+  const logger = createLogger({
     level: 'info',
-    component: 'my-plugin'
+    component: 'my-plugin',
   })
 
-  return (ctx) => {
+  return ctx => {
     logger.info('Plugin initialized')
 
     ctx.server.registerTool(
       'logged_tool',
-      { /* schema */ },
-      async (args) => {
+      {
+        /* schema */
+      },
+      async args => {
         logger.debug('Tool called', { args })
-        
+
         try {
           const result = await process(args)
           logger.info('Tool succeeded', { result })
@@ -225,13 +229,10 @@ export function createLoggingPlugin(): HatagoPlugin {
 Create scoped loggers with context:
 
 ```typescript
-function createChildLogger(
-  parent: Logger,
-  component: string
-): Logger {
+function createChildLogger(parent: Logger, component: string): Logger {
   return createLogger({
     ...parent.config,
-    component
+    component,
   })
 }
 
@@ -245,27 +246,27 @@ const apiLogger = createChildLogger(mainLogger, 'api')
 Add trace IDs for request correlation:
 
 ```typescript
-export const tracingPlugin: HatagoPlugin = (ctx) => {
+export const tracingPlugin: HatagoPlugin = ctx => {
   const logger = createLogger({ level: 'info' })
 
   ctx.app.use(async (c, next) => {
     const traceId = `trace-${Date.now()}-${Math.random()}`
-    
+
     // Create logger with trace context
     const requestLogger = createLogger({
       level: 'info',
-      component: `request-${traceId}`
+      component: `request-${traceId}`,
     })
-    
+
     requestLogger.info('Request started', {
       method: c.req.method,
-      path: c.req.path
+      path: c.req.path,
     })
-    
+
     await next()
-    
+
     requestLogger.info('Request completed', {
-      status: c.res.status
+      status: c.res.status,
     })
   })
 }
@@ -278,14 +279,14 @@ Send logs to external services:
 ```typescript
 function createRemoteLogger(config: LoggerConfig): Logger {
   const baseLogger = createLogger(config)
-  
+
   return {
     ...baseLogger,
     info: (message: string, meta?: object) => {
       baseLogger.info(message, meta)
       // Send to remote service
       sendToRemote({ level: 'info', message, meta })
-    }
+    },
     // ... other methods
   }
 }
@@ -300,7 +301,7 @@ Reduce log volume in production:
 ```typescript
 const logger = createSecureLogger({
   level: 'info',
-  sampleRate: 0.1  // Log only 10% of non-error messages
+  sampleRate: 0.1, // Log only 10% of non-error messages
 })
 ```
 
@@ -311,7 +312,7 @@ Non-blocking log operations:
 ```typescript
 function createAsyncLogger(config: LoggerConfig): Logger {
   const queue: LogEntry[] = []
-  
+
   // Process queue periodically
   setInterval(() => {
     if (queue.length > 0) {
@@ -319,11 +320,11 @@ function createAsyncLogger(config: LoggerConfig): Logger {
       entries.forEach(entry => console.log(JSON.stringify(entry)))
     }
   }, 1000)
-  
+
   return {
     info: (message: string, meta?: object) => {
       queue.push({ level: 'info', message, meta, timestamp: new Date() })
-    }
+    },
     // ... other methods
   }
 }
@@ -334,12 +335,12 @@ function createAsyncLogger(config: LoggerConfig): Logger {
 ### 1. Use Appropriate Log Levels
 
 ```typescript
-logger.trace('Detailed debug info')      // Very verbose
-logger.debug('Debug information')        // Development
-logger.info('Normal operations')         // Production
-logger.warn('Warning conditions')        // Potential issues
-logger.error('Error conditions')         // Errors
-logger.fatal('Fatal errors')            // System failures
+logger.trace('Detailed debug info') // Very verbose
+logger.debug('Debug information') // Development
+logger.info('Normal operations') // Production
+logger.warn('Warning conditions') // Potential issues
+logger.error('Error conditions') // Errors
+logger.fatal('Fatal errors') // System failures
 ```
 
 ### 2. Structure Log Data
@@ -349,7 +350,7 @@ logger.fatal('Fatal errors')            // System failures
 logger.info('User action', {
   userId: user.id,
   action: 'login',
-  timestamp: Date.now()
+  timestamp: Date.now(),
 })
 
 // ❌ Bad - Unstructured string
@@ -364,9 +365,9 @@ const secureLogger = createSecureLogger({ maskingEnabled: true })
 secureLogger.info('User authenticated', { email: user.email })
 
 // ❌ Bad - Log raw sensitive data
-logger.info('User authenticated', { 
+logger.info('User authenticated', {
   email: user.email,
-  password: user.password  // Never log passwords!
+  password: user.password, // Never log passwords!
 })
 ```
 
@@ -378,7 +379,7 @@ logger.error('Database query failed', {
   query: 'SELECT * FROM users',
   error: error.message,
   duration: queryTime,
-  retries: retryCount
+  retries: retryCount,
 })
 
 // ❌ Bad - No context
@@ -392,7 +393,7 @@ logger.error('Query failed')
 ```typescript
 function createMockLogger(): Logger & { logs: LogEntry[] } {
   const logs: LogEntry[] = []
-  
+
   return {
     logs,
     info: (message, meta) => {
@@ -408,7 +409,7 @@ myFunction(logger)
 expect(logger.logs).toContainEqual({
   level: 'info',
   message: 'Expected message',
-  meta: { key: 'value' }
+  meta: { key: 'value' },
 })
 ```
 

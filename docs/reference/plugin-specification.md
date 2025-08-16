@@ -18,10 +18,10 @@ type HatagoPlugin = (ctx: HatagoContext) => void | Promise<void>
 
 ```typescript
 interface HatagoContext {
-  app: Hono                           // Hono web framework instance
-  server: McpServer                   // MCP server instance
-  env?: Record<string, unknown>       // Environment variables
-  getBaseUrl?: (req: Request) => URL  // Base URL helper function
+  app: Hono // Hono web framework instance
+  server: McpServer // MCP server instance
+  env?: Record<string, unknown> // Environment variables
+  getBaseUrl?: (req: Request) => URL // Base URL helper function
 }
 ```
 
@@ -32,7 +32,7 @@ interface HatagoContext {
 Direct function export:
 
 ```typescript
-export const simplePlugin: HatagoPlugin = (ctx) => {
+export const simplePlugin: HatagoPlugin = ctx => {
   // Plugin implementation
 }
 ```
@@ -43,7 +43,7 @@ Factory function for configurable plugins:
 
 ```typescript
 export function createPlugin(config?: PluginConfig): HatagoPlugin {
-  return (ctx) => {
+  return ctx => {
     // Use config in plugin implementation
   }
 }
@@ -55,11 +55,7 @@ Multiple plugins combined:
 
 ```typescript
 export function createComposedPlugin(): HatagoPlugin {
-  return combinePlugins(
-    pluginA,
-    pluginB,
-    pluginC
-  )
+  return combinePlugins(pluginA, pluginB, pluginC)
 }
 ```
 
@@ -83,7 +79,7 @@ await plugin({
   app,
   server,
   env: process.env,
-  getBaseUrl
+  getBaseUrl,
 })
 ```
 
@@ -149,7 +145,7 @@ export class MyPlugin {
 
 // ✅ Correct - Function-based
 export function createMyPlugin(config: Config): HatagoPlugin {
-  return (ctx) => {}
+  return ctx => {}
 }
 ```
 
@@ -166,7 +162,7 @@ function calculate(a: number, b: number): number {
 // ❌ Impure function
 let total = 0
 function addToTotal(value: number): void {
-  total += value  // Side effect
+  total += value // Side effect
 }
 ```
 
@@ -186,11 +182,7 @@ state.count++
 
 ```typescript
 // ✅ Composition
-const enhancedPlugin = compose(
-  withLogging,
-  withRetry,
-  withCache
-)(basePlugin)
+const enhancedPlugin = compose(withLogging, withRetry, withCache)(basePlugin)
 
 // ❌ Inheritance
 class EnhancedPlugin extends BasePlugin {}
@@ -212,7 +204,7 @@ interface PluginConfig {
 Plugins should read configuration from environment:
 
 ```typescript
-export const plugin: HatagoPlugin = (ctx) => {
+export const plugin: HatagoPlugin = ctx => {
   const apiKey = ctx.env?.API_KEY
   if (!apiKey) {
     throw new Error('API_KEY required')
@@ -229,12 +221,12 @@ import { z } from 'zod'
 
 const configSchema = z.object({
   apiKey: z.string().min(1),
-  timeout: z.number().positive().default(5000)
+  timeout: z.number().positive().default(5000),
 })
 
 export function createPlugin(config: unknown): HatagoPlugin {
   const validConfig = configSchema.parse(config)
-  return (ctx) => {
+  return ctx => {
     // Use validConfig
   }
 }
@@ -253,7 +245,10 @@ interface ToolError {
 
 // Plugin initialization errors
 class PluginError extends Error {
-  constructor(message: string, public code: string) {
+  constructor(
+    message: string,
+    public code: string
+  ) {
     super(message)
   }
 }
@@ -262,22 +257,18 @@ class PluginError extends Error {
 ### Error Handling Pattern
 
 ```typescript
-export const plugin: HatagoPlugin = (ctx) => {
-  ctx.server.registerTool(
-    'my_tool',
-    schema,
-    async (args) => {
-      try {
-        const result = await process(args)
-        return { content: [{ type: 'text', text: result }] }
-      } catch (error) {
-        return {
-          content: [{ type: 'text', text: error.message }],
-          isError: true
-        }
+export const plugin: HatagoPlugin = ctx => {
+  ctx.server.registerTool('my_tool', schema, async args => {
+    try {
+      const result = await process(args)
+      return { content: [{ type: 'text', text: result }] }
+    } catch (error) {
+      return {
+        content: [{ type: 'text', text: error.message }],
+        isError: true,
       }
     }
-  )
+  })
 }
 ```
 
@@ -305,9 +296,9 @@ describe('Plugin', () => {
   it('should register tools', () => {
     const mockServer = { registerTool: vi.fn() }
     const mockApp = {}
-    
+
     plugin({ server: mockServer, app: mockApp })
-    
+
     expect(mockServer.registerTool).toHaveBeenCalled()
   })
 })
@@ -353,7 +344,7 @@ my-plugin/
 
 ```typescript
 // Named export for simple plugin
-export const myPlugin: HatagoPlugin = (ctx) => {}
+export const myPlugin: HatagoPlugin = ctx => {}
 
 // Factory function for configurable plugin
 export function createMyPlugin(config?: Config): HatagoPlugin {}
@@ -372,14 +363,10 @@ export default myPlugin
 All inputs must be validated:
 
 ```typescript
-ctx.server.registerTool(
-  'secure_tool',
-  { inputSchema: schema },
-  async (args) => {
-    const validated = validateInput(args)
-    // Process validated input
-  }
-)
+ctx.server.registerTool('secure_tool', { inputSchema: schema }, async args => {
+  const validated = validateInput(args)
+  // Process validated input
+})
 ```
 
 ### Secret Management
@@ -413,18 +400,14 @@ Load resources on demand:
 ```typescript
 export function createPlugin(): HatagoPlugin {
   let heavyResource: HeavyResource | null = null
-  
-  return (ctx) => {
-    ctx.server.registerTool(
-      'lazy_tool',
-      schema,
-      async (args) => {
-        if (!heavyResource) {
-          heavyResource = await import('./heavy-resource')
-        }
-        return heavyResource.process(args)
+
+  return ctx => {
+    ctx.server.registerTool('lazy_tool', schema, async args => {
+      if (!heavyResource) {
+        heavyResource = await import('./heavy-resource')
       }
-    )
+      return heavyResource.process(args)
+    })
   }
 }
 ```
@@ -436,15 +419,11 @@ Cache expensive computations:
 ```typescript
 const memoizedCalculation = memoize(expensiveCalculation)
 
-export const plugin: HatagoPlugin = (ctx) => {
-  ctx.server.registerTool(
-    'cached_tool',
-    schema,
-    async (args) => {
-      const result = memoizedCalculation(args)
-      return { content: [{ type: 'text', text: result }] }
-    }
-  )
+export const plugin: HatagoPlugin = ctx => {
+  ctx.server.registerTool('cached_tool', schema, async args => {
+    const result = memoizedCalculation(args)
+    return { content: [{ type: 'text', text: result }] }
+  })
 }
 ```
 
@@ -453,6 +432,7 @@ export const plugin: HatagoPlugin = (ctx) => {
 ### Runtime Support
 
 Plugins must work on:
+
 - Node.js 18+
 - Cloudflare Workers
 - Deno (optional)
@@ -473,6 +453,7 @@ Each plugin should have one clear purpose.
 ### 2. Documentation
 
 Include comprehensive README with:
+
 - Installation instructions
 - Configuration options
 - Usage examples
@@ -481,6 +462,7 @@ Include comprehensive README with:
 ### 3. Versioning
 
 Follow semantic versioning:
+
 - MAJOR: Breaking changes
 - MINOR: New features
 - PATCH: Bug fixes

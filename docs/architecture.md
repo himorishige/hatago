@@ -17,13 +17,17 @@ Hatago embraces functional programming principles:
 // ❌ Old class-based approach
 class Logger {
   constructor(private config: Config) {}
-  log(message: string) { /* ... */ }
+  log(message: string) {
+    /* ... */
+  }
 }
 
 // ✅ Functional approach
 function createLogger(config: Config) {
   return {
-    log: (message: string) => { /* pure function */ }
+    log: (message: string) => {
+      /* pure function */
+    },
   }
 }
 ```
@@ -36,9 +40,9 @@ Everything in Hatago is a plugin:
 type HatagoPlugin = (ctx: HatagoContext) => void | Promise<void>
 
 type HatagoContext = {
-  app: Hono           // HTTP framework instance
-  server: McpServer   // MCP server instance
-  env?: Record<string, unknown>  // Environment variables
+  app: Hono // HTTP framework instance
+  server: McpServer // MCP server instance
+  env?: Record<string, unknown> // Environment variables
 }
 ```
 
@@ -86,10 +90,7 @@ export function createApp(config: AppConfig): Promise<{
 }>
 
 // Plugin loading system
-export function loadPlugins(
-  plugins: HatagoPlugin[],
-  context: HatagoContext
-): Promise<void>
+export function loadPlugins(plugins: HatagoPlugin[], context: HatagoContext): Promise<void>
 ```
 
 ### 2. Adapters
@@ -100,15 +101,19 @@ Adapters provide runtime-specific implementations:
 // Node.js adapter
 export function createNodeAdapter(options: NodeAdapterOptions) {
   return {
-    start: async () => { /* start HTTP server */ },
-    stop: async () => { /* graceful shutdown */ }
+    start: async () => {
+      /* start HTTP server */
+    },
+    stop: async () => {
+      /* graceful shutdown */
+    },
   }
 }
 
 // Workers adapter
 export function createWorkersAdapter(app: Hono) {
   return {
-    fetch: (request: Request) => app.fetch(request)
+    fetch: (request: Request) => app.fetch(request),
   }
 }
 ```
@@ -133,14 +138,16 @@ Plugins extend functionality:
 ```typescript
 // Plugin factory pattern
 export function createLoggerPlugin(config?: LoggerConfig): HatagoPlugin {
-  return (ctx) => {
+  return ctx => {
     const logger = createLogger(config)
-    
+
     // Register MCP tool
     ctx.server.registerTool(
       'log',
-      { /* schema */ },
-      async (args) => {
+      {
+        /* schema */
+      },
+      async args => {
         logger.log(args.message)
         return { content: [{ type: 'text', text: 'Logged' }] }
       }
@@ -227,19 +234,10 @@ Building complex behavior from simple functions:
 
 ```typescript
 // Compose validators
-const validateRequest = compose(
-  validateSchema,
-  validateAuth,
-  validateRateLimit
-)
+const validateRequest = compose(validateSchema, validateAuth, validateRateLimit)
 
 // Compose transformers
-const processData = pipe(
-  normalize,
-  validate,
-  transform,
-  format
-)
+const processData = pipe(normalize, validate, transform, format)
 ```
 
 ### 4. Immutable State Management
@@ -248,10 +246,10 @@ State changes create new objects:
 
 ```typescript
 // Reducer pattern for state updates
-type Action = 
+type Action =
   | { type: 'ADD_REQUEST' }
   | { type: 'COMPLETE_REQUEST' }
-  | { type: 'FAIL_REQUEST', error: Error }
+  | { type: 'FAIL_REQUEST'; error: Error }
 
 function stateReducer(state: State, action: Action): State {
   switch (action.type) {
@@ -276,9 +274,9 @@ Plugins run in isolated contexts:
 ```typescript
 // Plugins only access provided capabilities
 type PluginContext = {
-  server: McpServer  // Limited MCP server interface
-  app: Hono         // Scoped HTTP router
-  env?: Record<string, unknown>  // Filtered environment
+  server: McpServer // Limited MCP server interface
+  app: Hono // Scoped HTTP router
+  env?: Record<string, unknown> // Filtered environment
 }
 ```
 
@@ -290,18 +288,14 @@ All inputs are validated:
 // Zod schema validation
 const schema = z.object({
   name: z.string(),
-  age: z.number().positive()
+  age: z.number().positive(),
 })
 
 // Automatic validation in tools
-server.registerTool(
-  'my_tool',
-  { inputSchema: zodToJsonSchema(schema) },
-  async (args) => {
-    const validated = schema.parse(args)
-    // Process validated input
-  }
-)
+server.registerTool('my_tool', { inputSchema: zodToJsonSchema(schema) }, async args => {
+  const validated = schema.parse(args)
+  // Process validated input
+})
 ```
 
 ## Performance Optimizations
@@ -326,7 +320,7 @@ Efficient resource management:
 // Reusable connection pool
 const pool = createConnectionPool({
   max: 10,
-  idleTimeout: 30000
+  idleTimeout: 30000,
 })
 ```
 
@@ -366,7 +360,7 @@ describe('Plugin Integration', () => {
   it('should register tools', async () => {
     const { server } = await createApp({ name: 'test' })
     await myPlugin({ server })
-    
+
     const tools = await server.listTools()
     expect(tools).toContain('my_tool')
   })
@@ -424,7 +418,7 @@ function calculateTotal(items: Item[]): number {
 // ❌ Impure function
 let total = 0
 function addToTotal(item: Item): void {
-  total += item.price  // Mutates external state
+  total += item.price // Mutates external state
 }
 ```
 
@@ -432,11 +426,7 @@ function addToTotal(item: Item): void {
 
 ```typescript
 // ✅ Composition
-const enhancedLogger = compose(
-  withTimestamp,
-  withContext,
-  withRedaction
-)(baseLogger)
+const enhancedLogger = compose(withTimestamp, withContext, withRedaction)(baseLogger)
 
 // ❌ Inheritance
 class EnhancedLogger extends BaseLogger {
@@ -459,12 +449,16 @@ state.count++
 ```typescript
 // ✅ Factory function
 export function createService(config: Config) {
-  return { /* service implementation */ }
+  return {
+    /* service implementation */
+  }
 }
 
 // ❌ Class constructor
 export class Service {
-  constructor(config: Config) { /* ... */ }
+  constructor(config: Config) {
+    /* ... */
+  }
 }
 ```
 
@@ -473,6 +467,7 @@ export class Service {
 ### WebAssembly Support
 
 Future versions may support WASM plugins for:
+
 - Performance-critical operations
 - Language-agnostic plugins
 - Secure sandboxing
@@ -480,6 +475,7 @@ Future versions may support WASM plugins for:
 ### Distributed Architecture
 
 Potential for distributed MCP servers:
+
 - Service mesh integration
 - Multi-region deployment
 - Federated plugin registry

@@ -5,6 +5,7 @@ Connect external MCP servers to Hatago to extend functionality.
 ## Overview
 
 Hatago can proxy requests to external MCP servers, allowing you to:
+
 - Use existing MCP servers without modification
 - Combine multiple MCP servers into one endpoint
 - Add namespace prefixes to avoid tool conflicts
@@ -55,10 +56,10 @@ curl -X POST http://localhost:8787/mcp \
   "proxy": {
     "servers": [
       {
-        "id": "server-id",           // Unique identifier
-        "endpoint": "http://...",    // MCP endpoint URL
-        "namespace": "prefix",       // Tool namespace prefix
-        "description": "..."         // Optional description
+        "id": "server-id", // Unique identifier
+        "endpoint": "http://...", // MCP endpoint URL
+        "namespace": "prefix", // Tool namespace prefix
+        "description": "..." // Optional description
       }
     ]
   }
@@ -73,7 +74,7 @@ curl -X POST http://localhost:8787/mcp \
 {
   "auth": {
     "type": "bearer",
-    "token": "${API_TOKEN}"  // From environment variable
+    "token": "${API_TOKEN}" // From environment variable
   }
 }
 ```
@@ -110,9 +111,10 @@ Control which tools are exposed:
 ```json
 {
   "tools": {
-    "include": ["calc.*", "time.*"],  // Only these patterns
-    "exclude": ["debug.*"],           // Exclude these patterns
-    "rename": {                       // Rename specific tools
+    "include": ["calc.*", "time.*"], // Only these patterns
+    "exclude": ["debug.*"], // Exclude these patterns
+    "rename": {
+      // Rename specific tools
       "oldName": "newName"
     }
   }
@@ -127,8 +129,8 @@ Enable automatic health checks:
 {
   "healthCheck": {
     "enabled": true,
-    "interval": 30000,  // Check every 30 seconds
-    "timeout": 5000     // 5 second timeout
+    "interval": 30000, // Check every 30 seconds
+    "timeout": 5000 // 5 second timeout
   }
 }
 ```
@@ -141,12 +143,13 @@ Control how namespaces are applied:
 
 ```json
 {
-  "namespaceStrategy": "prefix",      // tool -> namespace:tool
-  "conflictResolution": "error"       // How to handle conflicts
+  "namespaceStrategy": "prefix", // tool -> namespace:tool
+  "conflictResolution": "error" // How to handle conflicts
 }
 ```
 
 Options:
+
 - `namespaceStrategy`: `"prefix"` | `"suffix"` | `"none"`
 - `conflictResolution`: `"error"` | `"rename"` | `"skip"`
 
@@ -164,12 +167,12 @@ When multiple servers provide tools with the same name:
         "endpoint": "http://server1.com/mcp"
       },
       {
-        "id": "server2", 
+        "id": "server2",
         "namespace": "s2",
         "endpoint": "http://server2.com/mcp"
       }
     ],
-    "conflictResolution": "rename"  // Auto-rename conflicts
+    "conflictResolution": "rename" // Auto-rename conflicts
   }
 }
 ```
@@ -272,6 +275,7 @@ curl -X POST http://localhost:8787/mcp \
 **Problem**: Cannot connect to external server
 
 **Solutions**:
+
 1. Verify server is running: `curl http://external-server/health`
 2. Check network connectivity
 3. Verify endpoint URL in configuration
@@ -282,6 +286,7 @@ curl -X POST http://localhost:8787/mcp \
 **Problem**: External tools not appearing
 
 **Solutions**:
+
 1. Check namespace prefix is being used
 2. Verify tool filtering rules
 3. Check server returns tools correctly
@@ -292,6 +297,7 @@ curl -X POST http://localhost:8787/mcp \
 **Problem**: 401/403 errors from external server
 
 **Solutions**:
+
 1. Verify credentials in environment variables
 2. Check authentication type matches server
 3. Test with curl using same credentials
@@ -341,7 +347,7 @@ Reference in configuration:
 Create a plugin for custom namespace handling:
 
 ```typescript
-export const customNamespacePlugin: HatagoPlugin = (ctx) => {
+export const customNamespacePlugin: HatagoPlugin = ctx => {
   // Custom namespace logic
 }
 ```
@@ -351,7 +357,7 @@ export const customNamespacePlugin: HatagoPlugin = (ctx) => {
 Add servers programmatically:
 
 ```typescript
-export const dynamicProxyPlugin: HatagoPlugin = (ctx) => {
+export const dynamicProxyPlugin: HatagoPlugin = ctx => {
   // Register external servers based on runtime conditions
 }
 ```
@@ -361,7 +367,7 @@ export const dynamicProxyPlugin: HatagoPlugin = (ctx) => {
 Transform external server responses:
 
 ```typescript
-export const transformPlugin: HatagoPlugin = (ctx) => {
+export const transformPlugin: HatagoPlugin = ctx => {
   // Intercept and transform responses
 }
 ```

@@ -137,6 +137,10 @@ async function runAllLoadTests() {
     version: '0.1.0',
   })
 
+  if (!app) {
+    throw new Error('Failed to create app')
+  }
+
   const server = serve({
     fetch: app.fetch,
     port: 8788,

@@ -23,11 +23,13 @@ hatago init <project-name> [options]
 ```
 
 **Options:**
+
 - `--template, -t <type>` - Project template (basic|node-http|workers|stdio-only)
 - `--force, -f` - Overwrite existing directory
 - `--skip-install` - Skip dependency installation
 
 **Examples:**
+
 ```bash
 hatago init my-server
 hatago init my-server --template workers
@@ -43,6 +45,7 @@ hatago dev [options]
 ```
 
 **Options:**
+
 - `--port, -p <port>` - Server port (default: 8787)
 - `--host, -H <hostname>` - Server hostname (default: localhost)
 - `--stdio` - Use stdio transport instead of HTTP
@@ -50,6 +53,7 @@ hatago dev [options]
 - `--env <file>` - Load environment from file
 
 **Examples:**
+
 ```bash
 hatago dev
 hatago dev --port 3000
@@ -65,11 +69,13 @@ hatago create-plugin <plugin-name> [options]
 ```
 
 **Options:**
+
 - `--template, -t <name>` - Plugin template (basic|mcp-wrapper|oauth)
 - `--output, -o <dir>` - Output directory (default: src/plugins)
 - `--interactive, -i` - Interactive mode
 
 **Examples:**
+
 ```bash
 hatago create-plugin weather-api
 hatago create-plugin github --template oauth
@@ -85,11 +91,13 @@ hatago config <command> [options]
 ```
 
 **Subcommands:**
+
 - `init` - Create new configuration file
 - `validate` - Validate configuration
 - `show` - Display current configuration
 
 **Examples:**
+
 ```bash
 hatago config init
 hatago config validate
@@ -105,11 +113,13 @@ hatago add-server <endpoint> [options]
 ```
 
 **Options:**
+
 - `--id <id>` - Server identifier
 - `--namespace <ns>` - Tool namespace
 - `--test` - Test connection before adding
 
 **Examples:**
+
 ```bash
 hatago add-server http://localhost:3001/mcp --id external
 hatago add-server http://api.example.com/mcp --namespace api --test
@@ -124,12 +134,14 @@ hatago scaffold <template> [name] [options]
 ```
 
 **Templates:**
+
 - `routes` - HTTP route handlers
 - `tools` - MCP tool implementations
 - `tests` - Test files
 - `docker` - Dockerfile
 
 **Examples:**
+
 ```bash
 hatago scaffold routes
 hatago scaffold tools weather-tools
@@ -155,10 +167,7 @@ The CLI uses `hatago.config.json` for project configuration:
   "name": "my-mcp-server",
   "version": "1.0.0",
   "runtime": "node",
-  "plugins": [
-    "@hatago/plugin-hello-hatago",
-    "./src/plugins/custom.ts"
-  ],
+  "plugins": ["@hatago/plugin-hello-hatago", "./src/plugins/custom.ts"],
   "server": {
     "port": 8787,
     "hostname": "localhost"
@@ -219,17 +228,20 @@ docker run -p 8787:8787 my-mcp-server
 ### Common Issues
 
 **Port in use:**
+
 ```bash
 hatago dev --port 3001
 ```
 
 **Module not found:**
+
 ```bash
 npm install
 hatago dev
 ```
 
 **Debug mode:**
+
 ```bash
 DEBUG=hatago:* hatago dev
 ```

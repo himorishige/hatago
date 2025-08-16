@@ -58,7 +58,7 @@ import { createNodeAdapter } from '@hatago/adapter-node'
 import type { HatagoPlugin } from '@hatago/core'
 
 // Create a simple plugin
-const helloPlugin: HatagoPlugin = (ctx) => {
+const helloPlugin: HatagoPlugin = ctx => {
   ctx.server.registerTool(
     'hello',
     {
@@ -66,17 +66,19 @@ const helloPlugin: HatagoPlugin = (ctx) => {
       inputSchema: {
         type: 'object',
         properties: {
-          name: { type: 'string', description: 'Name to greet' }
+          name: { type: 'string', description: 'Name to greet' },
         },
-        required: ['name']
-      }
+        required: ['name'],
+      },
     },
-    async (args) => {
+    async args => {
       return {
-        content: [{
-          type: 'text',
-          text: `Hello, ${args.name}! Welcome to Hatago!`
-        }]
+        content: [
+          {
+            type: 'text',
+            text: `Hello, ${args.name}! Welcome to Hatago!`,
+          },
+        ],
       }
     }
   )
@@ -86,7 +88,7 @@ const helloPlugin: HatagoPlugin = (ctx) => {
 async function main() {
   const { app, server } = await createApp({
     name: 'my-mcp-server',
-    version: '1.0.0'
+    version: '1.0.0',
   })
 
   // Apply plugins
@@ -96,7 +98,7 @@ async function main() {
   const adapter = createNodeAdapter({
     app,
     port: 8787,
-    hostname: 'localhost'
+    hostname: 'localhost',
   })
 
   // Start the server
@@ -213,14 +215,14 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import type { HatagoPlugin } from '@hatago/core'
 
 // Your plugin (same as before)
-const helloPlugin: HatagoPlugin = (ctx) => {
+const helloPlugin: HatagoPlugin = ctx => {
   // ... same plugin code
 }
 
 async function main() {
   const { server } = await createApp({
     name: 'my-mcp-server',
-    version: '1.0.0'
+    version: '1.0.0',
   })
 
   // Apply plugins
@@ -267,7 +269,7 @@ import { createLoggerPlugin } from '@hatago/plugin-logger'
 
 const { app, server } = await createApp({
   name: 'my-server',
-  version: '1.0.0'
+  version: '1.0.0',
 })
 
 // Apply plugins
@@ -280,7 +282,7 @@ await createLoggerPlugin()({ app, server, env: process.env })
 ```typescript
 import type { HatagoPlugin } from '@hatago/core'
 
-export const myCustomPlugin: HatagoPlugin = (ctx) => {
+export const myCustomPlugin: HatagoPlugin = ctx => {
   const { app, server, env } = ctx
 
   // Register MCP tools
@@ -291,23 +293,25 @@ export const myCustomPlugin: HatagoPlugin = (ctx) => {
       inputSchema: {
         type: 'object',
         properties: {
-          input: { type: 'string' }
-        }
-      }
+          input: { type: 'string' },
+        },
+      },
     },
-    async (args) => {
+    async args => {
       // Tool implementation
       return {
-        content: [{
-          type: 'text',
-          text: `Processed: ${args.input}`
-        }]
+        content: [
+          {
+            type: 'text',
+            text: `Processed: ${args.input}`,
+          },
+        ],
       }
     }
   )
 
   // Add HTTP routes (optional)
-  app.get('/my-endpoint', (c) => {
+  app.get('/my-endpoint', c => {
     return c.json({ message: 'Hello from plugin' })
   })
 }
@@ -332,10 +336,7 @@ Create `hatago.config.json`:
 {
   "name": "my-mcp-server",
   "version": "1.0.0",
-  "plugins": [
-    "@hatago/plugin-hello-hatago",
-    "./src/plugins/custom-plugin.ts"
-  ],
+  "plugins": ["@hatago/plugin-hello-hatago", "./src/plugins/custom-plugin.ts"],
   "server": {
     "port": 8787,
     "hostname": "localhost"
@@ -377,7 +378,7 @@ import { createWorkersAdapter } from '@hatago/adapter-workers'
 export default createWorkersAdapter(
   await createApp({
     name: 'my-worker',
-    version: '1.0.0'
+    version: '1.0.0',
   })
 )
 ```
