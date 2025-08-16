@@ -1,6 +1,6 @@
 {
   "name": "@hatago/plugin-logger",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "type": "module",
   "description": "Structured logging plugin for Hatago",
   "license": "MIT",
@@ -45,10 +45,10 @@
     "format:fix": "pnpm -w run format:fix"
   },
   "peerDependencies": {
-    "@hatago/core": ">=0.2.0"
+    "@hatago/core": ">=0.3.0"
   },
   "dependencies": {
-    "@hatago/core": "^0.2.0"
+    "@hatago/core": "^0.3.0"
   },
   "devDependencies": {
     "@types/node": "^20.19.10",
