@@ -1,0 +1,157 @@
+import type { HatagoPlugin } from '@hatago/types' import {
+{{camelCase name}}Config,
+{{camelCase name}}ConfigSchema } from './{{kebabCase name}}.config' import {
+{{titleCase name}}Client } from './{{kebabCase name}}.client' import type {
+{{titleCase name}}ClientOptions } from './{{kebabCase name}}.types' /** *
+{{description}}
+* * This plugin wraps the
+{{mcpServerName}}
+external MCP server and provides * its tools and resources through the Hatago interface. * * @author
+{{author}}
+*/ export const
+{{camelCase name}}Plugin: HatagoPlugin = async ({ server, app, env, getBaseUrl }) => { // Parse and
+validate configuration const config =
+{{camelCase name}}ConfigSchema.parse({ name: '{{name}}', transport: env?.{{toUpperCase
+  (snakeCase name)
+}}_TRANSPORT || '{{transport}}', // STDIO configuration
+{{#if (eq transport 'stdio')}}
+  stdio: { command: '{{mcpCommand}}', args: [{{#each mcpArgs}}'{{this}}'{{#unless @last}},
+    {{/unless}}{{/each}}], env: {
+  {{#if (ne authType 'none')}}
+    {{authToken}}: env?.{{authToken}}
+  {{/if}}
+  } },
+{{/if}}
+
+// HTTP configuration
+{{#if (eq transport 'http')}}
+  http: { endpoint: env?.{{toUpperCase (snakeCase name)}}_ENDPOINT || '{{mcpServerEndpoint}}',
+  autoStart: env?.{{toUpperCase (snakeCase name)}}_AUTO_START !== 'false', autoStartConfig: {
+  command: 'npx
+  {{mcpServerName}}
+  --port', preferredPort: parseInt(env?.{{toUpperCase (snakeCase name)}}_PORT as string) ||
+  {{mcpServerPort}}, portRange: { min:
+  {{portRangeMin}}, max:
+  {{portRangeMax}}
+  } }
+  {{#if (ne authType 'none')}}, authToken: env?.{{authToken}}
+  {{/if}}
+  },
+{{/if}}
+
+{{#if namespace}}
+  namespace: env?.{{toUpperCase (snakeCase name)}}_NAMESPACE || '{{namespace}}',
+{{/if}}
+{{#if caching}}
+  cache: { enabled: env?.{{toUpperCase (snakeCase name)}}_CACHE_ENABLED !== 'false', ttl:
+  parseInt(env?.{{toUpperCase (snakeCase name)}}_CACHE_TTL as string) || 300000 },
+{{/if}}
+{{#if healthCheck}}
+  healthCheck: { enabled: env?.{{toUpperCase (snakeCase name)}}_HEALTH_CHECK !== 'false', interval:
+  parseInt(env?.{{toUpperCase (snakeCase name)}}_HEALTH_INTERVAL as string) || 60000 }
+{{/if}}
+}) // Validate required configuration
+{{#if (eq transport 'stdio')}}
+  if (config.transport === 'stdio' && !config.stdio) { throw new Error('STDIO configuration is
+  required when transport is stdio') }
+{{/if}}
+{{#if (eq transport 'http')}}
+  if (config.transport === 'http' && !config.http) { throw new Error('HTTP configuration is required
+  when transport is http') }
+  {{#if (ne authType 'none')}}
+    if (config.transport === 'http' && !config.http?.authToken) { throw new Error('{{authToken}}
+    environment variable is required for HTTP transport') }
+  {{/if}}
+{{/if}}
+
+// Create MCP client const clientOptions:
+{{titleCase name}}ClientOptions = { transport: config.transport, timeout: 30000, // STDIO options
+stdio: config.stdio, // HTTP options http: config.http ? { ...config.http,
+{{#if (ne authType 'none')}}
+  auth: config.http.authToken ? { type: '{{authType}}',
+  {{#if (eq authType 'bearer')}}
+    token: config.http.authToken
+  {{/if}}
+  } : undefined
+{{/if}}
+} : undefined,
+
+{{#if caching}}
+  cache: config.cache,
+{{/if}}
+{{#if healthCheck}}
+  healthCheck: config.healthCheck
+{{/if}}
+} const client = new
+{{titleCase name}}Client(clientOptions) try { // Connect to external MCP server const
+connectionTarget = config.transport === 'stdio' ? `${config.stdio?.command}
+${config.stdio?.args?.join(' ')}` : config.http?.endpoint || 'auto-start'
+console.log(`[${config.name}] Connecting to MCP server via ${config.transport.toUpperCase()}:
+${connectionTarget}...`) await client.connect() console.log(`[${config.name}] Successfully connected
+to MCP server`) // Load available tools and register them const tools = await client.listTools()
+console.log(`[${config.name}] Found ${tools.length} tools`) for (const tool of tools) {
+{{#if namespace}}
+  const toolName = config.namespace ? `${config.namespace}.${tool.name}` : tool.name
+{{else}}
+  const toolName = tool.name
+{{/if}}
+
+server.registerTool({ name: toolName, description: `${tool.description} (via
+{{mcpServerName}})`, inputSchema: tool.inputSchema }, async (args) => { try {
+console.log(`[${config.name}] Calling tool ${tool.name} with args:`, args) const result = await
+client.callTool(tool.name, args) console.log(`[${config.name}] Tool ${tool.name} executed
+successfully`) return result } catch (error) { console.error(`[${config.name}] Tool ${tool.name}
+execution failed:`, error) throw new Error(`{{mcpServerName}}
+tool execution failed: ${error.message}`) } }) } // Load available resources and register them try {
+const resources = await client.listResources() console.log(`[${config.name}] Found
+${resources.length} resources`) for (const resource of resources) { server.registerResource({ uri:
+resource.uri, name: resource.name, description: `${resource.description} (via
+{{mcpServerName}})`, mimeType: resource.mimeType }, async () => { try {
+console.log(`[${config.name}] Reading resource ${resource.uri}`) const contents = await
+client.readResource(resource.uri) console.log(`[${config.name}] Resource ${resource.uri} read
+successfully`) return contents } catch (error) { console.error(`[${config.name}] Resource
+${resource.uri} read failed:`, error) throw new Error(`{{mcpServerName}}
+resource read failed: ${error.message}`) } }) } } catch (error) { console.warn(`[${config.name}]
+Failed to load resources:`, error) // Non-critical, continue without resources } } catch (error) {
+console.error(`[${config.name}] Failed to connect to MCP server:`, error) throw error } // HTTP
+endpoints app.get('/{{kebabCase name}}/status', (c) => { const connectionInfo = config.transport ===
+'stdio' ? { transport: 'stdio', command: config.stdio?.command } : { transport: 'http', endpoint:
+config.http?.endpoint } return c.json({ status: 'ok', plugin: '{{name}}', mcpServer: '{{mcpServerName}}',
+...connectionInfo, connected: client.isConnected(), toolsLoaded: client.getToolCount(),
+resourcesLoaded: client.getResourceCount(), stats: client.getStats() }) })
+
+{{#if healthCheck}}
+  app.get('/{{kebabCase name}}/health', async (c) => { try { const isConnected =
+  client.isConnected() const connectionInfo = config.transport === 'stdio' ? { transport: 'stdio' }
+  : { transport: 'http', endpoint: config.http?.endpoint } return c.json({ status: isConnected ?
+  'healthy' : 'unhealthy', ...connectionInfo, lastCheck: new Date().toISOString(), stats:
+  client.getStats() }, isConnected ? 200 : 503) } catch (error) { const connectionInfo =
+  config.transport === 'stdio' ? { transport: 'stdio' } : { transport: 'http', endpoint:
+  config.http?.endpoint } return c.json({ status: 'error', error: error.message, ...connectionInfo
+  }, 500) } })
+{{/if}}
+
+// Plugin configuration resource server.registerResource({ uri: '{{kebabCase name}}://config', name:
+'{{titleCase name}}
+Configuration', description: 'Current plugin configuration and status', mimeType: 'application/json'
+}, async () => { return { contents: [{ type: 'text', text: JSON.stringify({ name: '{{name}}',
+description: '{{description}}', mcpServer: '{{mcpServerName}}', transport: config.transport,
+...(config.transport === 'stdio' ? { stdio: config.stdio } : { http: config.http }), connected:
+client.isConnected(),
+{{#if namespace}}
+  namespace: config.namespace,
+{{/if}}
+{{#if caching}}
+  caching: config.cache,
+{{/if}}
+{{#if healthCheck}}
+  healthCheck: config.healthCheck,
+{{/if}}
+toolsAvailable: client.getToolCount(), resourcesAvailable: client.getResourceCount(), lastConnected:
+client.getLastConnectedTime(), stats: client.getStats(), version: '1.0.0' }, null, 2) }] } }) //
+Cleanup on shutdown const cleanup = async () => { console.log(`[${config.name}] Cleaning up
+plugin...`) try { await client.disconnect() console.log(`[${config.name}] Disconnected from MCP
+server`) } catch (error) { console.error(`[${config.name}] Error disconnecting from MCP server:`,
+error) } } process.on('SIGTERM', cleanup) process.on('SIGINT', cleanup) process.on('exit', cleanup)
+console.log(`[${config.name}] Plugin initialized successfully`) } export default
+{{camelCase name}}Plugin

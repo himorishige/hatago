@@ -20,7 +20,7 @@ const {{PLUGIN_NAME_CAMEL}}Plugin: CapabilityAwarePluginFactory = (context: Plug
   }
   
   return async ({ server, capabilities }) => {
-    if (!config.enabled) {
+    if (!_config.enabled) {
       return
     }
 
@@ -60,7 +60,7 @@ const {{PLUGIN_NAME_CAMEL}}Plugin: CapabilityAwarePluginFactory = (context: Plug
       pluginName: context.manifest.name,
       version: context.manifest.version,
       runtime: context.runtime,
-      config
+      config: _config
     })
   }
 }
