@@ -1,6 +1,6 @@
 {
   "name": "@hatago/plugin-oauth-metadata",
-  "version": "0.1.2",
+  "version": "1.0.0",
   "type": "module",
   "description": "OAuth 2.1 Protected Resource Metadata (RFC 9728) plugin for Hatago",
   "license": "MIT",
@@ -50,11 +50,11 @@
     "format:fix": "pnpm -w run format:fix"
   },
   "peerDependencies": {
-    "@hatago/core": ">=0.1.2",
+    "@hatago/core": ">=0.2.0",
     "hono": ">=4.0.0"
   },
   "dependencies": {
-    "@hatago/core": "^0.1.2"
+    "@hatago/core": "^0.2.0"
   },
   "devDependencies": {
     "@types/node": "^20.19.10",

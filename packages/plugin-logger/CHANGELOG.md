@@ -1,5 +1,16 @@
 # @hatago/plugin-logger
 
+## 1.0.0
+
+### Minor Changes
+
+- 2e9ebdf: Enhanced packages
+
+### Patch Changes
+
+- Updated dependencies [2e9ebdf]
+  - @hatago/core@0.2.0
+
 ## 0.1.2
 
 ### Patch Changes
