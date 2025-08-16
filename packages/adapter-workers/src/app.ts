@@ -1,6 +1,6 @@
 import { type CreateAppOptions, createApp as createCoreApp, defaultPlugins } from '@hatago/core'
 import type { HatagoPlugin } from '@hatago/core'
-import { StreamableHTTPTransport } from '@hono/mcp'
+import { StreamableHTTPTransport } from '@hatago/core/transport'
 
 export interface CreateWorkersAppOptions extends Omit<CreateAppOptions, 'env'> {
   /** Cloudflare Workers environment variables */

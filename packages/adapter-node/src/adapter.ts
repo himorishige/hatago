@@ -1,9 +1,9 @@
+import { createAdapter } from '@hatago/core'
+import type { ServeOptions } from '@hatago/core'
 /**
  * Node.js adapter for Hatago
  */
 import { serve as honoServe } from '@hono/node-server'
-import { createAdapter } from '@hatago/core'
-import type { ServeOptions } from '@hatago/core'
 
 export const nodeAdapter = createAdapter('node', {
   features: {

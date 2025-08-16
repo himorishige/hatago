@@ -1,8 +1,21 @@
 {
   "name": "@hatago/config",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Configuration management for Hatago MCP server",
   "type": "module",
+  "license": "MIT",
+  "author": "Hatago Contributors",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/himorishige/hatago.git",
+    "directory": "packages/hatago-config"
+  },
+  "keywords": [
+    "hatago",
+    "mcp",
+    "config",
+    "configuration"
+  ],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -13,8 +26,10 @@
   },
   "files": [
     "dist",
-    "src"
+    "README.md",
+    "LICENSE"
   ],
+  "sideEffects": false,
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

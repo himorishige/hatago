@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 
-import { Command } from 'commander'
 import { readFileSync } from 'fs'
-import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
-import { checkForUpdates } from './utils/update-checker.js'
-import { setupErrorHandling } from './utils/error-handler.js'
-import { configCommand } from './commands/config.js'
-import { initCommand } from './commands/init.js'
-import { devCommand } from './commands/dev.js'
+import { fileURLToPath } from 'url'
+import { Command } from 'commander'
 import { addServerCommand } from './commands/add-server.js'
+import { configCommand } from './commands/config.js'
 import { createPluginCommand } from './commands/create-plugin.js'
+import { devCommand } from './commands/dev.js'
+import { initCommand } from './commands/init.js'
 import { scaffoldCommand } from './commands/scaffold.js'
+import { setupErrorHandling } from './utils/error-handler.js'
+import { checkForUpdates } from './utils/update-checker.js'
 
 // Setup error handling first
 setupErrorHandling()

@@ -1,6 +1,6 @@
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'fs'
+import { dirname, join, resolve } from 'path'
 import Handlebars from 'handlebars'
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 'fs'
-import { resolve, join, dirname } from 'path'
 
 /**
  * Template configuration interface

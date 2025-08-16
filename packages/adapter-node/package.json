@@ -1,13 +1,13 @@
 {
   "name": "@hatago/adapter-node",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Hatago Node.js adapter",
   "license": "MIT",
   "author": "Hatago Contributors",
   "repository": {
     "type": "git",
-    "url": "https://github.com/himorishige/hatago.git",
+    "url": "git+https://github.com/himorishige/hatago.git",
     "directory": "packages/adapter-node"
   },
   "keywords": [
@@ -28,13 +28,25 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "dev": "tsx src/server.ts",
     "dev:stdio": "tsx src/stdio.ts",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "start": "node --enable-source-maps dist/server.js",
     "start:stdio": "node --enable-source-maps dist/stdio.js",
     "clean": "rm -rf dist",
@@ -43,16 +55,22 @@
     "format": "pnpm -w run format",
     "format:fix": "pnpm -w run format:fix"
   },
+  "peerDependencies": {
+    "hono": ">=4.0.0",
+    "@modelcontextprotocol/sdk": "^1.17.2"
+  },
   "dependencies": {
-    "@hatago/core": "workspace:*",
+    "@hatago/core": "^0.1.1",
     "@hono/node-server": "^1.18.2",
-    "@hono/mcp": "file:../../docs/dist",
-    "@modelcontextprotocol/sdk": "^1.0.8"
+    "@hatago/mcp-transport-internal": "file:../hono-mcp"
   },
   "devDependencies": {
     "@types/node": "^20.19.10",
+    "hono": "^4.9.1",
+    "@modelcontextprotocol/sdk": "^1.17.2",
     "tsx": "^4.20.4",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "vitest": "^2.1.8"
   },
   "engines": {
     "node": ">=18"

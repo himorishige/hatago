@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
-import { serve } from '@hono/node-server'
-import { Hono } from 'hono'
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StreamableHTTPTransport } from '@hono/mcp'
+import { serve } from '@hono/node-server'
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import { Hono } from 'hono'
 
 /**
  * Simple external MCP server providing clock functionality

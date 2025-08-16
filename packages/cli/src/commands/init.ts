@@ -1,8 +1,8 @@
+import { existsSync, mkdirSync, writeFileSync } from 'fs'
+import { join, resolve } from 'path'
+import { type HatagoConfig, generateConfigTemplate } from '@hatago/config'
+import { blue, cyan, green, red, yellow } from 'colorette'
 import { Command } from 'commander'
-import { writeFileSync, existsSync, mkdirSync } from 'fs'
-import { resolve, join } from 'path'
-import { green, red, yellow, cyan, blue } from 'colorette'
-import { generateConfigTemplate, type HatagoConfig } from '@hatago/config'
 import { CLIError } from '../utils/error-handler.js'
 
 /**

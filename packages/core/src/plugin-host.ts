@@ -1,16 +1,16 @@
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type {
-  PluginHost,
-  PluginManifest,
-  CapabilityRegistry,
   CapabilityAwarePlugin,
   CapabilityAwarePluginFactory,
-  Logger,
-  KV,
-  Timer,
+  CapabilityRegistry,
   Crypto,
+  KV,
+  Logger,
+  PluginHost,
+  PluginManifest,
+  Timer,
 } from './types.js'
 import { CapabilityError } from './types.js'
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 
 /**
  * Default plugin host implementation with capability-based security

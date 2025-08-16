@@ -1,9 +1,9 @@
-import { Command } from 'commander'
-import { resolve, join, dirname } from 'path'
-import { fileURLToPath } from 'url'
 import { existsSync } from 'fs'
-import { green, red, yellow, cyan, blue, gray } from 'colorette'
-import { TemplateEngine, type TemplateContext, type TemplateConfig } from '@hatago/config'
+import { dirname, join, resolve } from 'path'
+import { fileURLToPath } from 'url'
+import { type TemplateConfig, type TemplateContext, TemplateEngine } from '@hatago/config'
+import { blue, cyan, gray, green, red, yellow } from 'colorette'
+import { Command } from 'commander'
 import { CLIError } from '../utils/error-handler.js'
 
 /**
@@ -79,7 +79,7 @@ async function promptSelect(
     'Select option',
     defaultValue ? String(choices.indexOf(defaultValue) + 1) : '1'
   )
-  const index = parseInt(answer, 10) - 1
+  const index = Number.parseInt(answer, 10) - 1
 
   if (index >= 0 && index < choices.length) {
     return choices[index]

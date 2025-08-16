@@ -16,3 +16,5 @@ examples/**/dist/
 # test coverage
 coverage/
 packages/*/coverage/
+*.lcov
+.nyc_output/

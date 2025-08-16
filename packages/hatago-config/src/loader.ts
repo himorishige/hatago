@@ -1,10 +1,10 @@
+import { existsSync, readFileSync } from 'fs'
+import { dirname, join, resolve } from 'path'
 import { cosmiconfig } from 'cosmiconfig'
 import { config as loadDotenv } from 'dotenv'
 import { parse as parseJsonc } from 'jsonc-parser'
-import { readFileSync, existsSync } from 'fs'
-import { join, resolve, dirname } from 'path'
-import { HatagoConfigSchema, type HatagoConfig } from './schema.js'
 import type { ZodError } from 'zod'
+import { type HatagoConfig, HatagoConfigSchema } from './schema.js'
 
 /**
  * Configuration validation error

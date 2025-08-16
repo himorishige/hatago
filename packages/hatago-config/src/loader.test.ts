@@ -1,8 +1,8 @@
-import { describe, test, expect, beforeEach, vi } from 'vitest'
-import { loadConfig, getDefaultConfig, validateConfig, generateConfigTemplate } from './loader.js'
-import { writeFileSync, mkdirSync, rmSync } from 'fs'
-import { join } from 'path'
+import { mkdirSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
+import { join } from 'path'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
+import { generateConfigTemplate, getDefaultConfig, loadConfig, validateConfig } from './loader.js'
 
 describe('loadConfig', () => {
   let tempDir: string

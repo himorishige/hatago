@@ -1,13 +1,13 @@
 {
   "name": "@hatago/cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Command line interface for Hatago MCP server",
   "type": "module",
   "license": "MIT",
   "author": "Hatago Contributors",
   "repository": {
     "type": "git",
-    "url": "https://github.com/himorishige/hatago.git",
+    "url": "git+https://github.com/himorishige/hatago.git",
     "directory": "packages/cli"
   },
   "keywords": [
@@ -21,8 +21,11 @@
   },
   "files": [
     "dist",
-    "templates"
+    "templates",
+    "README.md",
+    "LICENSE"
   ],
+  "sideEffects": false,
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -31,7 +34,7 @@
     "test:watch": "vitest --watch"
   },
   "dependencies": {
-    "@hatago/config": "workspace:*",
+    "@hatago/config": "^0.1.0",
     "commander": "^12.1.0",
     "colorette": "^2.0.20",
     "prompts": "^2.4.2",

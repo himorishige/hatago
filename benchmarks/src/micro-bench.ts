@@ -5,8 +5,8 @@
  * Tests individual operations performance
  */
 
-import { createApp } from '@hatago/core'
 import { performance } from 'node:perf_hooks'
+import { createApp } from '@hatago/core'
 
 interface BenchResult {
   name: string

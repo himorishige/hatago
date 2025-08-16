@@ -1,14 +1,14 @@
-import { Command } from 'commander'
-import { writeFileSync, readFileSync } from 'fs'
+import { readFileSync, writeFileSync } from 'fs'
 import { resolve } from 'path'
-import { green, red, yellow, cyan, blue } from 'colorette'
 import {
-  loadConfig,
-  validateConfig,
+  ConfigValidationError,
   type HatagoConfig,
   type ProxyServerConfig,
-  ConfigValidationError,
+  loadConfig,
+  validateConfig,
 } from '@hatago/config'
+import { blue, cyan, green, red, yellow } from 'colorette'
+import { Command } from 'commander'
 import { CLIError } from '../utils/error-handler.js'
 
 /**
@@ -157,7 +157,7 @@ async function interactiveConfig(endpoint: string): Promise<Partial<ProxyServerC
   const advancedConfig = await promptInput('Configure advanced options? (y/N)', 'n')
   if (advancedConfig.toLowerCase() === 'y') {
     const timeoutStr = await promptInput('Timeout (ms)', '30000')
-    config.timeout = parseInt(timeoutStr, 10)
+    config.timeout = Number.parseInt(timeoutStr, 10)
 
     const enableHealthCheck = await promptInput('Enable health checks? (Y/n)', 'y')
     if (enableHealthCheck.toLowerCase() !== 'n') {
@@ -191,7 +191,7 @@ function generateServerId(endpoint: string): string {
  */
 async function updateConfigFile(
   newServer: ProxyServerConfig,
-  dryRun: boolean = false
+  dryRun = false
 ): Promise<void> {
   const { config, filepath } = await loadConfig()
 
@@ -359,7 +359,7 @@ export const addServerCommand = new Command('add-server')
   .option('-i, --id <id>', 'Server identifier')
   .option('-n, --namespace <namespace>', 'Tool namespace')
   .option('-d, --description <description>', 'Server description')
-  .option('-t, --timeout <timeout>', 'Request timeout in milliseconds', val => parseInt(val, 10))
+  .option('-t, --timeout <timeout>', 'Request timeout in milliseconds', val => Number.parseInt(val, 10))
   .option('--auth-type <type>', 'Authentication type (bearer|basic|custom)')
   .option('--auth-token <token>', 'Bearer token or API key')
   .option('--auth-username <username>', 'Username for basic auth')

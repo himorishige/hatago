@@ -154,7 +154,7 @@ export const sloMetrics: HatagoPluginFactory<SLOMetricsConfig> =
     })
 
     // Plugin event tracking helper
-    const trackPluginEvent = (pluginName: string, event: string, success: boolean = true) => {
+    const trackPluginEvent = (pluginName: string, event: string, success = true) => {
       const eventKey = createMetricKey(pluginName, undefined, event)
       metrics.plugin_events_total.set(
         eventKey,

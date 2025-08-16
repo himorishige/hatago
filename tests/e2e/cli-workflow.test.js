@@ -5,11 +5,11 @@
  * to plugin development and server deployment.
  */
 
-import { describe, it, beforeAll, afterAll, expect } from 'vitest'
 import { execSync, spawn } from 'child_process'
-import { mkdtempSync, rmSync, existsSync, readFileSync } from 'fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'fs'
 import { tmpdir } from 'os'
 import { join, resolve } from 'path'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 const CLI_PATH = resolve(__dirname, '../../apps/hatago-cli/dist/index.js')
 const TIMEOUT = 60000 // 60 seconds for E2E operations

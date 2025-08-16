@@ -1,11 +1,11 @@
-import type { HatagoPlugin } from '../system/types.js'
+import { loadConfig } from '../config/loader.js'
+import { NamespaceManager } from '../config/namespace-manager.js'
 import type {
   MCPServerConfig as CoreMCPServerConfig,
-  ProxyConfig,
   HatagoConfig,
+  ProxyConfig,
 } from '../config/types.js'
-import { NamespaceManager } from '../config/namespace-manager.js'
-import { loadConfig } from '../config/loader.js'
+import type { HatagoPlugin } from '../system/types.js'
 import { logger } from '../utils/logger.js'
 
 // Legacy type compatibility

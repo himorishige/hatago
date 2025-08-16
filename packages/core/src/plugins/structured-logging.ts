@@ -186,8 +186,8 @@ export const structuredLogging: HatagoPluginFactory<StructuredLoggingConfig> =
     // HTTP endpoint for log retrieval
     app.get(endpoint, c => {
       const query = c.req.query()
-      const levelFilter = query.level ? parseInt(query.level) : undefined
-      const limit = query.limit ? parseInt(query.limit) : 100
+      const levelFilter = query.level ? Number.parseInt(query.level) : undefined
+      const limit = query.limit ? Number.parseInt(query.limit) : 100
       const since = query.since ? new Date(query.since) : undefined
 
       // Get logs from buffer (most recent first)

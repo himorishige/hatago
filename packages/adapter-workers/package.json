@@ -1,8 +1,22 @@
 {
   "name": "@hatago/adapter-workers",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Hatago Cloudflare Workers adapter",
+  "license": "MIT",
+  "author": "Hatago Contributors",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/himorishige/hatago.git",
+    "directory": "packages/adapter-workers"
+  },
+  "keywords": [
+    "hatago",
+    "mcp",
+    "cloudflare",
+    "workers",
+    "adapter"
+  ],
   "main": "./dist/worker.js",
   "types": "./dist/worker.d.ts",
   "exports": {
@@ -13,8 +27,14 @@
   },
   "files": [
     "dist",
-    "wrangler.toml"
+    "wrangler.toml",
+    "README.md",
+    "LICENSE"
   ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "dev": "wrangler dev src/worker.ts",
     "build": "tsc -p tsconfig.json",
@@ -26,14 +46,21 @@
     "format": "pnpm -w run format",
     "format:fix": "pnpm -w run format:fix"
   },
+  "peerDependencies": {
+    "hono": ">=4.0.0",
+    "@modelcontextprotocol/sdk": "^1.17.2"
+  },
   "dependencies": {
-    "@hatago/core": "workspace:*",
-    "@hono/mcp": "file:../../docs/dist"
+    "@hatago/core": "^0.1.1",
+    "@hatago/mcp-transport-internal": "file:../hono-mcp"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241224.0",
     "@types/node": "^20.19.10",
+    "hono": "^4.9.1",
+    "@modelcontextprotocol/sdk": "^1.17.2",
     "typescript": "^5.9.2",
+    "vitest": "^2.1.8",
     "wrangler": "^3.114.13"
   },
   "engines": {

@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { setupTestEnv, createMockConfig, type TestCLI } from '../helpers/test-utils.js'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { type TestCLI, createMockConfig, setupTestEnv } from '../helpers/test-utils.js'
 
 describe('config command', () => {
   let cli: TestCLI

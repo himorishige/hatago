@@ -1,10 +1,10 @@
 import type { HatagoPlugin } from '../types.js'
+import { healthEndpoints } from './health-endpoints.js'
 import { helloHatago } from './hello-hatago.js'
 import { oauthMetadata } from './oauth-metadata.js'
-import { healthEndpoints } from './health-endpoints.js'
-import { sloMetrics } from './slo-metrics.js'
-import { structuredLogging, LogLevel } from './structured-logging.js'
 import { pluginSecurity } from './plugin-security.js'
+import { sloMetrics } from './slo-metrics.js'
+import { LogLevel, structuredLogging } from './structured-logging.js'
 
 /**
  * Create default plugins with environment-based configuration

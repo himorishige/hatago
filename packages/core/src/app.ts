@@ -1,8 +1,8 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { Hono } from 'hono'
-import { applyPlugins } from './plugins.js'
 import { correlationId } from './middleware/correlation-id.js'
-import type { HatagoContext, HatagoPlugin, HatagoMode } from './types.js'
+import { applyPlugins } from './plugins.js'
+import type { HatagoContext, HatagoMode, HatagoPlugin } from './types.js'
 
 export interface CreateAppOptions {
   /** Environment variables (runtime-specific) */

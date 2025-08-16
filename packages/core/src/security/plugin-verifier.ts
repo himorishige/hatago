@@ -101,7 +101,7 @@ export class InMemoryKeyRegistry implements TrustedKeyRegistry {
   async addKey(
     keyId: string,
     key: CryptoKey,
-    trusted: boolean = false,
+    trusted = false,
     metadata: {
       algorithm: string
       issuer?: string

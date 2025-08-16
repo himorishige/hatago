@@ -1,10 +1,10 @@
-import { Command } from 'commander'
-import { spawn, ChildProcess } from 'child_process'
+import { type ChildProcess, spawn } from 'child_process'
 import { watch } from 'fs'
-import { resolve, join, dirname } from 'path'
 import { existsSync } from 'fs'
-import { green, red, yellow, cyan, blue, gray } from 'colorette'
-import { loadConfig, type HatagoConfig } from '@hatago/config'
+import { dirname, join, resolve } from 'path'
+import { type HatagoConfig, loadConfig } from '@hatago/config'
+import { blue, cyan, gray, green, red, yellow } from 'colorette'
+import { Command } from 'commander'
 import { CLIError } from '../utils/error-handler.js'
 
 /**
@@ -378,11 +378,11 @@ async function handleDev(options: DevOptions): Promise<void> {
  */
 export const devCommand = new Command('dev')
   .description('Start development server with hot reload')
-  .option('-p, --port <port>', 'Server port', val => parseInt(val, 10))
+  .option('-p, --port <port>', 'Server port', val => Number.parseInt(val, 10))
   .option('-H, --hostname <hostname>', 'Server hostname')
   .option('-w, --watch <paths...>', 'Additional paths to watch for changes')
   .option('--inspect', 'Enable Node.js inspector for debugging')
-  .option('--inspect-port <port>', 'Inspector port', val => parseInt(val, 10), 9229)
+  .option('--inspect-port <port>', 'Inspector port', val => Number.parseInt(val, 10), 9229)
   .option('--no-clear-screen', 'Disable clearing screen on restart')
   .option('--open', 'Open browser after server starts')
   .action(handleDev)

@@ -2,7 +2,7 @@
  * Reference server using @hatago/adapter-node
  */
 import { serve } from '@hatago/adapter-node'
-import { createApp, LoggerLevel } from '@hatago/core'
+import { LoggerLevel, createApp } from '@hatago/core'
 import { createDefaultLogger } from '@hatago/core'
 
 const port = Number(process.env.PORT || 8787)

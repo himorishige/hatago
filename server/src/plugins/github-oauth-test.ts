@@ -3,10 +3,10 @@
  * 実際のGitHub APIを使用したOAuth認証テスト
  */
 
-import { z } from 'zod'
-import type { HatagoPlugin } from '../system/types'
 import crypto from 'crypto'
 import { createServer } from 'http'
+import { z } from 'zod'
+import type { HatagoPlugin } from '../system/types'
 import { logger } from '../utils/logger.js'
 
 /**

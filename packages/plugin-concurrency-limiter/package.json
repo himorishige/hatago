@@ -1,8 +1,22 @@
 {
   "name": "@hatago/plugin-concurrency-limiter",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Concurrency limiting plugin for Hatago with overload protection",
+  "license": "MIT",
+  "author": "Hatago Contributors",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/himorishige/hatago.git",
+    "directory": "packages/plugin-concurrency-limiter"
+  },
+  "keywords": [
+    "hatago",
+    "mcp",
+    "plugin",
+    "concurrency",
+    "rate-limiting"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -13,8 +27,14 @@
   },
   "files": [
     "dist",
-    "hatago.plugin.json"
+    "hatago.plugin.json",
+    "README.md",
+    "LICENSE"
   ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit",
@@ -24,13 +44,18 @@
     "format": "pnpm -w run format",
     "format:fix": "pnpm -w run format:fix"
   },
+  "peerDependencies": {
+    "@hatago/core": ">=0.1.0",
+    "hono": ">=4.0.0",
+    "@modelcontextprotocol/sdk": "^1.17.2"
+  },
   "dependencies": {
-    "@hatago/core": "workspace:*",
-    "@modelcontextprotocol/sdk": "^1.0.2",
-    "hono": "^4.6.10"
+    "@hatago/core": "^0.1.1"
   },
   "devDependencies": {
     "@types/node": "^20.19.10",
+    "hono": "^4.9.1",
+    "@modelcontextprotocol/sdk": "^1.17.2",
     "typescript": "^5.9.2"
   },
   "engines": {

@@ -1,5 +1,5 @@
-import { red, yellow } from 'colorette'
 import { ConfigValidationError } from '@hatago/config'
+import { red, yellow } from 'colorette'
 
 /**
  * CLI error with exit code
@@ -7,7 +7,7 @@ import { ConfigValidationError } from '@hatago/config'
 export class CLIError extends Error {
   constructor(
     message: string,
-    public exitCode: number = 1
+    public exitCode = 1
   ) {
     super(message)
     this.name = 'CLIError'

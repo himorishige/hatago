@@ -1,6 +1,6 @@
-import { type ZodError, type ZodIssue } from 'zod'
-import { type HatagoConfig, type MCPServerConfig } from './schema.js'
-import { type ConfigValidationError } from './loader.js'
+import type { ZodError, ZodIssue } from 'zod'
+import type { ConfigValidationError } from './loader.js'
+import type { HatagoConfig, MCPServerConfig } from './schema.js'
 
 /**
  * Diagnostic issue severity

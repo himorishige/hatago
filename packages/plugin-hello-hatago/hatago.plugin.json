@@ -1,0 +1,17 @@
+{
+  "name": "@hatago/plugin-hello-hatago",
+  "version": "0.1.1",
+  "description": "Hello Hatago test plugin with streaming progress notifications",
+  "type": "core",
+  "entry": "./dist/index.js",
+  "exports": ["helloHatago"],
+  "tools": [
+    {
+      "name": "hello_hatago",
+      "description": "Emit progress that spells Hello Hatago, then return the text"
+    }
+  ],
+  "permissions": [],
+  "dependencies": ["@hatago/core"],
+  "tags": ["test", "demo", "streaming", "progress"]
+}

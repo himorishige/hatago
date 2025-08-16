@@ -1,8 +1,22 @@
 {
   "name": "@hatago/plugin-kv",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Key-value storage abstraction plugin for Hatago",
+  "license": "MIT",
+  "author": "Hatago Contributors",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/himorishige/hatago.git",
+    "directory": "packages/plugin-kv"
+  },
+  "keywords": [
+    "hatago",
+    "mcp",
+    "plugin",
+    "kv",
+    "storage"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -13,8 +27,14 @@
   },
   "files": [
     "dist",
-    "hatago.plugin.json"
+    "hatago.plugin.json",
+    "README.md",
+    "LICENSE"
   ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit",
@@ -24,8 +44,11 @@
     "format": "pnpm -w run format",
     "format:fix": "pnpm -w run format:fix"
   },
+  "peerDependencies": {
+    "@hatago/core": ">=0.1.0"
+  },
   "dependencies": {
-    "@hatago/core": "workspace:*"
+    "@hatago/core": "^0.1.1"
   },
   "devDependencies": {
     "@types/node": "^20.19.10",

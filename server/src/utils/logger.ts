@@ -122,7 +122,7 @@ class Logger {
       format: (process.env.LOG_FORMAT as LogFormat) || 'pretty',
       transport: (process.env.HATAGO_TRANSPORT as HatagoMode) || 'http',
       redactKeys: process.env.LOG_REDACT?.split(',') || DEFAULT_REDACT_KEYS,
-      sampleRate: parseFloat(process.env.LOG_SAMPLE_RATE || '1.0'),
+      sampleRate: Number.parseFloat(process.env.LOG_SAMPLE_RATE || '1.0'),
       ...config,
     }
 
@@ -328,7 +328,7 @@ class Logger {
 
     // process.stdout.write を監視
     const originalWrite = process.stdout.write
-    process.stdout.write = function (chunk: any, ...args: any[]) {
+    process.stdout.write = (chunk: any, ...args: any[]) => {
       process.stderr.write('[STDOUT-GUARD] Prevented stdout write: ' + String(chunk))
       return true
     }

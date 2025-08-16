@@ -1,0 +1,69 @@
+{
+  "name": "@hatago/plugin-oauth-metadata",
+  "version": "0.1.1",
+  "type": "module",
+  "description": "OAuth 2.1 Protected Resource Metadata (RFC 9728) plugin for Hatago",
+  "license": "MIT",
+  "author": "Hatago Contributors",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/himorishige/hatago.git",
+    "directory": "packages/plugin-oauth-metadata"
+  },
+  "keywords": [
+    "hatago",
+    "mcp",
+    "plugin",
+    "oauth",
+    "oauth2",
+    "rfc9728",
+    "security"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "hatago.plugin.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "clean": "rm -rf dist",
+    "lint": "biome lint src",
+    "lint:fix": "biome lint --write src",
+    "format": "pnpm -w run format",
+    "format:fix": "pnpm -w run format:fix"
+  },
+  "peerDependencies": {
+    "@hatago/core": ">=0.1.0",
+    "hono": ">=4.0.0"
+  },
+  "dependencies": {
+    "@hatago/core": "^0.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.10",
+    "hono": "^4.9.1",
+    "typescript": "^5.9.2",
+    "vitest": "^2.1.8",
+    "@vitest/coverage-v8": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

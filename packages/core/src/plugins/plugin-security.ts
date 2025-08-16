@@ -1,10 +1,10 @@
-import type { HatagoPlugin, HatagoPluginFactory } from '../types.js'
+import { createDefaultLogger } from '../logger.js'
 import {
-  PluginVerifier,
   type PluginSignature,
+  PluginVerifier,
   type VerificationResult,
 } from '../security/plugin-verifier.js'
-import { createDefaultLogger } from '../logger.js'
+import type { HatagoPlugin, HatagoPluginFactory } from '../types.js'
 
 const logger = createDefaultLogger('plugin-security')
 

@@ -21,7 +21,7 @@ var __export = (target, all) => {
 }
 var __copyProps = (to, from, except, desc) => {
   if ((from && typeof from === 'object') || typeof from === 'function') {
-    for (let key of __getOwnPropNames(from))
+    for (const key of __getOwnPropNames(from))
       if (!__hasOwnProp.call(to, key) && key !== except)
         __defProp(to, key, {
           get: () => from[key],
@@ -64,7 +64,6 @@ function checkURL(request, init) {
 var urls
 var init_checked_fetch = __esm({
   '.wrangler/tmp/bundle-SOBM5W/checked-fetch.js'() {
-    'use strict'
     urls = /* @__PURE__ */ new Set()
     __name(checkURL, 'checkURL')
     globalThis.fetch = new Proxy(globalThis.fetch, {
@@ -85,7 +84,6 @@ function stripCfConnectingIPHeader(input, init) {
 }
 var init_strip_cf_connecting_ip_header = __esm({
   '.wrangler/tmp/bundle-SOBM5W/strip-cf-connecting-ip-header.js'() {
-    'use strict'
     __name(stripCfConnectingIPHeader, 'stripCfConnectingIPHeader')
     globalThis.fetch = new Proxy(globalThis.fetch, {
       apply(target, thisArg, argArray) {
@@ -117,14 +115,13 @@ var require_uri_all = __commonJS({
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
-    ;(function (global, factory) {
+    ;((global, factory) => {
       typeof exports === 'object' && typeof module !== 'undefined'
         ? factory(exports)
         : typeof define === 'function' && define.amd
           ? define(['exports'], factory)
           : factory((global.URI = global.URI || {}))
-    })(exports, function (exports2) {
-      'use strict'
+    })(exports, (exports2) => {
       function merge() {
         for (var _len = arguments.length, sets = Array(_len), _key = 0; _key < _len; _key++) {
           sets[_key] = arguments[_key]
@@ -470,7 +467,7 @@ var require_uri_all = __commonJS({
       __name(buildExps, 'buildExps')
       var URI_PROTOCOL = buildExps(false)
       var IRI_PROTOCOL = buildExps(true)
-      var slicedToArray = (function () {
+      var slicedToArray = (() => {
         function sliceIterator(arr, i) {
           var _arr = []
           var _n = true
@@ -494,7 +491,7 @@ var require_uri_all = __commonJS({
           return _arr
         }
         __name(sliceIterator, 'sliceIterator')
-        return function (arr, i) {
+        return (arr, i) => {
           if (Array.isArray(arr)) {
             return arr
           } else if (Symbol.iterator in Object(arr)) {
@@ -504,7 +501,7 @@ var require_uri_all = __commonJS({
           }
         }
       })()
-      var toConsumableArray = /* @__PURE__ */ __name(function (arr) {
+      var toConsumableArray = /* @__PURE__ */ __name((arr) => {
         if (Array.isArray(arr)) {
           for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]
           return arr2
@@ -796,14 +793,10 @@ var require_uri_all = __commonJS({
         return output.join('')
       }, 'encode')
       var toUnicode = /* @__PURE__ */ __name(function toUnicode2(input) {
-        return mapDomain(input, function (string) {
-          return regexPunycode.test(string) ? decode(string.slice(4).toLowerCase()) : string
-        })
+        return mapDomain(input, (string) => regexPunycode.test(string) ? decode(string.slice(4).toLowerCase()) : string)
       }, 'toUnicode')
       var toASCII = /* @__PURE__ */ __name(function toASCII2(input) {
-        return mapDomain(input, function (string) {
-          return regexNonASCII.test(string) ? 'xn--' + encode(string) : string
-        })
+        return mapDomain(input, (string) => regexNonASCII.test(string) ? 'xn--' + encode(string) : string)
       }, 'toASCII')
       var punycode = {
         /**
@@ -856,13 +849,13 @@ var require_uri_all = __commonJS({
         var i = 0
         var il = str.length
         while (i < il) {
-          var c = parseInt(str.substr(i + 1, 2), 16)
+          var c = Number.parseInt(str.substr(i + 1, 2), 16)
           if (c < 128) {
             newStr += String.fromCharCode(c)
             i += 3
           } else if (c >= 194 && c < 224) {
             if (il - i >= 6) {
-              var c2 = parseInt(str.substr(i + 4, 2), 16)
+              var c2 = Number.parseInt(str.substr(i + 4, 2), 16)
               newStr += String.fromCharCode(((c & 31) << 6) | (c2 & 63))
             } else {
               newStr += str.substr(i, 6)
@@ -870,8 +863,8 @@ var require_uri_all = __commonJS({
             i += 6
           } else if (c >= 224) {
             if (il - i >= 9) {
-              var _c = parseInt(str.substr(i + 4, 2), 16)
-              var c3 = parseInt(str.substr(i + 7, 2), 16)
+              var _c = Number.parseInt(str.substr(i + 4, 2), 16)
+              var c3 = Number.parseInt(str.substr(i + 7, 2), 16)
               newStr += String.fromCharCode(((c & 15) << 12) | ((_c & 63) << 6) | (c3 & 63))
             } else {
               newStr += str.substr(i, 9)
@@ -962,7 +955,7 @@ var require_uri_all = __commonJS({
           if (isLastFieldIPv4Address) {
             fields[fieldCount - 1] = _normalizeIPv4(fields[fieldCount - 1], protocol)
           }
-          var allZeroFields = fields.reduce(function (acc, field, index) {
+          var allZeroFields = fields.reduce((acc, field, index) => {
             if (!field || field === '0') {
               var lastLongest = acc[acc.length - 1]
               if (lastLongest && lastLongest.index + lastLongest.length === index) {
@@ -973,9 +966,7 @@ var require_uri_all = __commonJS({
             }
             return acc
           }, [])
-          var longestZeroFields = allZeroFields.sort(function (a, b) {
-            return b.length - a.length
-          })[0]
+          var longestZeroFields = allZeroFields.sort((a, b) => b.length - a.length)[0]
           var newHost = void 0
           if (longestZeroFields && longestZeroFields.length > 1) {
             var newFirst = fields.slice(0, longestZeroFields.index)
@@ -1008,7 +999,7 @@ var require_uri_all = __commonJS({
             components.scheme = matches[1]
             components.userinfo = matches[3]
             components.host = matches[4]
-            components.port = parseInt(matches[5], 10)
+            components.port = Number.parseInt(matches[5], 10)
             components.path = matches[6] || ''
             components.query = matches[7]
             components.fragment = matches[8]
@@ -1019,7 +1010,7 @@ var require_uri_all = __commonJS({
             components.scheme = matches[1] || void 0
             components.userinfo = uriString.indexOf('@') !== -1 ? matches[3] : void 0
             components.host = uriString.indexOf('//') !== -1 ? matches[4] : void 0
-            components.port = parseInt(matches[5], 10)
+            components.port = Number.parseInt(matches[5], 10)
             components.path = matches[6] || ''
             components.query = uriString.indexOf('?') !== -1 ? matches[7] : void 0
             components.fragment = uriString.indexOf('#') !== -1 ? matches[8] : void 0
@@ -1096,9 +1087,7 @@ var require_uri_all = __commonJS({
           uriTokens.push(
             _normalizeIPv6(_normalizeIPv4(String(components.host), protocol), protocol).replace(
               protocol.IPV6ADDRESS,
-              function (_, $1, $2) {
-                return '[' + $1 + ($2 ? '%25' + $2 : '') + ']'
-              }
+              (_, $1, $2) => '[' + $1 + ($2 ? '%25' + $2 : '') + ']'
             )
           )
         }
@@ -1621,7 +1610,6 @@ var require_fast_deep_equal = __commonJS({
     exports,
     module
   ) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -1661,7 +1649,6 @@ var require_ucs2length = __commonJS({
     exports,
     module
   ) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -1686,7 +1673,6 @@ var require_ucs2length = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/compile/util.js
 var require_util = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/compile/util.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -1958,7 +1944,6 @@ var require_schema_obj = __commonJS({
     exports,
     module
   ) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -1977,18 +1962,17 @@ var require_json_schema_traverse = __commonJS({
     exports,
     module
   ) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
-    var traverse = (module.exports = function (schema, opts, cb) {
+    var traverse = (module.exports = (schema, opts, cb) => {
       if (typeof opts == 'function') {
         cb = opts
         opts = {}
       }
       cb = opts.cb || cb
-      var pre = typeof cb == 'function' ? cb : cb.pre || function () {}
-      var post = cb.post || function () {}
+      var pre = typeof cb == 'function' ? cb : cb.pre || (() => {})
+      var post = cb.post || (() => {})
       _traverse(opts, pre, post, schema, '', schema)
     })
     traverse.keywords = {
@@ -2100,7 +2084,6 @@ var require_json_schema_traverse = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/compile/resolve.js
 var require_resolve = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/compile/resolve.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -2268,17 +2251,17 @@ var require_resolve = __commonJS({
         for (var i = 0; i < schema.length; i++) {
           item = schema[i]
           if (typeof item == 'object') count += countKeys(item)
-          if (count == Infinity) return Infinity
+          if (count == Number.POSITIVE_INFINITY) return Number.POSITIVE_INFINITY
         }
       } else {
         for (var key in schema) {
-          if (key == '$ref') return Infinity
+          if (key == '$ref') return Number.POSITIVE_INFINITY
           if (SIMPLE_INLINED[key]) {
             count++
           } else {
             item = schema[key]
             if (typeof item == 'object') count += countKeys(item) + 1
-            if (count == Infinity) return Infinity
+            if (count == Number.POSITIVE_INFINITY) return Number.POSITIVE_INFINITY
           }
         }
       }
@@ -2310,13 +2293,12 @@ var require_resolve = __commonJS({
       var baseIds = { '': schemaId }
       var fullPaths = { '': getFullPath(schemaId, false) }
       var localRefs = {}
-      var self = this
       traverse(
         schema,
         { allKeys: true },
-        function (sch, jsonPtr, rootSchema, parentJsonPtr, parentKeyword, parentSchema, keyIndex) {
+        (sch, jsonPtr, rootSchema, parentJsonPtr, parentKeyword, parentSchema, keyIndex) => {
           if (jsonPtr === '') return
-          var id = self._getId(sch)
+          var id = this._getId(sch)
           var baseId = baseIds[parentJsonPtr]
           var fullPath = fullPaths[parentJsonPtr] + '/' + parentKeyword
           if (keyIndex !== void 0)
@@ -2324,8 +2306,8 @@ var require_resolve = __commonJS({
               '/' + (typeof keyIndex == 'number' ? keyIndex : util2.escapeFragment(keyIndex))
           if (typeof id == 'string') {
             id = baseId = normalizeId(baseId ? URI.resolve(baseId, id) : id)
-            var refVal = self._refs[id]
-            if (typeof refVal == 'string') refVal = self._refs[refVal]
+            var refVal = this._refs[id]
+            if (typeof refVal == 'string') refVal = this._refs[refVal]
             if (refVal && refVal.schema) {
               if (!equal(sch, refVal.schema))
                 throw new Error('id "' + id + '" resolves to more than one schema')
@@ -2335,7 +2317,7 @@ var require_resolve = __commonJS({
                   throw new Error('id "' + id + '" resolves to more than one schema')
                 localRefs[id] = sch
               } else {
-                self._refs[id] = fullPath
+                this._refs[id] = fullPath
               }
             }
           }
@@ -2355,7 +2337,6 @@ var require_error_classes = __commonJS({
     exports,
     module
   ) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -2370,9 +2351,7 @@ var require_error_classes = __commonJS({
       this.ajv = this.validation = true
     }
     __name(ValidationError, 'ValidationError')
-    MissingRefError.message = function (baseId, ref) {
-      return "can't resolve reference " + ref + ' from id ' + baseId
-    }
+    MissingRefError.message = (baseId, ref) => "can't resolve reference " + ref + ' from id ' + baseId
     function MissingRefError(baseId, ref, message) {
       this.message = message || MissingRefError.message(baseId, ref)
       this.missingRef = resolve.url(baseId, ref)
@@ -2394,25 +2373,20 @@ var require_fast_json_stable_stringify = __commonJS({
     exports,
     module
   ) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
-    module.exports = function (data, opts) {
+    module.exports = (data, opts) => {
       if (!opts) opts = {}
       if (typeof opts === 'function') opts = { cmp: opts }
       var cycles = typeof opts.cycles === 'boolean' ? opts.cycles : false
       var cmp =
         opts.cmp &&
-        (function (f) {
-          return function (node) {
-            return function (a, b) {
+        ((f) => (node) => (a, b) => {
               var aobj = { key: a, value: node[a] }
               var bobj = { key: b, value: node[b] }
               return f(aobj, bobj)
-            }
-          }
-        })(opts.cmp)
+            })(opts.cmp)
       var seen = []
       return /* @__PURE__ */ __name(function stringify(node) {
         if (node && node.toJSON && typeof node.toJSON === 'function') {
@@ -2455,7 +2429,6 @@ var require_fast_json_stable_stringify = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/validate.js
 var require_validate = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/validate.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -3112,7 +3085,6 @@ var require_validate = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/compile/index.js
 var require_compile = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/compile/index.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -3338,9 +3310,7 @@ var require_compile = __commonJS({
           var deps = rule.definition.dependencies
           if (
             deps &&
-            !deps.every(function (keyword) {
-              return Object.prototype.hasOwnProperty.call(parentSchema, keyword)
-            })
+            !deps.every((keyword) => Object.prototype.hasOwnProperty.call(parentSchema, keyword))
           )
             throw new Error('parent schema must have all required keywords: ' + deps.join(','))
           var validateSchema = rule.definition.validateSchema
@@ -3434,7 +3404,6 @@ var require_compile = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/cache.js
 var require_cache = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/cache.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -3459,7 +3428,6 @@ var require_cache = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/compile/formats.js
 var require_formats = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/compile/formats.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -3598,7 +3566,6 @@ var require_formats = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/ref.js
 var require_ref = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/ref.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -3756,7 +3723,6 @@ var require_ref = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/allOf.js
 var require_allOf = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/allOf.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -3812,7 +3778,6 @@ var require_allOf = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/anyOf.js
 var require_anyOf = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/anyOf.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -3831,11 +3796,9 @@ var require_anyOf = __commonJS({
       var $closingBraces = ''
       $it.level++
       var $nextValid = 'valid' + $it.level
-      var $noEmptySchema = $schema.every(function ($sch2) {
-        return it.opts.strictKeywords
+      var $noEmptySchema = $schema.every(($sch2) => it.opts.strictKeywords
           ? (typeof $sch2 == 'object' && Object.keys($sch2).length > 0) || $sch2 === false
-          : it.util.schemaHasRules($sch2, it.RULES.all)
-      })
+          : it.util.schemaHasRules($sch2, it.RULES.all))
       if ($noEmptySchema) {
         var $currentBaseId = $it.baseId
         out += ' var ' + $errs + ' = errors; var ' + $valid + ' = false;  '
@@ -3915,7 +3878,6 @@ var require_anyOf = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/comment.js
 var require_comment = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/comment.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -3943,7 +3905,6 @@ var require_comment = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/const.js
 var require_const = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/const.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -4030,7 +3991,6 @@ var require_const = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/contains.js
 var require_contains = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/contains.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -4157,7 +4117,6 @@ var require_dependencies = __commonJS({
     exports,
     module
   ) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -4424,7 +4383,6 @@ var require_dependencies = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/enum.js
 var require_enum = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/enum.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -4548,7 +4506,6 @@ var require_enum = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/format.js
 var require_format = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/format.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -4775,7 +4732,6 @@ var require_format = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/if.js
 var require_if = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/if.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -4917,7 +4873,6 @@ var require_if = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/items.js
 var require_items = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/items.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -5113,7 +5068,6 @@ var require_items = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/_limit.js
 var require_limit = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/_limit.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -5434,7 +5388,6 @@ var require_limit = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/_limitItems.js
 var require_limitItems = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/_limitItems.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -5544,7 +5497,6 @@ var require_limitLength = __commonJS({
     exports,
     module
   ) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -5663,7 +5615,6 @@ var require_limitProperties = __commonJS({
     exports,
     module
   ) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -5774,7 +5725,6 @@ var require_limitProperties = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/multipleOf.js
 var require_multipleOf = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/multipleOf.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -5886,7 +5836,6 @@ var require_multipleOf = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/not.js
 var require_not = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/not.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -6016,7 +5965,6 @@ var require_not = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/oneOf.js
 var require_oneOf = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/oneOf.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -6156,7 +6104,6 @@ var require_oneOf = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/pattern.js
 var require_pattern = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/pattern.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -6254,7 +6201,6 @@ var require_pattern = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/properties.js
 var require_properties = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/properties.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -6723,7 +6669,6 @@ var require_propertyNames = __commonJS({
     exports,
     module
   ) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -6870,7 +6815,6 @@ var require_propertyNames = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/required.js
 var require_required = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/required.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -7332,7 +7276,6 @@ var require_required = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/uniqueItems.js
 var require_uniqueItems = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/uniqueItems.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -7472,7 +7415,6 @@ var require_uniqueItems = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/index.js
 var require_dotjs = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/index.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -7512,7 +7454,6 @@ var require_dotjs = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/compile/rules.js
 var require_rules = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/compile/rules.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -7573,14 +7514,14 @@ var require_rules = __commonJS({
       var TYPES = ['number', 'integer', 'string', 'array', 'object', 'boolean', 'null']
       RULES.all = toHash(ALL)
       RULES.types = toHash(TYPES)
-      RULES.forEach(function (group) {
-        group.rules = group.rules.map(function (keyword) {
+      RULES.forEach((group) => {
+        group.rules = group.rules.map((keyword) => {
           var implKeywords
           if (typeof keyword == 'object') {
             var key = Object.keys(keyword)[0]
             implKeywords = keyword[key]
             keyword = key
-            implKeywords.forEach(function (k) {
+            implKeywords.forEach((k) => {
               ALL.push(k)
               RULES.all[k] = true
             })
@@ -7609,7 +7550,6 @@ var require_rules = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/data.js
 var require_data = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/data.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -7634,7 +7574,7 @@ var require_data = __commonJS({
       'format',
       'const',
     ]
-    module.exports = function (metaSchema, keywordsJsonPointers) {
+    module.exports = (metaSchema, keywordsJsonPointers) => {
       for (var i = 0; i < keywordsJsonPointers.length; i++) {
         metaSchema = JSON.parse(JSON.stringify(metaSchema))
         var segments = keywordsJsonPointers[i].split('/')
@@ -7664,7 +7604,6 @@ var require_data = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/compile/async.js
 var require_async = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/compile/async.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -7678,12 +7617,12 @@ var require_async = __commonJS({
         callback = meta
         meta = void 0
       }
-      var p = loadMetaSchemaOf(schema).then(function () {
+      var p = loadMetaSchemaOf(schema).then(() => {
         var schemaObj = self._addSchema(schema, void 0, meta)
         return schemaObj.validate || _compileAsync(schemaObj)
       })
       if (callback) {
-        p.then(function (v) {
+        p.then((v) => {
           callback(null, v)
         }, callback)
       }
@@ -7714,16 +7653,14 @@ var require_async = __commonJS({
             schemaPromise.then(removePromise, removePromise)
           }
           return schemaPromise
-            .then(function (sch) {
+            .then((sch) => {
               if (!added(ref)) {
-                return loadMetaSchemaOf(sch).then(function () {
+                return loadMetaSchemaOf(sch).then(() => {
                   if (!added(ref)) self.addSchema(sch, ref, void 0, meta)
                 })
               }
             })
-            .then(function () {
-              return _compileAsync(schemaObj)
-            })
+            .then(() => _compileAsync(schemaObj))
           function removePromise() {
             delete self._loadingSchemas[ref]
           }
@@ -7744,7 +7681,6 @@ var require_async = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/custom.js
 var require_custom = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/dotjs/custom.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -7773,9 +7709,9 @@ var require_custom = __commonJS({
       } else {
         $schemaValue = $schema
       }
-      var $rule = this,
+      var 
         $definition = 'definition' + $lvl,
-        $rDef = $rule.definition,
+        $rDef = this.definition,
         $closingBraces = ''
       var $compile, $inline, $macro, $ruleValidate, $validateCode
       if ($isData && $rDef.$data) {
@@ -7792,7 +7728,7 @@ var require_custom = __commonJS({
           $definition +
           '.validate;'
       } else {
-        $ruleValidate = it.useCustomRule($rule, $schema, it.schema, it)
+        $ruleValidate = it.useCustomRule(this, $schema, it.schema, it)
         if (!$ruleValidate) return
         $schemaValue = 'validate.schema' + $schemaPath
         $validateCode = $ruleValidate.code
@@ -7924,7 +7860,7 @@ var require_custom = __commonJS({
           out += ' ' + !$rDef.valid + ' '
         }
         out += ') { '
-        $errorKeyword = $rule.keyword
+        $errorKeyword = this.keyword
         var $$outStack = $$outStack || []
         $$outStack.push(out)
         out = ''
@@ -7940,10 +7876,10 @@ var require_custom = __commonJS({
             ' , schemaPath: ' +
             it.util.toQuotedString($errSchemaPath) +
             " , params: { keyword: '" +
-            $rule.keyword +
+            this.keyword +
             "' } "
           if (it.opts.messages !== false) {
-            out += ` , message: 'should pass "` + $rule.keyword + `" keyword validation' `
+            out += ` , message: 'should pass "` + this.keyword + `" keyword validation' `
           }
           if (it.opts.verbose) {
             out +=
@@ -8078,10 +8014,10 @@ var require_custom = __commonJS({
               ' , schemaPath: ' +
               it.util.toQuotedString($errSchemaPath) +
               " , params: { keyword: '" +
-              $rule.keyword +
+              this.keyword +
               "' } "
             if (it.opts.messages !== false) {
-              out += ` , message: 'should pass "` + $rule.keyword + `" keyword validation' `
+              out += ` , message: 'should pass "` + this.keyword + `" keyword validation' `
             }
             if (it.opts.verbose) {
               out +=
@@ -8327,7 +8263,6 @@ var require_json_schema_draft_07 = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/definition_schema.js
 var require_definition_schema = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/definition_schema.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -8368,7 +8303,6 @@ var require_definition_schema = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/keyword.js
 var require_keyword = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/keyword.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -8496,7 +8430,6 @@ var require_data2 = __commonJS({
 // ../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/ajv.js
 var require_ajv = __commonJS({
   '../../node_modules/.pnpm/ajv@6.12.6/node_modules/ajv/lib/ajv.js'(exports, module) {
-    'use strict'
     init_checked_fetch()
     init_strip_cf_connecting_ip_header()
     init_modules_watch_stub()
@@ -8547,7 +8480,7 @@ var require_ajv = __commonJS({
       this._compilations = []
       this.RULES = rules()
       this._getId = chooseGetId(opts)
-      opts.loopRequired = opts.loopRequired || Infinity
+      opts.loopRequired = opts.loopRequired || Number.POSITIVE_INFINITY
       if (opts.errorDataPath == 'property') opts._errorDataPathProperty = true
       if (opts.serialize === void 0) opts.serialize = stableStringify
       this._metaOpts = getMetaSchemaOptions(this)
@@ -9071,7 +9004,7 @@ init_checked_fetch()
 init_strip_cf_connecting_ip_header()
 init_modules_watch_stub()
 var util
-;(function (util2) {
+;((util2) => {
   util2.assertEqual = _ => {}
   function assertIs(_arg) {}
   __name(assertIs, 'assertIs')
@@ -9097,9 +9030,7 @@ var util
     return util2.objectValues(filtered)
   }
   util2.objectValues = obj => {
-    return util2.objectKeys(obj).map(function (e) {
-      return obj[e]
-    })
+    return util2.objectKeys(obj).map((e) => obj[e])
   }
   util2.objectKeys =
     typeof Object.keys === 'function'
@@ -9136,7 +9067,7 @@ var util
   }
 })(util || (util = {}))
 var objectUtil
-;(function (objectUtil2) {
+;((objectUtil2) => {
   objectUtil2.mergeShapes = (first, second) => {
     return {
       ...first,
@@ -9262,9 +9193,7 @@ var ZodError = class extends Error {
   format(_mapper) {
     const mapper =
       _mapper ||
-      function (issue) {
-        return issue.message
-      }
+      ((issue) => issue.message)
     const fieldErrors = { _errors: [] }
     const processError = /* @__PURE__ */ __name(error => {
       for (const issue of error.issues) {
@@ -9570,7 +9499,7 @@ init_checked_fetch()
 init_strip_cf_connecting_ip_header()
 init_modules_watch_stub()
 var errorUtil
-;(function (errorUtil2) {
+;((errorUtil2) => {
   errorUtil2.errToObj = message => (typeof message === 'string' ? { message } : message || {})
   errorUtil2.toString = message => (typeof message === 'string' ? message : message?.message)
 })(errorUtil || (errorUtil = {}))
@@ -13033,7 +12962,7 @@ var late = {
   object: ZodObject.lazycreate,
 }
 var ZodFirstPartyTypeKind
-;(function (ZodFirstPartyTypeKind2) {
+;((ZodFirstPartyTypeKind2) => {
   ZodFirstPartyTypeKind2['ZodString'] = 'ZodString'
   ZodFirstPartyTypeKind2['ZodNumber'] = 'ZodNumber'
   ZodFirstPartyTypeKind2['ZodNaN'] = 'ZodNaN'
@@ -13220,7 +13149,7 @@ var isJSONRPCResponse = /* @__PURE__ */ __name(
   'isJSONRPCResponse'
 )
 var ErrorCode
-;(function (ErrorCode2) {
+;((ErrorCode2) => {
   ErrorCode2[(ErrorCode2['ConnectionClosed'] = -32e3)] = 'ConnectionClosed'
   ErrorCode2[(ErrorCode2['RequestTimeout'] = -32001)] = 'RequestTimeout'
   ErrorCode2[(ErrorCode2['ParseError'] = -32700)] = 'ParseError'
@@ -15373,7 +15302,7 @@ var zodPatterns = {
    */
   emoji: () => {
     if (emojiRegex2 === void 0) {
-      emojiRegex2 = RegExp('^(\\p{Extended_Pictographic}|\\p{Emoji_Component})+$', 'u')
+      emojiRegex2 = /^(\p{Extended_Pictographic}|\p{Emoji_Component})+$/u
     }
     return emojiRegex2
   },
@@ -16526,7 +16455,7 @@ init_checked_fetch()
 init_strip_cf_connecting_ip_header()
 init_modules_watch_stub()
 var McpZodTypeKind
-;(function (McpZodTypeKind2) {
+;((McpZodTypeKind2) => {
   McpZodTypeKind2['Completable'] = 'McpCompletable'
 })(McpZodTypeKind || (McpZodTypeKind = {}))
 var Completable = class extends ZodType {
@@ -18817,8 +18746,7 @@ var Node2 = /* @__PURE__ */ __name(
     search(method, path) {
       const handlerSets = []
       this.#params = emptyParams
-      const curNode = this
-      let curNodes = [curNode]
+      let curNodes = [this]
       const parts = splitPath(path)
       const curNodesQueue = []
       for (let i = 0, len = parts.length; i < len; i++) {
@@ -19938,7 +19866,7 @@ function wrapExportedHandler(worker) {
   for (const middleware of __INTERNAL_WRANGLER_MIDDLEWARE__) {
     __facade_register__(middleware)
   }
-  const fetchDispatcher = /* @__PURE__ */ __name(function (request, env, ctx) {
+  const fetchDispatcher = /* @__PURE__ */ __name((request, env, ctx) => {
     if (worker.fetch === void 0) {
       throw new Error('Handler does not export a fetch() function.')
     }
@@ -19947,7 +19875,7 @@ function wrapExportedHandler(worker) {
   return {
     ...worker,
     fetch(request, env, ctx) {
-      const dispatcher = /* @__PURE__ */ __name(function (type, init) {
+      const dispatcher = /* @__PURE__ */ __name((type, init) => {
         if (type === 'scheduled' && worker.scheduled !== void 0) {
           const controller = new __Facade_ScheduledController__(
             Date.now(),

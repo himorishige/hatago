@@ -3,14 +3,14 @@
 // export dynamically through wrangler, or we can potentially let users directly
 // add them as a sort of "plugin" system.
 
+import {
+  type Dispatcher,
+  __facade_invoke__,
+  __facade_register__,
+} from '/Users/morishige/ghq/github.com/himorishige/hatago/node_modules/.pnpm/wrangler@3.114.13_@cloudflare+workers-types@4.20250813.0/node_modules/wrangler/templates/middleware/common.ts'
 import ENTRY, {
   __INTERNAL_WRANGLER_MIDDLEWARE__,
 } from '/Users/morishige/ghq/github.com/himorishige/hatago/packages/adapter-workers/.wrangler/tmp/bundle-SOBM5W/middleware-insertion-facade.js'
-import {
-  __facade_invoke__,
-  __facade_register__,
-  Dispatcher,
-} from '/Users/morishige/ghq/github.com/himorishige/hatago/node_modules/.pnpm/wrangler@3.114.13_@cloudflare+workers-types@4.20250813.0/node_modules/wrangler/templates/middleware/common.ts'
 import type { WorkerEntrypointConstructor } from '/Users/morishige/ghq/github.com/himorishige/hatago/packages/adapter-workers/.wrangler/tmp/bundle-SOBM5W/middleware-insertion-facade.js'
 
 // Preserve all the exports from the worker
@@ -49,7 +49,7 @@ function wrapExportedHandler(worker: ExportedHandler): ExportedHandler {
     __facade_register__(middleware)
   }
 
-  const fetchDispatcher: ExportedHandlerFetchHandler = function (request, env, ctx) {
+  const fetchDispatcher: ExportedHandlerFetchHandler = (request, env, ctx) => {
     if (worker.fetch === undefined) {
       throw new Error('Handler does not export a fetch() function.')
     }
@@ -59,7 +59,7 @@ function wrapExportedHandler(worker: ExportedHandler): ExportedHandler {
   return {
     ...worker,
     fetch(request, env, ctx) {
-      const dispatcher: Dispatcher = function (type, init) {
+      const dispatcher: Dispatcher = (type, init) => {
         if (type === 'scheduled' && worker.scheduled !== undefined) {
           const controller = new __Facade_ScheduledController__(
             Date.now(),

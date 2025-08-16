@@ -1,0 +1,67 @@
+{
+  "name": "@hatago/plugin-hello-hatago",
+  "version": "0.1.1",
+  "type": "module",
+  "description": "Hello Hatago test plugin with streaming progress notifications",
+  "license": "MIT",
+  "author": "Hatago Contributors",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/himorishige/hatago.git",
+    "directory": "packages/plugin-hello-hatago"
+  },
+  "keywords": [
+    "hatago",
+    "mcp",
+    "plugin",
+    "hello",
+    "test",
+    "streaming"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "hatago.plugin.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "clean": "rm -rf dist",
+    "lint": "biome lint src",
+    "lint:fix": "biome lint --write src",
+    "format": "pnpm -w run format",
+    "format:fix": "pnpm -w run format:fix"
+  },
+  "peerDependencies": {
+    "@hatago/core": ">=0.1.0"
+  },
+  "dependencies": {
+    "@hatago/core": "^0.1.1",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.10",
+    "typescript": "^5.9.2",
+    "vitest": "^2.1.8",
+    "@vitest/coverage-v8": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

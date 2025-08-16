@@ -1,7 +1,7 @@
-import helloHatago from './hello-hatago.js'
-import oauthMetadata from './oauth-metadata.js'
 import { enhancedMcpProxy } from './enhanced-mcp-proxy.js'
 import { githubOAuthTestPlugin } from './github-oauth-test.js'
+import helloHatago from './hello-hatago.js'
+import oauthMetadata from './oauth-metadata.js'
 
 // Environment variables with defaults
 const REQUIRE_AUTH = process.env.REQUIRE_AUTH === 'true'

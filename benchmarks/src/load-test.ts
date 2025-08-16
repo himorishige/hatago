@@ -5,9 +5,9 @@
  * Uses Node.js built-in HTTP client for load generation
  */
 
+import { performance } from 'node:perf_hooks'
 import { createApp } from '@hatago/adapter-node'
 import { serve } from '@hono/node-server'
-import { performance } from 'node:perf_hooks'
 
 interface LoadTestConfig {
   url: string

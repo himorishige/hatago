@@ -1,6 +1,6 @@
-import worker, * as OTHER_EXPORTS from '/Users/morishige/ghq/github.com/himorishige/hatago/packages/adapter-workers/src/worker.ts'
 import * as __MIDDLEWARE_0__ from '/Users/morishige/ghq/github.com/himorishige/hatago/node_modules/.pnpm/wrangler@3.114.13_@cloudflare+workers-types@4.20250813.0/node_modules/wrangler/templates/middleware/middleware-ensure-req-body-drained.ts'
 import * as __MIDDLEWARE_1__ from '/Users/morishige/ghq/github.com/himorishige/hatago/node_modules/.pnpm/wrangler@3.114.13_@cloudflare+workers-types@4.20250813.0/node_modules/wrangler/templates/middleware/middleware-miniflare3-json-error.ts'
+import worker, * as OTHER_EXPORTS from '/Users/morishige/ghq/github.com/himorishige/hatago/packages/adapter-workers/src/worker.ts'
 
 export * from '/Users/morishige/ghq/github.com/himorishige/hatago/packages/adapter-workers/src/worker.ts'
 

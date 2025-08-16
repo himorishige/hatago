@@ -174,9 +174,7 @@ export interface PluginContext {
 /**
  * Capability-aware plugin function
  */
-export interface CapabilityAwarePlugin {
-  (ctx: { server: McpServer; capabilities: CapabilityRegistry }): void | Promise<void>
-}
+export type CapabilityAwarePlugin = (ctx: { server: McpServer; capabilities: CapabilityRegistry }) => void | Promise<void>
 
 /**
  * New plugin factory type with capability context

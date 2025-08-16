@@ -1,0 +1,23 @@
+{
+  "name": "@hatago/plugin-oauth-metadata",
+  "version": "0.1.1",
+  "description": "OAuth 2.1 Protected Resource Metadata (RFC 9728) plugin for Hatago",
+  "type": "http",
+  "entry": "./dist/index.js",
+  "exports": ["oauthMetadata", "OAuthMetadataOptions"],
+  "endpoints": [
+    {
+      "path": "/.well-known/oauth-protected-resource",
+      "method": "GET",
+      "description": "OAuth 2.1 Protected Resource Metadata (RFC 9728)"
+    },
+    {
+      "path": "/.well-known/oauth-authorization-server",
+      "method": "GET",
+      "description": "OAuth 2.0 Authorization Server Metadata (RFC 8414) - optional"
+    }
+  ],
+  "permissions": ["http:routes"],
+  "dependencies": ["@hatago/core"],
+  "tags": ["oauth", "security", "rfc9728", "authentication"]
+}

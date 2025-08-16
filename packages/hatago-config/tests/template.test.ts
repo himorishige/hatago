@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { TemplateEngine, type TemplateConfig } from '../src/template.js'
-import { mkdtempSync, rmSync, writeFileSync, existsSync, readFileSync } from 'fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { type TemplateConfig, TemplateEngine } from '../src/template.js'
 
 describe('TemplateEngine', () => {
   let engine: TemplateEngine

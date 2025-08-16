@@ -1,17 +1,17 @@
-import { Command } from 'commander'
-import { writeFileSync, existsSync } from 'fs'
+import { existsSync, writeFileSync } from 'fs'
 import { resolve } from 'path'
-import { green, red, yellow, cyan } from 'colorette'
 import {
-  loadConfig,
-  validateConfig,
-  generateConfigTemplate,
+  ConfigValidationError,
+  type HatagoConfig,
   diagnoseConfig,
   formatDiagnostics,
   generateConfigFixes,
-  ConfigValidationError,
-  type HatagoConfig,
+  generateConfigTemplate,
+  loadConfig,
+  validateConfig,
 } from '@hatago/config'
+import { cyan, green, red, yellow } from 'colorette'
+import { Command } from 'commander'
 import { CLIError } from '../utils/error-handler.js'
 
 /**

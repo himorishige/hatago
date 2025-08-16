@@ -1,5 +1,5 @@
+import { cyan, yellow } from 'colorette'
 import updateNotifier from 'update-notifier'
-import { yellow, cyan } from 'colorette'
 
 /**
  * Check for updates asynchronously

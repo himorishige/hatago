@@ -1,8 +1,8 @@
 import type {
-  CapabilityAwarePluginFactory,
-  PluginContext,
   CapabilityAwarePlugin,
+  CapabilityAwarePluginFactory,
   CapabilityRegistry,
+  PluginContext,
 } from '@hatago/core'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { Context } from 'hono'

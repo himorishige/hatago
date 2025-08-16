@@ -1,0 +1,45 @@
+{
+  "name": "@hatago/plugin-github-oauth",
+  "version": "0.1.1",
+  "description": "GitHub OAuth integration plugin for Hatago with API access tools",
+  "type": "full",
+  "entry": "./dist/index.js",
+  "exports": ["githubOAuthTestPlugin", "GitHubOAuthConfig"],
+  "tools": [
+    {
+      "name": "github_user",
+      "description": "Get current GitHub user information"
+    },
+    {
+      "name": "github_repos",
+      "description": "List user repositories"
+    },
+    {
+      "name": "github_search",
+      "description": "Search GitHub repositories"
+    },
+    {
+      "name": "github_repo",
+      "description": "Get repository information"
+    },
+    {
+      "name": "github_issues",
+      "description": "List repository issues"
+    }
+  ],
+  "endpoints": [
+    {
+      "path": "/github/health",
+      "method": "GET",
+      "description": "GitHub OAuth plugin health check"
+    },
+    {
+      "path": "/github/auth/setup",
+      "method": "GET",
+      "description": "GitHub OAuth setup instructions"
+    }
+  ],
+  "permissions": ["http:routes", "env:read", "network:github.com"],
+  "dependencies": ["@hatago/core"],
+  "tags": ["github", "oauth", "api", "development", "test"]
+}

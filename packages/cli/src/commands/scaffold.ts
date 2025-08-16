@@ -1,9 +1,9 @@
-import { Command } from 'commander'
-import { resolve, join, dirname } from 'path'
-import { fileURLToPath } from 'url'
 import { existsSync } from 'fs'
-import { green, red, yellow, cyan, blue, gray } from 'colorette'
-import { TemplateEngine, type TemplateContext, type TemplateConfig } from '@hatago/config'
+import { dirname, join, resolve } from 'path'
+import { fileURLToPath } from 'url'
+import { type TemplateConfig, type TemplateContext, TemplateEngine } from '@hatago/config'
+import { blue, cyan, gray, green, red, yellow } from 'colorette'
+import { Command } from 'commander'
 import { CLIError } from '../utils/error-handler.js'
 
 /**
@@ -226,7 +226,7 @@ async function interactivePrompt(prompts: any[]): Promise<TemplateContext> {
             const selectAnswer = await new Promise<string>(resolve => {
               rl.question('Select option: ', resolve)
             })
-            const selectedIndex = parseInt(selectAnswer, 10) - 1
+            const selectedIndex = Number.parseInt(selectAnswer, 10) - 1
             context[prompt.name] = prompt.choices[selectedIndex] || prompt.choices[0]
           }
           break
