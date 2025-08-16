@@ -79,7 +79,57 @@ importers:
         version: 5.9.2
       wrangler:
         specifier: ^3.114.13
-        version: 3.114.13
+        version: 3.114.13(@cloudflare/workers-types@4.20250816.0)
+
+  apps/test-mcp-servers/clock:
+    dependencies:
+      '@hatago/hono-mcp':
+        specifier: workspace:*
+        version: link:../../../packages/hono-mcp
+      '@hono/node-server':
+        specifier: ^1.18.2
+        version: 1.18.2(hono@4.9.2)
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.17.2
+        version: 1.17.3
+      hono:
+        specifier: ^4.9.1
+        version: 4.9.2
+    devDependencies:
+      '@types/node':
+        specifier: ^20.19.10
+        version: 20.19.11
+      tsx:
+        specifier: ^4.19.2
+        version: 4.20.4
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.2
+
+  apps/test-mcp-servers/math:
+    dependencies:
+      '@hatago/hono-mcp':
+        specifier: workspace:*
+        version: link:../../../packages/hono-mcp
+      '@hono/node-server':
+        specifier: ^1.18.2
+        version: 1.18.2(hono@4.9.2)
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.17.2
+        version: 1.17.3
+      hono:
+        specifier: ^4.9.1
+        version: 4.9.2
+    devDependencies:
+      '@types/node':
+        specifier: ^20.19.10
+        version: 20.19.11
+      tsx:
+        specifier: ^4.19.2
+        version: 4.20.4
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.2
 
   benchmarks:
     dependencies:
@@ -101,56 +151,6 @@ importers:
         version: 20.19.11
       tsx:
         specifier: ^4.20.4
-        version: 4.20.4
-      typescript:
-        specifier: ^5.9.2
-        version: 5.9.2
-
-  examples/external-mcp-clock:
-    dependencies:
-      '@hatago/hono-mcp':
-        specifier: workspace:*
-        version: link:../../packages/hono-mcp
-      '@hono/node-server':
-        specifier: ^1.18.2
-        version: 1.18.2(hono@4.9.2)
-      '@modelcontextprotocol/sdk':
-        specifier: ^1.17.2
-        version: 1.17.3
-      hono:
-        specifier: ^4.9.1
-        version: 4.9.2
-    devDependencies:
-      '@types/node':
-        specifier: ^20.19.10
-        version: 20.19.11
-      tsx:
-        specifier: ^4.19.2
-        version: 4.20.4
-      typescript:
-        specifier: ^5.9.2
-        version: 5.9.2
-
-  examples/external-mcp-math:
-    dependencies:
-      '@hatago/hono-mcp':
-        specifier: workspace:*
-        version: link:../../packages/hono-mcp
-      '@hono/node-server':
-        specifier: ^1.18.2
-        version: 1.18.2(hono@4.9.2)
-      '@modelcontextprotocol/sdk':
-        specifier: ^1.17.2
-        version: 1.17.3
-      hono:
-        specifier: ^4.9.1
-        version: 4.9.2
-    devDependencies:
-      '@types/node':
-        specifier: ^20.19.10
-        version: 20.19.11
-      tsx:
-        specifier: ^4.19.2
         version: 4.20.4
       typescript:
         specifier: ^5.9.2
@@ -7305,37 +7305,6 @@ packages:
       '@cloudflare/workerd-linux-64': 1.20250718.0
       '@cloudflare/workerd-linux-arm64': 1.20250718.0
       '@cloudflare/workerd-windows-64': 1.20250718.0
-    dev: true
-
-  /wrangler@3.114.13:
-    resolution:
-      {
-        integrity: sha512-bJbKJGTjClEp5XeyjiIKXodHW6j14ZsXuMphjvTZSwkQjGg6QlOol74/44d/u1Uso+hhIzYFg6m/d/1ggxUqWQ==,
-      }
-    engines: { node: '>=16.17.0' }
-    hasBin: true
-    peerDependencies:
-      '@cloudflare/workers-types': ^4.20250408.0
-    peerDependenciesMeta:
-      '@cloudflare/workers-types':
-        optional: true
-    dependencies:
-      '@cloudflare/kv-asset-handler': 0.3.4
-      '@cloudflare/unenv-preset': 2.0.2(unenv@2.0.0-rc.14)(workerd@1.20250718.0)
-      '@esbuild-plugins/node-globals-polyfill': 0.2.3(esbuild@0.17.19)
-      '@esbuild-plugins/node-modules-polyfill': 0.2.2(esbuild@0.17.19)
-      blake3-wasm: 2.1.5
-      esbuild: 0.17.19
-      miniflare: 3.20250718.1
-      path-to-regexp: 6.3.0
-      unenv: 2.0.0-rc.14
-      workerd: 1.20250718.0
-    optionalDependencies:
-      fsevents: 2.3.3
-      sharp: 0.33.5
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
     dev: true
 
   /wrangler@3.114.13(@cloudflare/workers-types@4.20250816.0):

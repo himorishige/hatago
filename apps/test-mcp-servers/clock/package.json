@@ -1,7 +1,8 @@
 {
-  "name": "external-mcp-clock",
+  "name": "@hatago/test-mcp-clock",
   "version": "1.0.1",
-  "description": "Simple external MCP server providing clock functionality for Hatago testing",
+  "private": true,
+  "description": "Test MCP server providing clock functionality for Hatago proxy testing",
   "type": "module",
   "main": "dist/server.js",
   "scripts": {

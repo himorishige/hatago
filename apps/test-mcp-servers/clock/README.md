@@ -1,6 +1,6 @@
-# External MCP Clock Server
+# Test MCP Clock Server
 
-Simple external MCP server providing clock and timezone functionality for testing Hatago's external MCP connection system.
+Test MCP server providing clock and timezone functionality for testing Hatago's MCP proxy features. This is a development/testing tool, not a production server or example implementation.
 
 ## Features
 
