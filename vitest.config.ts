@@ -21,6 +21,11 @@ export default defineConfig({
 
     // 環境設定
     environment: 'node',
+    
+    // 環境変数設定
+    env: {
+      NODE_ENV: 'test',
+    },
 
     // グローバル設定
     globals: true,

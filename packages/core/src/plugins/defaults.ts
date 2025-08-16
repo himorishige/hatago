@@ -16,21 +16,21 @@ export function createDefaultPlugins(env: Record<string, unknown> = {}): HatagoP
   const RESOURCE = env.RESOURCE as string | undefined
   const PLUGIN_SECURITY_ENABLED = env.PLUGIN_SECURITY_ENABLED !== 'false'
   const REQUIRE_SIGNED_PLUGINS = env.REQUIRE_SIGNED_PLUGINS === 'true'
-
+  
   return [
     // Structured logging (must be first for proper initialization)
     structuredLogging({
       enabled: true,
       level: env.LOG_LEVEL === 'debug' ? LogLevel.DEBUG : LogLevel.INFO,
-      format: env.NODE_ENV === 'production' ? 'json' : 'compact',
-      includeStackTrace: env.NODE_ENV !== 'production',
+      format: (env.NODE_ENV || process.env.NODE_ENV) === 'production' ? 'json' : 'compact',
+      includeStackTrace: (env.NODE_ENV || process.env.NODE_ENV) !== 'production',
     }),
 
     // Plugin security and signature verification
     pluginSecurity({
       enabled: PLUGIN_SECURITY_ENABLED,
       requireSigned: REQUIRE_SIGNED_PLUGINS,
-      allowTestKeys: env.NODE_ENV !== 'production',
+      allowTestKeys: (env.NODE_ENV || process.env.NODE_ENV) !== 'production',
       maxSignatureAgeHours: 24,
       blockUnsigned: REQUIRE_SIGNED_PLUGINS,
     }),
@@ -38,8 +38,8 @@ export function createDefaultPlugins(env: Record<string, unknown> = {}): HatagoP
     // Stream "Hello Hatago" demo tool
     helloHatago(),
 
-    // Health endpoints for monitoring
-    healthEndpoints({ enabled: true }),
+    // Health endpoints for monitoring (disabled in test environment to prevent memory leaks)
+    healthEndpoints({ enabled: (env.NODE_ENV || process.env.NODE_ENV) !== 'test' }),
 
     // SLO-compliant metrics collection
     sloMetrics({
