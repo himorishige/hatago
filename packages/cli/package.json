@@ -1,6 +1,6 @@
 {
   "name": "@hatago/cli",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Command line interface for Hatago MCP server",
   "type": "module",
   "license": "MIT",
@@ -34,7 +34,7 @@
     "test:watch": "vitest --watch"
   },
   "dependencies": {
-    "@hatago/config": "^0.1.0",
+    "@hatago/config": "^0.1.2",
     "commander": "^12.1.0",
     "colorette": "^2.0.20",
     "prompts": "^2.4.2",
