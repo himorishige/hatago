@@ -1,6 +1,6 @@
 {
   "name": "@hatago/adapter-node",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "type": "module",
   "description": "Hatago Node.js adapter",
   "license": "MIT",
@@ -60,7 +60,7 @@
     "@modelcontextprotocol/sdk": "^1.17.2"
   },
   "dependencies": {
-    "@hatago/core": "^0.1.2",
+    "@hatago/core": "^0.2.0",
     "@hono/node-server": "^1.18.2",
     "@hatago/hono-mcp": "workspace:*"
   },

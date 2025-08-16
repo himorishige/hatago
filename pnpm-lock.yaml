@@ -114,7 +114,7 @@ importers:
   packages/adapter-node:
     dependencies:
       '@hatago/core':
-        specifier: ^0.1.2
+        specifier: ^0.2.0
         version: link:../core
       '@hatago/hono-mcp':
         specifier: workspace:*
@@ -145,7 +145,7 @@ importers:
   packages/adapter-workers:
     dependencies:
       '@hatago/core':
-        specifier: ^0.1.2
+        specifier: ^0.2.0
         version: link:../core
       '@hatago/hono-mcp':
         specifier: workspace:*
@@ -176,7 +176,7 @@ importers:
   packages/cli:
     dependencies:
       '@hatago/config':
-        specifier: ^0.1.2
+        specifier: ^0.2.0
         version: link:../hatago-config
       chokidar:
         specifier: ^4.0.1
@@ -317,7 +317,7 @@ importers:
   packages/plugin-concurrency-limiter:
     dependencies:
       '@hatago/core':
-        specifier: ^0.1.2
+        specifier: ^0.2.0
         version: link:../core
     devDependencies:
       '@modelcontextprotocol/sdk':
@@ -336,7 +336,7 @@ importers:
   packages/plugin-github-oauth:
     dependencies:
       '@hatago/core':
-        specifier: ^0.1.2
+        specifier: ^0.2.0
         version: link:../core
       zod:
         specifier: ^3.25.76
@@ -364,7 +364,7 @@ importers:
   packages/plugin-hello-hatago:
     dependencies:
       '@hatago/core':
-        specifier: ^0.1.2
+        specifier: ^0.2.0
         version: link:../core
       zod:
         specifier: ^3.25.76
@@ -386,7 +386,7 @@ importers:
   packages/plugin-kv:
     dependencies:
       '@hatago/core':
-        specifier: ^0.1.2
+        specifier: ^0.2.0
         version: link:../core
     devDependencies:
       '@types/node':
@@ -399,7 +399,7 @@ importers:
   packages/plugin-logger:
     dependencies:
       '@hatago/core':
-        specifier: ^0.1.2
+        specifier: ^0.2.0
         version: link:../core
     devDependencies:
       '@types/node':
@@ -412,7 +412,7 @@ importers:
   packages/plugin-oauth-metadata:
     dependencies:
       '@hatago/core':
-        specifier: ^0.1.2
+        specifier: ^0.2.0
         version: link:../core
     devDependencies:
       '@types/node':
@@ -434,7 +434,7 @@ importers:
   packages/plugin-rate-limit:
     dependencies:
       '@hatago/core':
-        specifier: ^0.1.2
+        specifier: ^0.2.0
         version: link:../core
     devDependencies:
       '@types/node':

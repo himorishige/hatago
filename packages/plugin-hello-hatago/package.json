@@ -1,6 +1,6 @@
 {
   "name": "@hatago/plugin-hello-hatago",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "type": "module",
   "description": "Hello Hatago test plugin with streaming progress notifications",
   "license": "MIT",
@@ -49,10 +49,10 @@
     "format:fix": "pnpm -w run format:fix"
   },
   "peerDependencies": {
-    "@hatago/core": ">=0.1.2"
+    "@hatago/core": ">=0.2.0"
   },
   "dependencies": {
-    "@hatago/core": "^0.1.2",
+    "@hatago/core": "^0.2.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {

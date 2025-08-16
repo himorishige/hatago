@@ -1,6 +1,6 @@
 {
   "name": "@hatago/core",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "type": "module",
   "description": "Hatago core: runtime-agnostic MCP server with plugin architecture",
   "license": "MIT",
