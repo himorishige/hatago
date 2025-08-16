@@ -1,5 +1,13 @@
 import { defineConfig } from 'vitest/config'
 
+// CI環境では重いテストを除外
+const isCI = process.env.CI === 'true'
+const ciExclude = isCI ? [
+  '**/tests/performance/**',    // パフォーマンステスト（環境依存）
+  '**/tests/e2e/**',           // E2Eテスト（サーバー起動が必要）
+  '**/logger.test.ts',         // メモリ集約的なコンソール出力テスト
+] : []
+
 export default defineConfig({
   test: {
     // テストファイルパターン
@@ -17,6 +25,7 @@ export default defineConfig({
       '**/.nuxt/**',
       '**/.vercel/**',
       '**/.wrangler/**',
+      ...ciExclude,              // CI環境での除外テスト
     ],
 
     // 環境設定
