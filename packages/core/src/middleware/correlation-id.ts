@@ -26,8 +26,8 @@ export function correlationId() {
     }
 
     // Wrap console methods to include correlation ID
-    const wrapConsoleMethod = (method: any) => {
-      return (...args: any[]) => {
+    const wrapConsoleMethod = (method: keyof typeof originalConsole) => {
+      return (...args: unknown[]) => {
         const timestamp = new Date().toISOString()
         const prefix = `[${timestamp}] [${correlationId}]`
         originalConsole[method as keyof typeof originalConsole](prefix, ...args)

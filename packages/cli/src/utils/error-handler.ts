@@ -50,7 +50,7 @@ function handleWarning(warning: Error): void {
  * Handle uncaught exceptions
  */
 function handleUncaughtException(error: Error): void {
-  console.error('\\n' + formatError(error))
+  console.error(`\\n${formatError(error)}`)
 
   if (process.env.HATAGO_VERBOSE === 'true' && error.stack) {
     console.error('\\nStack trace:')
@@ -66,7 +66,7 @@ function handleUncaughtException(error: Error): void {
 /**
  * Handle unhandled promise rejections
  */
-function handleUnhandledRejection(reason: any): void {
+function handleUnhandledRejection(reason: unknown): void {
   const error = reason instanceof Error ? reason : new Error(String(reason))
   handleUncaughtException(error)
 }

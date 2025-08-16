@@ -31,7 +31,7 @@ server.registerTool(
     description: 'Perform basic mathematical calculations',
     inputSchema: {},
   },
-  async (args, extra) => {
+  async (args, _extra) => {
     const { expression = '1+1' } = args as {
       expression?: string
     }
@@ -49,7 +49,7 @@ server.registerTool(
       // Use Function constructor for safe evaluation
       const result = new Function(`"use strict"; return (${sanitized})`)()
 
-      if (typeof result !== 'number' || !isFinite(result)) {
+      if (typeof result !== 'number' || !Number.isFinite(result)) {
         throw new Error('Expression did not evaluate to a valid number')
       }
 
@@ -100,7 +100,7 @@ server.registerTool(
     description: 'Generate random numbers within specified range',
     inputSchema: {},
   },
-  async (args, extra) => {
+  async (args, _extra) => {
     const {
       min = 1,
       max = 100,
@@ -172,7 +172,7 @@ server.registerTool(
     description: 'Calculate timezone offset in minutes (for math demonstrations)',
     inputSchema: {},
   },
-  async (args, extra) => {
+  async (_args, _extra) => {
     const offset = new Date().getTimezoneOffset()
 
     return {
@@ -244,7 +244,7 @@ app.get('/', c => {
 const port = Number(process.env.PORT) || 8789
 const hostname = process.env.HOSTNAME || 'localhost'
 
-console.log(`🧮 External MCP Math Server starting...`)
+console.log('🧮 External MCP Math Server starting...')
 console.log(`   Server: http://${hostname}:${port}`)
 console.log(`   Health: http://${hostname}:${port}/health`)
 console.log(`   MCP:    http://${hostname}:${port}/mcp`)
@@ -256,4 +256,4 @@ serve({
 })
 
 console.log(`✅ Math server running on http://${hostname}:${port}`)
-console.log(`📋 Available tools: math.calculate, math.random, getTimezone (conflicts with clock)`)
+console.log('📋 Available tools: math.calculate, math.random, getTimezone (conflicts with clock)')

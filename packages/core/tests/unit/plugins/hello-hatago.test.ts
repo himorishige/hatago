@@ -5,8 +5,8 @@ import type { HatagoContext } from '../../../src/types.js'
 
 describe('helloHatago plugin', () => {
   let ctx: HatagoContext
-  let registeredTool: any
-  let toolHandler: any
+  let registeredTool: unknown
+  let toolHandler: unknown
 
   beforeEach(() => {
     const server = new McpServer({ name: 'test', version: '1.0.0' })

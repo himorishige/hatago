@@ -57,13 +57,13 @@ async function runMicroBenchmarks() {
     await benchmark(
       'App Creation',
       async () => {
-        const { app, server } = await createApp({
+        const { app } = await createApp({
           name: 'bench',
           version: '0.1.0',
           plugins: [],
         })
         // Simulate cleanup
-        app.fetch = undefined as any
+        ;(app as any).fetch = undefined
       },
       1000
     )
@@ -74,12 +74,12 @@ async function runMicroBenchmarks() {
     await benchmark(
       'App Creation (with plugins)',
       async () => {
-        const { app, server } = await createApp({
+        const { app } = await createApp({
           name: 'bench',
           version: '0.1.0',
           // Uses default plugins
         })
-        app.fetch = undefined as any
+        ;(app as any).fetch = undefined
       },
       100
     )
@@ -134,18 +134,18 @@ async function runMicroBenchmarks() {
   }
 
   // 5. Context creation overhead
-  let contextCount = 0
+  let _contextCount = 0
   results.push(
     await benchmark(
       'Context creation',
       async () => {
-        const ctx = {
+        const _ctx = {
           app,
-          server: {} as any,
+          server: {} as unknown,
           env: { test: true },
           getBaseUrl: (req: Request) => new URL(req.url),
         }
-        contextCount++
+        _contextCount++
       },
       10000
     )

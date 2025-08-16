@@ -1,3 +1,4 @@
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type {
   HatagoPlugin,
   HatagoPluginFactory,
@@ -21,7 +22,7 @@ class MCPClient {
   /**
    * Initialize connection with remote MCP server
    */
-  async initialize(): Promise<any> {
+  async initialize(): Promise<unknown> {
     const body = {
       jsonrpc: '2.0',
       id: 1,
@@ -40,7 +41,7 @@ class MCPClient {
   /**
    * List available tools from remote server
    */
-  async listTools(): Promise<any> {
+  async listTools(): Promise<unknown> {
     const body = {
       jsonrpc: '2.0',
       id: 2,
@@ -54,7 +55,7 @@ class MCPClient {
   /**
    * Call a tool on the remote server
    */
-  async callTool(toolName: string, args: any, meta?: any): Promise<any> {
+  async callTool(toolName: string, args: unknown, meta?: unknown): Promise<unknown> {
     const body = {
       jsonrpc: '2.0',
       id: Date.now(), // Simple ID generation
@@ -62,7 +63,7 @@ class MCPClient {
       params: {
         name: toolName,
         arguments: args,
-        ...(meta && { _meta: meta }),
+        ...(meta && { _meta: meta } as any),
       },
     }
 
@@ -70,7 +71,7 @@ class MCPClient {
     return response
   }
 
-  private async sendRequest(body: any): Promise<any> {
+  private async sendRequest(body: unknown): Promise<unknown> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       Accept: 'application/json, text/event-stream',
@@ -130,15 +131,15 @@ class MCPClient {
     }
   }
 
-  private async parseSSEResponse(response: Response): Promise<any> {
+  private async parseSSEResponse(response: Response): Promise<unknown> {
     const reader = response.body?.getReader()
     if (!reader) {
       throw new Error('No response body')
     }
 
     const decoder = new TextDecoder()
-    let result: any = null
-    const progressNotifications: any[] = []
+    let result: unknown = null
+    const progressNotifications: unknown[] = []
 
     try {
       while (true) {
@@ -171,7 +172,7 @@ class MCPClient {
 
     // Return result with progress notifications
     return {
-      ...result,
+      ...(result as any),
       _progressNotifications: progressNotifications,
     }
   }
@@ -218,18 +219,18 @@ export const mcpProxy: HatagoPluginFactory<MCPProxyPluginOptions> =
 /**
  * Connect to a single MCP server and register its tools
  */
-async function connectToServer(server: any, serverConfig: MCPServerConfig) {
+async function connectToServer(server: McpServer, serverConfig: MCPServerConfig) {
   const client = new MCPClient(serverConfig)
 
   try {
     // Initialize connection
     console.log(`MCP Proxy: Connecting to ${serverConfig.id} at ${serverConfig.endpoint}`)
     const initResult = await client.initialize()
-    console.log(`MCP Proxy: Connected to ${serverConfig.id}:`, initResult.result?.serverInfo)
+    console.log(`MCP Proxy: Connected to ${serverConfig.id}:`, (initResult as any).result?.serverInfo)
 
     // List available tools
     const toolsResult = await client.listTools()
-    const remoteTools = toolsResult.result?.tools || []
+    const remoteTools = (toolsResult as any).result?.tools || []
 
     console.log(`MCP Proxy: Found ${remoteTools.length} tools from ${serverConfig.id}`)
 
@@ -244,23 +245,34 @@ async function connectToServer(server: any, serverConfig: MCPServerConfig) {
           description: `${remoteTool.description || 'Remote tool'} [Proxied from ${serverConfig.id}]`,
           inputSchema: {}, // Use empty object like hello-hatago plugin (no validation)
         },
-        async (args: any, extra: any) => {
+        async (args: unknown, extra: unknown) => {
           try {
             // Forward the call to remote server
-            const response = await client.callTool(remoteTool.name, args, (extra as any)?._meta)
+            const response = await client.callTool(
+              remoteTool.name,
+              args,
+              (extra as { _meta?: unknown })?._meta
+            )
 
             // Handle progress notifications if present
-            if (response._progressNotifications && (extra as any).sendNotification) {
-              for (const notification of response._progressNotifications) {
+            const responseWithNotifications = response as { _progressNotifications?: unknown[] }
+            const extraWithSend = extra as {
+              sendNotification?: (notification: unknown) => Promise<void>
+            }
+            if (
+              responseWithNotifications._progressNotifications &&
+              extraWithSend.sendNotification
+            ) {
+              for (const notification of responseWithNotifications._progressNotifications) {
                 try {
-                  await (extra as any).sendNotification(notification)
+                  await extraWithSend.sendNotification?.(notification)
                 } catch (e) {
                   console.error('Failed to forward progress notification:', e)
                 }
               }
             }
 
-            return response.result || response
+            return (response as any).result || response
           } catch (error) {
             console.error(`MCP Proxy: Error calling ${serverConfig.id}:${remoteTool.name}:`, error)
             throw error

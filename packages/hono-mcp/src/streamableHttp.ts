@@ -44,7 +44,7 @@ class MemoryEventStore implements EventStore {
       this.events.set(streamId, [])
     }
 
-    this.events.get(streamId)!.push({ id: eventId, message })
+    this.events.get(streamId)?.push({ id: eventId, message })
 
     // Keep only last 1000 events per stream to prevent memory leak
     const streamEvents = this.events.get(streamId)!
@@ -227,7 +227,7 @@ export class StreamableHTTPTransport implements Transport {
           currentEntry.writing = false
           currentEntry.queueCount = Math.max(0, (currentEntry.queueCount || 0) - 1)
           if (currentEntry.writeQueue === newWrite) {
-            delete currentEntry.writeQueue
+            currentEntry.writeQueue = undefined
           }
         }
       })
@@ -235,7 +235,6 @@ export class StreamableHTTPTransport implements Transport {
     streamEntry.writeQueue = newWrite
     await newWrite
   }
-
 
   /**
    * Validates request headers for DNS rebinding protection (simplified based on official SDK).
@@ -340,13 +339,13 @@ export class StreamableHTTPTransport implements Transport {
         if (lastEventId) {
           streamId = async stream => {
             try {
-              const resolvedStreamId = await this.#eventStore!.replayEventsAfter(lastEventId, {
+              const resolvedStreamId = await this.#eventStore?.replayEventsAfter(lastEventId, {
                 send: async (eventId: string, message: JSONRPCMessage) => {
                   await this.#writeSSEEvent(stream, message, eventId)
                 },
               })
               return resolvedStreamId
-            } catch (error) {
+            } catch (_error) {
               this.onerror?.(new Error('Failed replay events'))
               throw new HTTPException(500, {
                 message: 'Failed replay events',
@@ -978,9 +977,8 @@ export class StreamableHTTPTransport implements Transport {
 
           response.ctx.json(responses.length === 1 ? responses[0] : responses)
           return
-        } else {
-          response.stream?.close()
         }
+        response.stream?.close()
         // Clean up
         for (const id of relatedIds) {
           this.#requestResponseMap.delete(id)

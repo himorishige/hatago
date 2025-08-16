@@ -1,5 +1,5 @@
-import { existsSync, mkdirSync, writeFileSync } from 'fs'
-import { join, resolve } from 'path'
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
+import { join, resolve } from 'node:path'
 import { type HatagoConfig, generateConfigTemplate } from '@hatago/config'
 import { blue, cyan, green, red, yellow } from 'colorette'
 import { Command } from 'commander'
@@ -25,7 +25,7 @@ interface InitOptions {
 /**
  * Output result based on JSON flag
  */
-function outputResult(data: any, message?: string): void {
+function outputResult(data: unknown, message?: string): void {
   if (process.env.HATAGO_JSON_OUTPUT === 'true') {
     console.log(JSON.stringify(data, null, 2))
   } else if (message) {
@@ -457,13 +457,13 @@ async function handleInit(projectPath: string, options: InitOptions): Promise<vo
     console.log(`💡 Run \`cd ${projectName} && ${packageManager} install\` to install dependencies`)
   }
 
-  console.log(`\\n🎯 Next steps:`)
+  console.log('\\n🎯 Next steps:')
   console.log(`   1. cd ${projectName}`)
   if (!skipInstall) {
     console.log(`   2. ${packageManager} install`)
   }
   console.log(`   ${skipInstall ? '2' : '3'}. ${packageManager} dev`)
-  console.log(`\\n📚 Learn more: https://hatago.dev/docs`)
+  console.log('\\n📚 Learn more: https://hatago.dev/docs')
 }
 
 /**

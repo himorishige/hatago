@@ -74,7 +74,7 @@ const structuredLogger: CapabilityAwarePluginFactory = (context: PluginContext) 
   }
 }
 
-function createEnhancedLogger(baseLogger: any, config: LoggerConfig, context: PluginContext) {
+function createEnhancedLogger(_baseLogger: any, config: LoggerConfig, context: PluginContext) {
   const logLevel = getLogLevelNumber(config.level || 'info')
   const pluginName = context.manifest.name
 

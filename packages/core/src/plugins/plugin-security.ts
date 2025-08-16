@@ -171,10 +171,12 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
 
     app.get(`${endpoint}/keys`, c => {
       // Get list of trusted keys if default registry is used
-      const keys = (verifier as any).defaultRegistry?.listKeys() || []
+      const keys =
+        (verifier as any).defaultRegistry?.listKeys() ||
+        []
       return c.json({
         trustedKeys: keys.length,
-        keys: keys.map((keyId: string) => ({ keyId })),
+        keys: keys.map((keyId: any) => ({ keyId: keyId as string })),
       })
     })
 
@@ -186,8 +188,8 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
         description: 'Verify a plugin signature for testing purposes',
         inputSchema: {},
       },
-      async (args: any) => {
-        const { pluginName, signature, testData } = args
+      async (args: unknown) => {
+        const { pluginName, signature, testData } = args as any
 
         if (!signature || !testData) {
           return {
@@ -242,7 +244,7 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
         description: 'Generate a test key pair for plugin signing (development only)',
         inputSchema: {},
       },
-      async (args: any) => {
+      async (args: unknown) => {
         if (!allowTestKeys) {
           return {
             content: [
@@ -255,7 +257,7 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
         }
 
         try {
-          const { algorithm = 'ed25519' } = args
+          const { algorithm = 'ed25519' } = args as any
           const keyPair = await verifier.generateKeyPair(algorithm)
 
           // Add to trusted keys for testing
@@ -309,7 +311,7 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
         description: 'Sign test data with a generated key (development only)',
         inputSchema: {},
       },
-      async (args: any) => {
+      async (args: unknown) => {
         if (!allowTestKeys) {
           return {
             content: [
@@ -322,7 +324,7 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
         }
 
         try {
-          const { testData, algorithm = 'ed25519' } = args
+          const { testData, algorithm = 'ed25519' } = args as any
 
           if (!testData) {
             return {
@@ -369,7 +371,8 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
                     testData,
                     signature,
                     message: 'Test data signed successfully',
-                    verification_command: `Use security.verify tool with this signature and testData`,
+                    verification_command:
+                      'Use security.verify tool with this signature and testData',
                   },
                   null,
                   2
@@ -440,6 +443,6 @@ export const pluginSecurity: HatagoPluginFactory<PluginSecurityConfig> =
 
     // Export verifier for use by other components
     if (typeof globalThis !== 'undefined') {
-      ;(globalThis as any).__hatago_plugin_verifier = verifier
+      ;(globalThis as { __hatago_plugin_verifier?: unknown }).__hatago_plugin_verifier = verifier
     }
   }

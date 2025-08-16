@@ -1,7 +1,7 @@
-import { execSync } from 'child_process'
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'fs'
-import { tmpdir } from 'os'
-import { join, resolve } from 'path'
+import { execSync } from 'node:child_process'
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join, resolve } from 'node:path'
 
 /**
  * Test CLI helper for running hatago commands
@@ -41,12 +41,13 @@ export class TestCLI {
         stderr: '',
         code: 0,
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (expectError) {
+        const err = error as { stdout?: Buffer; stderr?: Buffer; status?: number }
         return {
-          stdout: error.stdout?.toString() || '',
-          stderr: error.stderr?.toString() || '',
-          code: error.status || 1,
+          stdout: err.stdout?.toString() || '',
+          stderr: err.stderr?.toString() || '',
+          code: err.status || 1,
         }
       }
       throw error
@@ -96,7 +97,7 @@ export class TestCLI {
 /**
  * Create mock configuration file
  */
-export function createMockConfig(overrides: any = {}): string {
+export function createMockConfig(overrides: Record<string, unknown> = {}): string {
   const defaultConfig = {
     server: {
       port: 8787,
@@ -123,7 +124,7 @@ export function createMockConfig(overrides: any = {}): string {
 /**
  * Create mock template config
  */
-export function createMockTemplateConfig(overrides: any = {}): string {
+export function createMockTemplateConfig(overrides: Record<string, unknown> = {}): string {
   const defaultConfig = {
     name: 'test-template',
     displayName: 'Test Template',

@@ -104,9 +104,9 @@ const rateLimitPlugin: CapabilityAwarePluginFactory = (context: PluginContext) =
     )
 
     // Cleanup expired buckets periodically
-    let cleanupInterval: number | undefined
+    let _cleanupInterval: number | undefined
     if (timer) {
-      cleanupInterval = timer.setInterval(
+      _cleanupInterval = timer.setInterval(
         () => {
           const now = Date.now()
           const expired: string[] = []

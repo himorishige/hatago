@@ -14,7 +14,7 @@ export interface {{PLUGIN_NAME_PASCAL}}Config {
  * the capability-based architecture.
  */
 const {{PLUGIN_NAME_CAMEL}}Plugin: CapabilityAwarePluginFactory = (context: PluginContext) => {
-  const config: {{PLUGIN_NAME_PASCAL}}Config = {
+  const _config: {{PLUGIN_NAME_PASCAL}}Config = {
     enabled: true,
     ...context.config as {{PLUGIN_NAME_PASCAL}}Config
   }

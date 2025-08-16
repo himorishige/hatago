@@ -9,7 +9,7 @@ export default defineConfig({
   minify: false,
   // Make CLI executable
   onSuccess: async () => {
-    const { readFileSync, writeFileSync, chmodSync } = await import('fs')
+    const { readFileSync, writeFileSync, chmodSync } = await import('node:fs')
     try {
       // Add shebang to the built file
       const distPath = 'dist/index.js'

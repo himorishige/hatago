@@ -181,9 +181,8 @@ function detectBackend(context: PluginContext, config: KVConfig): string {
   // Auto-detect based on runtime
   if (context.runtime === 'workers') {
     return 'cloudflare-kv'
-  } else {
-    return config.redisUrl ? 'redis' : 'memory'
   }
+  return config.redisUrl ? 'redis' : 'memory'
 }
 
 function createMemoryStore(
@@ -241,7 +240,7 @@ function createCloudflareKVStore(
   addPrefix: (key: string) => string,
   removePrefix: (key: string) => string,
   kvBinding: any,
-  config: KVConfig
+  _config: KVConfig
 ): KVStore {
   return {
     async get(key: string): Promise<string | null> {

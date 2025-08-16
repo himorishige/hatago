@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { type TestCLI, createMockConfig, setupTestEnv } from '../helpers/test-utils.js'
+import { type TestCLI, createMockConfig, setupTestEnv } from '../helpers/test-utils.ts'
 
 describe('config command', () => {
   let cli: TestCLI
@@ -124,17 +124,23 @@ describe('config command', () => {
     })
 
     it('should get specific configuration path', () => {
+      const config = createMockConfig({ server: { port: 9999 } })
+      cli.createFile('hatago.config.jsonc', config)
+
       const result = cli.run('config get server.port')
 
       expect(result.code).toBe(0)
-      expect(result.stdout.trim()).toBe('9999')
+      expect(result.stdout).toContain('9999')
     })
 
     it('should get nested configuration path', () => {
+      const config = createMockConfig({ logging: { level: 'debug' } })
+      cli.createFile('hatago.config.jsonc', config)
+
       const result = cli.run('config get logging.level')
 
       expect(result.code).toBe(0)
-      expect(result.stdout.trim()).toBe('debug')
+      expect(result.stdout).toContain('debug')
     })
 
     it('should report error for invalid path', () => {

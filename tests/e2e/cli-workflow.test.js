@@ -5,10 +5,10 @@
  * to plugin development and server deployment.
  */
 
-import { execSync, spawn } from 'child_process'
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'fs'
-import { tmpdir } from 'os'
-import { join, resolve } from 'path'
+import { execSync, spawn } from 'node:child_process'
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join, resolve } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 const CLI_PATH = resolve(__dirname, '../../apps/hatago-cli/dist/index.js')

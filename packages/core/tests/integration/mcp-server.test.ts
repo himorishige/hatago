@@ -6,7 +6,7 @@ import { helloHatago } from '../../src/plugins/hello-hatago.js'
 describe.skip('MCP Server Integration', () => {
   describe('Full MCP Protocol Flow', () => {
     it('should handle complete MCP interaction flow', async () => {
-      const { app, server } = await createApp({
+      const { app, server: _server } = await createApp({
         name: 'test-mcp-server',
         version: '1.0.0',
         plugins: [helloHatago()],
@@ -67,7 +67,9 @@ describe.skip('MCP Server Integration', () => {
       const listData = JSON.parse(listLines[0].slice(6))
 
       expect(listData.result.tools).toBeInstanceOf(Array)
-      const helloTool = listData.result.tools.find((t: any) => t.name === 'hello_hatago')
+      const helloTool = listData.result.tools.find(
+        (t: { name: string }) => t.name === 'hello_hatago'
+      )
       expect(helloTool).toBeDefined()
 
       // 3. Call tool
@@ -169,7 +171,7 @@ describe.skip('MCP Server Integration', () => {
       )
       expect(resultLine).toBeDefined()
 
-      const resultData = JSON.parse(resultLine!.slice(6))
+      const resultData = JSON.parse(resultLine?.slice(6))
       expect(resultData.result.content[0].text).toContain('Hello Hatago!')
     })
 

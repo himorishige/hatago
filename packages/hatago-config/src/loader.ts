@@ -1,8 +1,8 @@
-import { existsSync, readFileSync } from 'fs'
-import { dirname, join, resolve } from 'path'
+import { existsSync, readFileSync } from 'node:fs'
+import { dirname, join, resolve } from 'node:path'
 import { cosmiconfig } from 'cosmiconfig'
 import { config as loadDotenv } from 'dotenv'
-import { parse as parseJsonc } from 'jsonc-parser'
+import { parse as parseJsonc, type ParseError } from 'jsonc-parser'
 import type { ZodError } from 'zod'
 import { type HatagoConfig, HatagoConfigSchema } from './schema.js'
 
@@ -82,7 +82,7 @@ function expandEnvironmentVariables(str: string): string {
 /**
  * Recursively expand environment variables in configuration object
  */
-function expandConfigVariables(obj: any): any {
+function expandConfigVariables(obj: unknown): unknown {
   if (typeof obj === 'string') {
     return expandEnvironmentVariables(obj)
   }
@@ -92,7 +92,7 @@ function expandConfigVariables(obj: any): any {
   }
 
   if (obj && typeof obj === 'object') {
-    const expanded: any = {}
+    const expanded: Record<string, unknown> = {}
     for (const [key, value] of Object.entries(obj)) {
       expanded[key] = expandConfigVariables(value)
     }
@@ -105,9 +105,9 @@ function expandConfigVariables(obj: any): any {
 /**
  * Parse JSONC (JSON with comments) content
  */
-function parseJsoncContent(content: string, filepath: string): any {
+function parseJsoncContent(content: string, filepath: string): unknown {
   try {
-    const parseErrors: any[] = []
+    const parseErrors: ParseError[] = []
     const result = parseJsonc(content, parseErrors, {
       allowTrailingComma: true,
       disallowComments: false,
@@ -115,20 +115,20 @@ function parseJsoncContent(content: string, filepath: string): any {
 
     if (parseErrors.length > 0) {
       throw new Error(
-        `JSONC parse errors in ${filepath}: ${parseErrors.map(e => e.error).join(', ')}`
+        `JSONC parse errors in ${filepath}: ${parseErrors.map(e => e.error || 'Unknown error').join(', ')}`
       )
     }
 
     return result
   } catch (error) {
-    throw new Error(`Failed to parse JSONC in ${filepath}: ${error}`)
+    throw new Error(`Failed to parse JSONC in ${filepath}: ${error instanceof Error ? error.message : String(error)}`)
   }
 }
 
 /**
  * Custom file loader for cosmiconfig that supports JSONC
  */
-function jsoncLoader(filepath: string, content: string): any {
+function jsoncLoader(filepath: string, content: string): unknown {
   if (filepath.endsWith('.json') || filepath.endsWith('.jsonc')) {
     return parseJsoncContent(content, filepath)
   }
@@ -183,7 +183,7 @@ export function getDefaultConfig(): HatagoConfig {
 /**
  * Deep merge two configuration objects
  */
-function mergeConfigs(base: any, override: any): any {
+function mergeConfigs(base: unknown, override: unknown): unknown {
   if (!override || typeof override !== 'object') {
     return base
   }
@@ -192,7 +192,7 @@ function mergeConfigs(base: any, override: any): any {
     return override
   }
 
-  const result = { ...base }
+  const result: Record<string, unknown> = { ...base as Record<string, unknown> }
 
   for (const [key, value] of Object.entries(override)) {
     if (value && typeof value === 'object' && !Array.isArray(value)) {
@@ -211,7 +211,7 @@ function mergeConfigs(base: any, override: any): any {
 export async function loadConfig(options: LoadConfigOptions = {}): Promise<ConfigSearchResult> {
   const {
     searchFrom = process.cwd(),
-    envPrefix = 'HATAGO_',
+    envPrefix: _envPrefix = 'HATAGO_',
     loadEnv = true,
     validate = true,
   } = options
@@ -283,7 +283,7 @@ export async function loadConfig(options: LoadConfigOptions = {}): Promise<Confi
     }
 
     return {
-      config: mergedConfig,
+      config: mergedConfig as HatagoConfig,
       filepath,
       isEmpty: !searchResult,
     }

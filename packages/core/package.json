@@ -54,21 +54,22 @@
     "format:fix": "prettier -w src"
   },
   "peerDependencies": {
-    "hono": ">=4.0.0",
-    "@modelcontextprotocol/sdk": "^1.17.2"
+    "@modelcontextprotocol/sdk": "^1.17.2",
+    "hono": ">=4.0.0"
   },
   "dependencies": {
-    "zod": "^3.25.76",
+    "@hatago/mcp-transport-internal": "file:../hono-mcp",
     "@himorishige/noren-core": "^0.6.2",
     "@himorishige/noren-plugin-security": "^0.6.2",
-    "@hatago/mcp-transport-internal": "file:../hono-mcp"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.2",
     "@types/node": "^20.19.10",
     "hono": "^4.9.1",
-    "@modelcontextprotocol/sdk": "^1.17.2",
     "msw": "^2.7.0",
     "typescript": "^5.9.2",
-    "vitest": "^2.1.8"
+    "vitest": "^2.1.8",
+    "zod-to-json-schema": "^3.24.6"
   }
 }

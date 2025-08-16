@@ -3,8 +3,8 @@
  * 実際のGitHub APIを使用したOAuth認証テスト
  */
 
-import crypto from 'crypto'
-import { createServer } from 'http'
+import crypto from 'node:crypto'
+import { createServer } from 'node:http'
 import type { HatagoPlugin } from '@hatago/core'
 import { createDefaultLogger } from '@hatago/core'
 import { z } from 'zod'
@@ -215,7 +215,7 @@ class GitHubOAuthClient {
 
   private async startCallbackServer(): Promise<string> {
     return new Promise((resolve, reject) => {
-      const server = createServer((req, res) => {
+      const server = createServer((_req, res) => {
         res.writeHead(200, { 'Content-Type': 'text/html' })
         res.end('<h1>OAuth callback received</h1><p>You can close this window.</p>')
         server.close()
@@ -266,7 +266,7 @@ export const githubOAuthTestPlugin: HatagoPlugin = async ctx => {
       description: 'Get current GitHub user information',
       inputSchema: {},
     },
-    async (args, extra) => {
+    async (_args, _extra) => {
       try {
         const user = await githubClient.getCurrentUser()
         return {
@@ -311,7 +311,7 @@ export const githubOAuthTestPlugin: HatagoPlugin = async ctx => {
           .describe('Sort repositories by'),
       },
     },
-    async (args, extra) => {
+    async (args, _extra) => {
       try {
         const repos = await githubClient.listRepositories(args)
         return {
@@ -352,7 +352,7 @@ export const githubOAuthTestPlugin: HatagoPlugin = async ctx => {
           .describe('Number of results per page (max 100)'),
       },
     },
-    async (args, extra) => {
+    async (args, _extra) => {
       try {
         const results = await githubClient.searchRepositories(args.query, args)
         return {
@@ -387,7 +387,7 @@ export const githubOAuthTestPlugin: HatagoPlugin = async ctx => {
         repo: z.string().describe('Repository name'),
       },
     },
-    async (args, extra) => {
+    async (args, _extra) => {
       try {
         const repo = await githubClient.getRepository(args.owner, args.repo)
         return {
@@ -430,7 +430,7 @@ export const githubOAuthTestPlugin: HatagoPlugin = async ctx => {
           .describe('Number of issues per page (max 100)'),
       },
     },
-    async (args, extra) => {
+    async (args, _extra) => {
       try {
         const issues = await githubClient.listIssues(args.owner, args.repo, args)
         return {

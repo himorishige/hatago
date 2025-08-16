@@ -118,8 +118,8 @@ export class StreamableHTTPTransport implements Transport {
       if (this.#eventStore) {
         const lastEventId = ctx.req.header('last-event-id')
         if (lastEventId) {
-          streamId = stream =>
-            this.#eventStore!.replayEventsAfter(lastEventId, {
+          streamId = async stream => {
+            const result = await this.#eventStore?.replayEventsAfter(lastEventId, {
               send: async (eventId: string, message: JSONRPCMessage) => {
                 try {
                   await stream.writeSSE({
@@ -135,6 +135,8 @@ export class StreamableHTTPTransport implements Transport {
                 }
               },
             })
+            return result || '_unknown_stream'
+          }
         }
       }
 
@@ -600,9 +602,8 @@ export class StreamableHTTPTransport implements Transport {
 
           response.ctx.json(responses.length === 1 ? responses[0] : responses)
           return
-        } else {
-          response.stream?.close()
         }
+        response.stream?.close()
         // Clean up
         for (const id of relatedIds) {
           this.#requestResponseMap.delete(id)

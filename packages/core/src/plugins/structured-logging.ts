@@ -60,7 +60,7 @@ export interface StructuredLoggingConfig {
  */
 export const structuredLogging: HatagoPluginFactory<StructuredLoggingConfig> =
   (config: StructuredLoggingConfig = {}): HatagoPlugin =>
-  ({ app, server, getBaseUrl }) => {
+  ({ app, server, getBaseUrl: _getBaseUrl }) => {
     const {
       enabled = true,
       level = LogLevel.INFO,
@@ -242,7 +242,7 @@ export const structuredLogging: HatagoPluginFactory<StructuredLoggingConfig> =
                   logs: logs.map(log => formatLogEntry(log)),
                   total: logs.length,
                   filters: { level: levelFilter, component },
-                  available_levels: Object.keys(LogLevel).filter(k => isNaN(Number(k))),
+                  available_levels: Object.keys(LogLevel).filter(k => Number.isNaN(Number(k))),
                 },
                 null,
                 2
@@ -295,7 +295,7 @@ export const structuredLogging: HatagoPluginFactory<StructuredLoggingConfig> =
                   },
                   buffer_usage: `${logBuffer.filter(Boolean).length}/${bufferSize}`,
                   available_actions: ['set_level'],
-                  available_levels: Object.keys(LogLevel).filter(k => isNaN(Number(k))),
+                  available_levels: Object.keys(LogLevel).filter(k => Number.isNaN(Number(k))),
                 },
                 null,
                 2
@@ -365,6 +365,6 @@ export const structuredLogging: HatagoPluginFactory<StructuredLoggingConfig> =
     // Export logger for other plugins to use
     // Note: This would need proper dependency injection in a real implementation
     if (typeof globalThis !== 'undefined') {
-      ;(globalThis as any).__hatago_logger = logger
+      ;(globalThis as { __hatago_logger?: unknown }).__hatago_logger = logger
     }
   }

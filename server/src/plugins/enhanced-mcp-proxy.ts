@@ -223,31 +223,32 @@ export interface EnhancedMCPProxyOptions {
 export const enhancedMcpProxy =
   (options: EnhancedMCPProxyOptions = {}): HatagoPlugin =>
   async ({ server }) => {
-    let proxyConfig: ProxyConfig
-    let namespaceManager: NamespaceManager
-
     // Determine configuration source
-    if (options.useConfig !== false) {
-      try {
-        const hatagoConfig = await loadConfig(options.configPath)
-        proxyConfig = hatagoConfig.proxy || {
-          servers: [],
-          namespaceStrategy: 'prefix',
-          conflictResolution: 'error',
+    const proxyConfig: ProxyConfig = await (async () => {
+      if (options.useConfig !== false) {
+        try {
+          const hatagoConfig = await loadConfig(options.configPath)
+          logger.info('Enhanced MCP Proxy using configuration file')
+          return (
+            hatagoConfig.proxy || {
+              servers: [],
+              namespaceStrategy: 'prefix',
+              conflictResolution: 'error',
+            }
+          )
+        } catch (error) {
+          logger.warn('Enhanced MCP Proxy failed to load config file, falling back to options', {
+            error: { message: (error as Error).message },
+          })
+          return createLegacyConfig(options)
         }
-        logger.info('Enhanced MCP Proxy using configuration file')
-      } catch (error) {
-        logger.warn('Enhanced MCP Proxy failed to load config file, falling back to options', {
-          error: { message: (error as Error).message },
-        })
-        proxyConfig = createLegacyConfig(options)
+      } else {
+        return createLegacyConfig(options)
       }
-    } else {
-      proxyConfig = createLegacyConfig(options)
-    }
+    })()
 
     // Initialize namespace manager
-    namespaceManager = new NamespaceManager(proxyConfig)
+    const namespaceManager = new NamespaceManager(proxyConfig)
 
     if (proxyConfig.servers.length === 0) {
       logger.warn('Enhanced MCP Proxy: No servers configured, skipping')

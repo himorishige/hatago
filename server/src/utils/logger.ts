@@ -191,7 +191,7 @@ class Logger {
         try {
           const registry = await getNorenRegistry()
           return await redactText(registry, obj)
-        } catch (error) {
+        } catch (_error) {
           // Noren失敗時は従来方式でフォールバック
           return obj
         }
@@ -214,7 +214,7 @@ class Logger {
         try {
           const registry = await getNorenRegistry()
           result[key] = await redactText(registry, value)
-        } catch (error) {
+        } catch (_error) {
           // Noren失敗時は元の値をそのまま使用
           result[key] = value
         }
@@ -290,10 +290,9 @@ class Logger {
     // TTYでない場合（ファイルリダイレクト等）はカラー無効
     if (this.config.transport === 'stdio') {
       return process.stderr.isTTY || false
-    } else {
-      // HTTPモードでは開発時のみ（stdoutがTTY）
-      return process.stdout.isTTY || false
     }
+    // HTTPモードでは開発時のみ（stdoutがTTY）
+    return process.stdout.isTTY || false
   }
 
   /**
@@ -302,17 +301,17 @@ class Logger {
   private write(level: LogLevel, output: string) {
     // stdio モードでは全てstderrへ
     if (this.config.transport === 'stdio') {
-      process.stderr.write(output + '\n')
+      process.stderr.write(`${output}\n`)
       return
     }
 
     // HTTP モードでの使い分け
     if (level === 'fatal' || level === 'error') {
-      process.stderr.write(output + '\n')
+      process.stderr.write(`${output}\n`)
     } else {
       // info以下は開発時はstdout、本番時はstderr
       const target = process.env.NODE_ENV === 'production' ? process.stderr : process.stdout
-      target.write(output + '\n')
+      target.write(`${output}\n`)
     }
   }
 
@@ -321,15 +320,15 @@ class Logger {
    */
   private guardStdout() {
     // console.log を無効化
-    const originalLog = console.log
+    const _originalLog = console.log
     console.log = (...args: any[]) => {
-      process.stderr.write('[STDOUT-GUARD] Redirected console.log: ' + args.join(' ') + '\n')
+      process.stderr.write(`[STDOUT-GUARD] Redirected console.log: ${args.join(' ')}\n`)
     }
 
     // process.stdout.write を監視
-    const originalWrite = process.stdout.write
-    process.stdout.write = (chunk: any, ...args: any[]) => {
-      process.stderr.write('[STDOUT-GUARD] Prevented stdout write: ' + String(chunk))
+    const _originalWrite = process.stdout.write
+    process.stdout.write = (chunk: any, ..._args: any[]) => {
+      process.stderr.write(`[STDOUT-GUARD] Prevented stdout write: ${String(chunk)}`)
       return true
     }
   }
@@ -353,6 +352,15 @@ class Logger {
   trace(msg: string, meta?: Record<string, any>) {
     return this.log('trace', msg, meta)
   }
+
+  // アクセサメソッド
+  setLevel(level: LogLevel) {
+    this.config.level = level
+  }
+
+  getLevel(): LogLevel {
+    return this.config.level
+  }
 }
 
 // デフォルトロガーインスタンス
@@ -364,9 +372,9 @@ export function createLogger(config?: Partial<LoggerConfig>): Logger {
 }
 
 export function setLogLevel(level: LogLevel) {
-  logger['config'].level = level
+  logger.setLevel(level)
 }
 
 export function getLogLevel(): LogLevel {
-  return logger['config'].level
+  return logger.getLevel()
 }

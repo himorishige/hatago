@@ -15,7 +15,7 @@ export interface DiagnosticIssue {
   path: string
   message: string
   suggestion?: string
-  fix?: () => any
+  fix?: () => unknown
 }
 
 /**
@@ -178,7 +178,7 @@ function performSemanticValidation(config: HatagoConfig): DiagnosticIssue[] {
       if (server.tools) {
         if (server.tools.include && server.tools.exclude) {
           const hasOverlap = server.tools.include.some(include =>
-            server.tools!.exclude!.some(exclude => include === exclude)
+            server.tools?.exclude?.some(exclude => include === exclude)
           )
 
           if (hasOverlap) {

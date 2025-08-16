@@ -2,8 +2,8 @@
  * Configuration loader for Hatago
  */
 
-import { resolve } from 'path'
-import { readFile } from 'fs/promises'
+import { resolve } from 'node:path'
+import { readFile } from 'node:fs/promises'
 import { logger } from '../utils/logger.js'
 import type { HatagoConfig } from './types.js'
 
@@ -78,7 +78,6 @@ export async function loadConfig(configPath?: string): Promise<HatagoConfig> {
       }
       // Continue trying other paths
       logger.debug(`Config file not found: ${path}`)
-      continue
     }
   }
 

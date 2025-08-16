@@ -187,7 +187,7 @@ describe('OAuth Metadata Plugin', () => {
       body: vi.fn(),
     }
 
-    const result = await middleware(mockHandlerContext, mockNext)
+    const _result = await middleware(mockHandlerContext, mockNext)
 
     expect(mockNext).not.toHaveBeenCalled()
     expect(mockHandlerContext.header).toHaveBeenCalledWith(

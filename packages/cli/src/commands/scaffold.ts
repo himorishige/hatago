@@ -1,6 +1,6 @@
-import { existsSync } from 'fs'
-import { dirname, join, resolve } from 'path'
-import { fileURLToPath } from 'url'
+import { existsSync } from 'node:fs'
+import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { type TemplateConfig, type TemplateContext, TemplateEngine } from '@hatago/config'
 import { blue, cyan, gray, green, red, yellow } from 'colorette'
 import { Command } from 'commander'
@@ -24,7 +24,7 @@ interface ScaffoldOptions {
 /**
  * Output result based on JSON flag
  */
-function outputResult(data: any, message?: string): void {
+function outputResult(data: unknown, message?: string): void {
   if (process.env.HATAGO_JSON_OUTPUT === 'true') {
     console.log(JSON.stringify(data, null, 2))
   } else if (message) {
@@ -81,7 +81,7 @@ async function listTemplates(options: ScaffoldOptions): Promise<void> {
     if (!categories.has(category)) {
       categories.set(category, [])
     }
-    categories.get(category)!.push(template)
+    categories.get(category)?.push(template)
   }
 
   // Filter by category if specified
@@ -144,7 +144,7 @@ async function showTemplateInfo(templateName: string): Promise<void> {
     console.log(`Tags: ${config.tags.join(', ')}`)
   }
 
-  console.log(`\\n📁 Files:`)
+  console.log('\\n📁 Files:')
   for (const file of config.files) {
     const optional = file.optional ? gray(' (optional)') : ''
     console.log(`  ${green('•')} ${file.output}${optional}`)
@@ -152,7 +152,7 @@ async function showTemplateInfo(templateName: string): Promise<void> {
   }
 
   if (config.prompts?.length) {
-    console.log(`\\n❓ Configuration:`)
+    console.log('\\n❓ Configuration:')
     for (const prompt of config.prompts) {
       const required = prompt.required ? red(' *') : ''
       console.log(`  ${green('•')} ${prompt.name}${required} (${prompt.type})`)
@@ -161,12 +161,12 @@ async function showTemplateInfo(templateName: string): Promise<void> {
   }
 
   if (config.dependencies?.length) {
-    console.log(`\\n📦 Dependencies:`)
+    console.log('\\n📦 Dependencies:')
     config.dependencies.forEach(dep => console.log(`  ${green('•')} ${dep}`))
   }
 
   if (config.devDependencies?.length) {
-    console.log(`\\n🔧 Dev Dependencies:`)
+    console.log('\\n🔧 Dev Dependencies:')
     config.devDependencies.forEach(dep => console.log(`  ${green('•')} ${dep}`))
   }
 
@@ -181,11 +181,12 @@ async function showTemplateInfo(templateName: string): Promise<void> {
 /**
  * Interactive prompt for complex prompts
  */
-async function interactivePrompt(prompts: any[]): Promise<TemplateContext> {
+async function interactivePrompt(prompts: unknown[]): Promise<TemplateContext> {
   const context: TemplateContext = {}
-  const { createInterface } = require('readline')
+  const { createInterface } = require('node:readline')
 
-  for (const prompt of prompts) {
+  for (const promptItem of prompts) {
+    const prompt = promptItem as { when?: string; [key: string]: unknown }
     if (prompt.when && !context[prompt.when]) {
       continue
     }
@@ -197,15 +198,16 @@ async function interactivePrompt(prompts: any[]): Promise<TemplateContext> {
 
     try {
       switch (prompt.type) {
-        case 'input':
+        case 'input': {
           const defaultText = prompt.default ? ` (${prompt.default})` : ''
           const answer = await new Promise<string>(resolve => {
             rl.question(`${prompt.message}${defaultText}: `, resolve)
           })
           context[prompt.name] = answer.trim() || prompt.default || ''
           break
+        }
 
-        case 'confirm':
+        case 'confirm': {
           const defaultConfirm = prompt.default ? 'Y/n' : 'y/N'
           const confirmAnswer = await new Promise<string>(resolve => {
             rl.question(`${prompt.message} (${defaultConfirm}): `, resolve)
@@ -216,6 +218,7 @@ async function interactivePrompt(prompts: any[]): Promise<TemplateContext> {
             (confirmAnswer === '' && prompt.default)
           context[prompt.name] = isYes
           break
+        }
 
         case 'select':
           if (prompt.choices) {
@@ -326,7 +329,7 @@ async function handleScaffold(
     // Load context from file if provided
     if (options.context && existsSync(options.context)) {
       try {
-        const contextFile = require('fs').readFileSync(options.context, 'utf-8')
+        const contextFile = require('node:fs').readFileSync(options.context, 'utf-8')
         const fileContext = JSON.parse(contextFile)
         context = { ...context, ...fileContext }
       } catch (error) {
@@ -362,7 +365,7 @@ async function handleScaffold(
       })
 
       // Show next steps
-      console.log(`\\n🎯 Next steps:`)
+      console.log('\\n🎯 Next steps:')
       console.log(`   1. Review generated files in: ${outputPath}`)
 
       if (config.dependencies?.length) {
@@ -370,8 +373,8 @@ async function handleScaffold(
       }
 
       if (config.category === 'plugins') {
-        console.log(`   3. Register plugin in your Hatago server`)
-        console.log(`   4. Start development server: hatago dev`)
+        console.log('   3. Register plugin in your Hatago server')
+        console.log('   4. Start development server: hatago dev')
       }
     }
   } catch (error) {

@@ -1,5 +1,5 @@
-import { readFileSync, writeFileSync } from 'fs'
-import { resolve } from 'path'
+import { readFileSync, writeFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import {
   ConfigValidationError,
   type HatagoConfig,
@@ -35,7 +35,7 @@ interface AddServerOptions {
 /**
  * Output result based on JSON flag
  */
-function outputResult(data: any, message?: string): void {
+function outputResult(data: unknown, message?: string): void {
   if (process.env.HATAGO_JSON_OUTPUT === 'true') {
     console.log(JSON.stringify(data, null, 2))
   } else if (message) {
@@ -54,10 +54,10 @@ async function testMcpServer(endpoint: string, auth?: ProxyServerConfig['auth'])
 
     if (auth) {
       if (auth.type === 'bearer' && auth.token) {
-        headers['Authorization'] = `Bearer ${auth.token}`
+        headers.Authorization = `Bearer ${auth.token}`
       } else if (auth.type === 'basic' && auth.username && auth.password) {
         const credentials = Buffer.from(`${auth.username}:${auth.password}`).toString('base64')
-        headers['Authorization'] = `Basic ${credentials}`
+        headers.Authorization = `Basic ${credentials}`
       }
     }
 
@@ -107,7 +107,7 @@ async function testMcpServer(endpoint: string, auth?: ProxyServerConfig['auth'])
  */
 async function promptInput(question: string, defaultValue?: string): Promise<string> {
   return new Promise(resolve => {
-    const { createInterface } = require('readline')
+    const { createInterface } = require('node:readline')
     const rl = createInterface({
       input: process.stdin,
       output: process.stdout,
@@ -189,10 +189,7 @@ function generateServerId(endpoint: string): string {
 /**
  * Update configuration file
  */
-async function updateConfigFile(
-  newServer: ProxyServerConfig,
-  dryRun = false
-): Promise<void> {
+async function updateConfigFile(newServer: ProxyServerConfig, dryRun = false): Promise<void> {
   const { config, filepath } = await loadConfig()
 
   if (!config.proxy) {
@@ -337,10 +334,10 @@ async function handleAddServer(endpoint: string, options: AddServerOptions): Pro
     await updateConfigFile(serverConfig as ProxyServerConfig, options.dry)
 
     if (!options.dry) {
-      console.log(`\\n🎯 Next steps:`)
+      console.log('\\n🎯 Next steps:')
       console.log(`   1. Test the server: hatago test-server ${serverConfig.id}`)
-      console.log(`   2. Start development server: hatago dev`)
-      console.log(`   3. Verify tools are available via MCP endpoint`)
+      console.log('   2. Start development server: hatago dev')
+      console.log('   3. Verify tools are available via MCP endpoint')
     }
   } catch (error) {
     if (error instanceof CLIError) {
@@ -359,7 +356,9 @@ export const addServerCommand = new Command('add-server')
   .option('-i, --id <id>', 'Server identifier')
   .option('-n, --namespace <namespace>', 'Tool namespace')
   .option('-d, --description <description>', 'Server description')
-  .option('-t, --timeout <timeout>', 'Request timeout in milliseconds', val => Number.parseInt(val, 10))
+  .option('-t, --timeout <timeout>', 'Request timeout in milliseconds', val =>
+    Number.parseInt(val, 10)
+  )
   .option('--auth-type <type>', 'Authentication type (bearer|basic|custom)')
   .option('--auth-token <token>', 'Bearer token or API key')
   .option('--auth-username <username>', 'Username for basic auth')

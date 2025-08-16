@@ -286,7 +286,7 @@ export class DefaultPluginHost implements PluginHost {
 /**
  * Create a secure capability proxy that validates access
  */
-function createCapabilityProxy<T extends object>(
+function _createCapabilityProxy<T extends object>(
   capability: T,
   allowedMethods: Set<string>,
   pluginName: string

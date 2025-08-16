@@ -6,12 +6,12 @@ export interface HealthEndpointsConfig {
   /** Additional health checks */
   checks?: Array<{
     name: string
-    check: () => Promise<{ status: 'pass' | 'fail'; details?: any }>
+    check: () => Promise<{ status: 'pass' | 'fail'; details?: unknown }>
   }>
   /** Startup checks (dependencies that must be ready before accepting traffic) */
   startupChecks?: Array<{
     name: string
-    check: () => Promise<{ status: 'pass' | 'fail'; details?: any }>
+    check: () => Promise<{ status: 'pass' | 'fail'; details?: unknown }>
   }>
 }
 
@@ -119,7 +119,7 @@ export const healthEndpoints: HatagoPluginFactory<HealthEndpointsConfig> =
       }
 
       try {
-        const checks: Record<string, any> = {}
+        const checks: Record<string, unknown> = {}
         let overallStatus: 'pass' | 'fail' = 'pass'
 
         // Run configured readiness checks
@@ -150,8 +150,8 @@ export const healthEndpoints: HatagoPluginFactory<HealthEndpointsConfig> =
 
         // Check memory pressure (warn if heap > 80% of total)
         if (memUsage && memUsage.heapUsed > memUsage.heapTotal * 0.8) {
-          checks.memory.status = 'warn'
-          checks.memory.details.warning = 'High memory usage'
+          (checks.memory as any).status = 'warn'
+          ;(checks.memory as any).details.warning = 'High memory usage'
         }
 
         const status = overallStatus === 'pass' ? 200 : 503

@@ -94,8 +94,6 @@ export class NamespaceManager {
 
       case 'suffix':
         return `${cleanToolName}${separator}${serverConfig.id}`
-
-      case 'none':
       default:
         return cleanToolName
     }
@@ -105,8 +103,8 @@ export class NamespaceManager {
    * Resolve naming conflict by generating alternative name
    */
   private resolveConflict(
-    serverConfig: MCPServerConfig,
-    originalName: string,
+    _serverConfig: MCPServerConfig,
+    _originalName: string,
     conflictName: string
   ): string {
     const namespace = this.config.namespace || {}
@@ -132,7 +130,7 @@ export class NamespaceManager {
       return true
     }
 
-    if (serverConfig.excludedTools && serverConfig.excludedTools.includes(toolName)) {
+    if (serverConfig.excludedTools?.includes(toolName)) {
       return true
     }
 

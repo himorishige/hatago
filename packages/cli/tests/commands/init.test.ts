@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { type TestCLI, setupTestEnv } from '../helpers/test-utils.js'
+import { type TestCLI, setupTestEnv } from '../helpers/test-utils.ts'
 
 describe('init command', () => {
   let cli: TestCLI

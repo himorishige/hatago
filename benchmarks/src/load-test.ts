@@ -42,9 +42,8 @@ async function makeRequest(
     if (response.ok) {
       await response.text() // Consume body
       return { success: true, latency }
-    } else {
-      return { success: false, latency, error: `HTTP ${response.status}` }
     }
+    return { success: false, latency, error: `HTTP ${response.status}` }
   } catch (error) {
     const latency = performance.now() - start
     return {

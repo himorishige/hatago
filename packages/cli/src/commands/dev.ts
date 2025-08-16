@@ -1,7 +1,7 @@
-import { type ChildProcess, spawn } from 'child_process'
-import { watch } from 'fs'
-import { existsSync } from 'fs'
-import { dirname, join, resolve } from 'path'
+import { type ChildProcess, spawn } from 'node:child_process'
+import { watch } from 'node:fs'
+import { existsSync } from 'node:fs'
+import { dirname, join, resolve } from 'node:path'
 import { type HatagoConfig, loadConfig } from '@hatago/config'
 import { blue, cyan, gray, green, red, yellow } from 'colorette'
 import { Command } from 'commander'
@@ -34,7 +34,7 @@ interface DevServer {
 /**
  * Output result based on JSON flag
  */
-function outputResult(data: any, message?: string): void {
+function outputResult(data: unknown, message?: string): void {
   if (process.env.HATAGO_JSON_OUTPUT === 'true') {
     console.log(JSON.stringify(data, null, 2))
   } else if (message) {
@@ -79,9 +79,7 @@ function findTscCommand(): string {
         // Global command
         return tscPath
       }
-    } catch {
-      continue
-    }
+    } catch {}
   }
 
   return 'npx tsc'
@@ -94,7 +92,12 @@ async function buildProject(verbose: boolean): Promise<boolean> {
   return new Promise(resolve => {
     const tscCommand = findTscCommand()
     const args = tscCommand.split(' ')
-    const cmd = args.shift()!
+    const cmd = args.shift()
+
+    if (!cmd) {
+      logWithTime('Error: Unable to parse TypeScript command', red)
+      return resolve(false)
+    }
 
     if (verbose) {
       logWithTime(`Building with: ${tscCommand}`, cyan)
@@ -225,6 +228,9 @@ async function restartServer(devServer: DevServer, options: DevOptions): Promise
   devServer.isRestarting = false
 }
 
+// Debounce timer for file changes
+let debounceTimer: NodeJS.Timeout | undefined
+
 /**
  * Setup file watcher
  */
@@ -239,7 +245,7 @@ function setupWatcher(devServer: DevServer, options: DevOptions): void {
 
     logWithTime(`👀 Watching: ${watchPath}`, gray)
 
-    const watcher = watch(watchPath, { recursive: true }, (eventType, filename) => {
+    const watcher = watch(watchPath, { recursive: true }, (_eventType, filename) => {
       if (!filename) return
 
       // Ignore non-source files
@@ -255,8 +261,10 @@ function setupWatcher(devServer: DevServer, options: DevOptions): void {
       logWithTime(`📝 Changed: ${filename}`, gray)
 
       // Debounce restarts
-      clearTimeout((restartServer as any).timeout)
-      ;(restartServer as any).timeout = setTimeout(() => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer)
+      }
+      debounceTimer = setTimeout(() => {
         restartServer(devServer, options)
       }, 300)
     })

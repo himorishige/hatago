@@ -36,7 +36,7 @@ export type HatagoPlugin = (ctx: HatagoContext) => void | Promise<void>
 /**
  * Plugin factory type for plugins that need configuration
  */
-export type HatagoPluginFactory<T = any> = (config?: T) => HatagoPlugin
+export type HatagoPluginFactory<T = unknown> = (config?: T) => HatagoPlugin
 
 /**
  * MCP server configuration for proxy functionality
@@ -108,7 +108,7 @@ export interface ToolDescriptor {
   description?: string
 
   /** Input schema */
-  inputSchema: any
+  inputSchema: unknown
 
   /** Whether tool supports streaming */
   streaming?: boolean
@@ -174,7 +174,10 @@ export interface PluginContext {
 /**
  * Capability-aware plugin function
  */
-export type CapabilityAwarePlugin = (ctx: { server: McpServer; capabilities: CapabilityRegistry }) => void | Promise<void>
+export type CapabilityAwarePlugin = (ctx: {
+  server: McpServer
+  capabilities: CapabilityRegistry
+}) => void | Promise<void>
 
 /**
  * New plugin factory type with capability context

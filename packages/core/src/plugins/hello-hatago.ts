@@ -24,7 +24,7 @@ export const helloHatago: HatagoPluginFactory =
         const chars = text.split('')
 
         // Access progressToken from _meta parameter
-        const token = (extra as any)._meta?.progressToken
+        const token = (extra as { _meta?: { progressToken?: string } })._meta?.progressToken
 
         const { sendNotification } = extra
         if (token && typeof sendNotification === 'function') {

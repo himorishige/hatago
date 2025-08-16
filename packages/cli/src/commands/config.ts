@@ -1,5 +1,5 @@
-import { existsSync, writeFileSync } from 'fs'
-import { resolve } from 'path'
+import { existsSync, writeFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import {
   ConfigValidationError,
   type HatagoConfig,
@@ -17,7 +17,7 @@ import { CLIError } from '../utils/error-handler.js'
 /**
  * Output result based on JSON flag
  */
-function outputResult(data: any, message?: string): void {
+function outputResult(data: unknown, message?: string): void {
   if (process.env.HATAGO_JSON_OUTPUT === 'true') {
     console.log(JSON.stringify(data, null, 2))
   } else if (message) {
@@ -46,14 +46,14 @@ async function handleValidate(options: { fix?: boolean }): Promise<void> {
     if (result.filepath) {
       console.log(`📋 Checking configuration: ${cyan(result.filepath)}`)
     } else {
-      console.log(`📋 Checking default configuration (no config file found)`)
+      console.log('📋 Checking default configuration (no config file found)')
     }
 
     console.log(formatDiagnostics(report))
 
     if (report.hasErrors) {
       if (options.fix && report.canAutoFix) {
-        console.log(`\\n🔧 Applying automatic fixes...`)
+        console.log('\\n🔧 Applying automatic fixes...')
         const fixedConfig = generateConfigFixes(result.config)
 
         // Re-validate fixed config
@@ -124,11 +124,11 @@ async function handleDoctor(): Promise<void> {
     if (result.filepath) {
       console.log(`\\n📋 Configuration file: ${cyan(result.filepath)}`)
     } else {
-      console.log(`\\n📋 Using default configuration (no config file found)`)
+      console.log('\\n📋 Using default configuration (no config file found)')
     }
 
     // Environment check
-    console.log(`\\n🌍 Environment:`)
+    console.log('\\n🌍 Environment:')
     console.log(`   Node.js: ${process.version}`)
     console.log(`   Platform: ${process.platform}`)
     console.log(`   Working directory: ${process.cwd()}`)
@@ -137,7 +137,7 @@ async function handleDoctor(): Promise<void> {
     console.log(formatDiagnostics(report))
 
     // Recommendations
-    console.log(`\\n💡 Recommendations:`)
+    console.log('\\n💡 Recommendations:')
     const recommendations = [
       'Run periodic health checks on external servers',
       'Use HTTPS endpoints for production deployments',
@@ -193,11 +193,11 @@ async function handleGet(path?: string): Promise<void> {
 
   // Navigate to specific path
   const parts = path.split('.')
-  let current: any = result.config
+  let current: unknown = result.config
 
   for (const part of parts) {
     if (current && typeof current === 'object' && part in current) {
-      current = current[part]
+      current = (current as Record<string, unknown>)[part]
     } else {
       throw new CLIError(`Configuration path not found: ${path}`, 1)
     }

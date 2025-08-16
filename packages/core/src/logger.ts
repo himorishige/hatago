@@ -44,7 +44,7 @@ export interface LoggerConfig {
 export function createLogger(config: LoggerConfig, component?: string): Logger {
   const shouldLog = (logLevel: LogLevel): boolean => logLevel >= config.level
 
-  const redactSensitiveData = (obj: any): any => {
+  const redactSensitiveData = (obj: unknown): unknown => {
     if (typeof obj !== 'object' || obj === null) {
       return obj
     }
@@ -53,7 +53,7 @@ export function createLogger(config: LoggerConfig, component?: string): Logger {
       return obj.map(redactSensitiveData)
     }
 
-    const result: any = {}
+    const result: Record<string, unknown> = {}
     for (const [key, value] of Object.entries(obj)) {
       const lowerKey = key.toLowerCase()
       if (config.redactFields.some(field => lowerKey.includes(field))) {
@@ -84,7 +84,7 @@ export function createLogger(config: LoggerConfig, component?: string): Logger {
     }
 
     if (meta) {
-      entry.meta = redactSensitiveData(meta)
+      entry.meta = redactSensitiveData(meta) as any
     }
 
     if (error && config.includeStackTrace) {

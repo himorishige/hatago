@@ -1,6 +1,6 @@
-import { existsSync } from 'fs'
-import { dirname, join, resolve } from 'path'
-import { fileURLToPath } from 'url'
+import { existsSync } from 'node:fs'
+import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { type TemplateConfig, type TemplateContext, TemplateEngine } from '@hatago/config'
 import { blue, cyan, gray, green, red, yellow } from 'colorette'
 import { Command } from 'commander'
@@ -22,7 +22,7 @@ interface CreatePluginOptions {
 /**
  * Output result based on JSON flag
  */
-function outputResult(data: any, message?: string): void {
+function outputResult(data: unknown, message?: string): void {
   if (process.env.HATAGO_JSON_OUTPUT === 'true') {
     console.log(JSON.stringify(data, null, 2))
   } else if (message) {
@@ -35,7 +35,7 @@ function outputResult(data: any, message?: string): void {
  */
 async function promptInput(question: string, defaultValue?: string): Promise<string> {
   return new Promise(resolve => {
-    const { createInterface } = require('readline')
+    const { createInterface } = require('node:readline')
     const rl = createInterface({
       input: process.stdin,
       output: process.stdout,
@@ -123,19 +123,19 @@ async function interactivePrompt(templateConfig: TemplateConfig): Promise<Templa
           context[prompt.name] = await promptSelect(prompt.message, prompt.choices, prompt.default)
           break
 
-        case 'array':
+        case 'array': {
           if (!prompt.itemPrompts) {
             context[prompt.name] = []
             break
           }
 
-          const items: any[] = []
+          const items: Record<string, unknown>[] = []
           let addMore = true
 
           console.log(`\\n${prompt.message}`)
 
           while (addMore) {
-            const item: any = {}
+            const item: Record<string, unknown> = {}
 
             console.log(`\\n  Adding item ${items.length + 1}:`)
 
@@ -177,6 +177,7 @@ async function interactivePrompt(templateConfig: TemplateConfig): Promise<Templa
 
           context[prompt.name] = items
           break
+        }
 
         default:
           console.log(`${yellow('Warning:')} Unknown prompt type: ${prompt.type}`)
@@ -346,13 +347,13 @@ async function handleCreatePlugin(pluginName: string, options: CreatePluginOptio
       })
 
       // Show next steps
-      console.log(`\\n🎯 Next steps:`)
+      console.log('\\n🎯 Next steps:')
       console.log(`   1. Review the generated plugin: ${pluginPath}`)
       console.log(
         `   2. Register plugin in your server: import { ${context.name}Plugin } from './plugins/${pluginName}.js'`
       )
-      console.log(`   3. Add to plugins array in createHatagoApp()`)
-      console.log(`   4. Start development server: hatago dev`)
+      console.log('   3. Add to plugins array in createHatagoApp()')
+      console.log('   4. Start development server: hatago dev')
 
       if (includeOptional.tests) {
         console.log(`   5. Run tests: pnpm test ${pluginName}`)

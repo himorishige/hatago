@@ -16,7 +16,7 @@ export function checkForUpdates(packageName: string, currentVersion: string): vo
       const { latest, current } = notifier.update
       console.log(`
 ${yellow('📦 Update available!')} ${current} → ${cyan(latest)}
-Run ${cyan('npm install -g ' + packageName)} to update
+Run ${cyan(`npm install -g ${packageName}`)} to update
       `)
     }
   } catch {

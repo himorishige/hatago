@@ -154,7 +154,7 @@ export const sloMetrics: HatagoPluginFactory<SLOMetricsConfig> =
     })
 
     // Plugin event tracking helper
-    const trackPluginEvent = (pluginName: string, event: string, success = true) => {
+    const _trackPluginEvent = (pluginName: string, event: string, success = true) => {
       const eventKey = createMetricKey(pluginName, undefined, event)
       metrics.plugin_events_total.set(
         eventKey,
@@ -173,7 +173,7 @@ export const sloMetrics: HatagoPluginFactory<SLOMetricsConfig> =
     // Prometheus format metrics endpoint
     app.get(endpoint, c => {
       const lines: string[] = []
-      const now = Date.now()
+      const _now = Date.now()
 
       // SLO targets as info metrics
       lines.push('# HELP hatago_slo_target SLO targets for monitoring')

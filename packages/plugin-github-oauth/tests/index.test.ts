@@ -140,10 +140,10 @@ describe('GitHub OAuth Plugin', () => {
     })
 
     it('should throw error when no authentication is configured', async () => {
-      delete process.env.GITHUB_PERSONAL_ACCESS_TOKEN
-      delete process.env.GITHUB_TOKEN
-      delete process.env.GITHUB_CLIENT_ID
-      delete process.env.GITHUB_CLIENT_SECRET
+      process.env.GITHUB_PERSONAL_ACCESS_TOKEN = undefined
+      process.env.GITHUB_TOKEN = undefined
+      process.env.GITHUB_CLIENT_ID = undefined
+      process.env.GITHUB_CLIENT_SECRET = undefined
 
       await githubOAuthTestPlugin(mockContext)
 
@@ -304,10 +304,10 @@ describe('GitHub OAuth Plugin', () => {
     })
 
     it('should handle health endpoint with no authentication', async () => {
-      delete process.env.GITHUB_PERSONAL_ACCESS_TOKEN
-      delete process.env.GITHUB_TOKEN
-      delete process.env.GITHUB_CLIENT_ID
-      delete process.env.GITHUB_CLIENT_SECRET
+      process.env.GITHUB_PERSONAL_ACCESS_TOKEN = undefined
+      process.env.GITHUB_TOKEN = undefined
+      process.env.GITHUB_CLIENT_ID = undefined
+      process.env.GITHUB_CLIENT_SECRET = undefined
 
       await githubOAuthTestPlugin(mockContext)
 
@@ -357,7 +357,7 @@ describe('GitHub OAuth Plugin', () => {
     })
 
     it('should fall back to GITHUB_TOKEN', async () => {
-      delete process.env.GITHUB_PERSONAL_ACCESS_TOKEN
+      process.env.GITHUB_PERSONAL_ACCESS_TOKEN = undefined
       process.env.GITHUB_TOKEN = 'generic-token'
 
       await githubOAuthTestPlugin(mockContext)

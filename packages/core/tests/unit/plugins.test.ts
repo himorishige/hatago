@@ -51,7 +51,7 @@ describe('applyPlugins', () => {
 
     await applyPlugins([asyncPlugin], ctx)
 
-    expect(ctx.env!.asyncCompleted).toBe(true)
+    expect(ctx.env?.asyncCompleted).toBe(true)
   })
 
   it('should throw on plugin errors', async () => {
@@ -121,7 +121,7 @@ describe('applyPlugins', () => {
 
     await applyPlugins([modifyingPlugin], ctx)
 
-    expect(ctx.env!.modified).toBe(true)
+    expect(ctx.env?.modified).toBe(true)
     // Note: We can't easily verify tool registration without accessing internal state
   })
 })

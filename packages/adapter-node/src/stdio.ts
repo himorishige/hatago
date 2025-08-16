@@ -3,7 +3,7 @@
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { createApp } from './app.js'
 
-async function serveStdio() {
+export async function startStdioServer() {
   const { server } = await createApp({
     name: 'hatago-stdio',
     version: '0.1.0',
@@ -21,7 +21,7 @@ async function serveStdio() {
 // Start server
 if (import.meta.url === `file://${process.argv[1]}`) {
   try {
-    await serveStdio()
+    await startStdioServer()
   } catch (error) {
     console.error('❌ Failed to start Hatago stdio server:', error)
     process.exit(1)

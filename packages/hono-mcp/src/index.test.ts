@@ -178,7 +178,7 @@ const TEST_MESSAGES = {
  */
 async function readSSEEvent(response: Response): Promise<string> {
   const reader = response.body?.getReader()
-  const { value } = await reader!.read()
+  const { value } = await reader?.read()
   return new TextDecoder().decode(value)
 }
 
@@ -338,7 +338,7 @@ describe('MCP helper', () => {
     const dataLine = eventLines.find(line => line.startsWith('data:'))
     expect(dataLine).toBeDefined()
 
-    const eventData = JSON.parse(dataLine!.substring(5))
+    const eventData = JSON.parse(dataLine?.substring(5))
     expect(eventData).toMatchObject({
       jsonrpc: '2.0',
       result: expect.objectContaining({
@@ -376,7 +376,7 @@ describe('MCP helper', () => {
     const dataLine = eventLines.find(line => line.startsWith('data:'))
     expect(dataLine).toBeDefined()
 
-    const eventData = JSON.parse(dataLine!.substring(5))
+    const eventData = JSON.parse(dataLine?.substring(5))
     expect(eventData).toMatchObject({
       jsonrpc: '2.0',
       result: {
@@ -445,7 +445,7 @@ describe('MCP helper', () => {
     const dataLine = eventLines.find(line => line.startsWith('data:'))
     expect(dataLine).toBeDefined()
 
-    const eventData = JSON.parse(dataLine!.substring(5))
+    const eventData = JSON.parse(dataLine?.substring(5))
     expect(eventData).toMatchObject({
       jsonrpc: '2.0',
       method: 'notifications/message',
@@ -478,7 +478,7 @@ describe('MCP helper', () => {
     // Just send one and verify it comes through - then the stream should stay open
     await transport.send(notification1)
 
-    const { value, done } = await reader!.read()
+    const { value, done } = await reader?.read()
     const text = new TextDecoder().decode(value)
     expect(text).toContain('First notification')
     expect(done).toBe(false) // Stream should still be open
@@ -705,12 +705,12 @@ describe('MCP helper', () => {
     const reader2 = response2.body?.getReader()
 
     // Read responses from each stream (requires each receives its specific response)
-    const { value: value1 } = await reader1!.read()
+    const { value: value1 } = await reader1?.read()
     const text1 = new TextDecoder().decode(value1)
     expect(text1).toContain('"id":"req-1"')
     expect(text1).toContain('"tools"') // tools/list result
 
-    const { value: value2 } = await reader2!.read()
+    const { value: value2 } = await reader2?.read()
     const text2 = new TextDecoder().decode(value2)
     expect(text2).toContain('"id":"req-2"')
     expect(text2).toContain('Hello, Connection2') // tools/call result
@@ -829,7 +829,7 @@ describe('StreamableHTTPServerTransport with AuthInfo', () => {
     const dataLine = eventLines.find(line => line.startsWith('data:'))
     expect(dataLine).toBeDefined()
 
-    const eventData = JSON.parse(dataLine!.substring(5))
+    const eventData = JSON.parse(dataLine?.substring(5))
     expect(eventData).toMatchObject({
       jsonrpc: '2.0',
       result: {
@@ -865,7 +865,7 @@ describe('StreamableHTTPServerTransport with AuthInfo', () => {
     const dataLine = eventLines.find(line => line.startsWith('data:'))
     expect(dataLine).toBeDefined()
 
-    const eventData = JSON.parse(dataLine!.substring(5))
+    const eventData = JSON.parse(dataLine?.substring(5))
     expect(eventData).toMatchObject({
       jsonrpc: '2.0',
       result: {
@@ -1040,7 +1040,7 @@ describe('StreamableHTTPServerTransport with pre-parsed body', () => {
     expect(response.headers.get('content-type')).toBe('text/event-stream')
 
     const reader = response.body?.getReader()
-    const { value } = await reader!.read()
+    const { value } = await reader?.read()
     const text = new TextDecoder().decode(value)
 
     // Verify the response used the pre-parsed body
@@ -1072,7 +1072,7 @@ describe('StreamableHTTPServerTransport with pre-parsed body', () => {
     expect(response.status).toBe(200)
 
     const reader = response.body?.getReader()
-    const { value } = await reader!.read()
+    const { value } = await reader?.read()
     const text = new TextDecoder().decode(value)
 
     expect(text).toContain('"id":"batch-1"')
@@ -1212,7 +1212,7 @@ describe('StreamableHTTPServerTransport with resumability', () => {
     expect(idMatch).toBeTruthy()
 
     // Verify the event was stored
-    const eventId = idMatch![1]
+    const eventId = idMatch?.[1]
     expect(storedEvents.has(eventId)).toBe(true)
     const storedEvent = storedEvents.get(eventId)
     expect(eventId.startsWith('_GET_stream')).toBe(true)
@@ -1236,7 +1236,7 @@ describe('StreamableHTTPServerTransport with resumability', () => {
 
     // Read the notification from the SSE stream
     const reader = sseResponse.body?.getReader()
-    const { value } = await reader!.read()
+    const { value } = await reader?.read()
     const text = new TextDecoder().decode(value)
 
     // Verify the notification was sent with an event ID
@@ -1246,7 +1246,7 @@ describe('StreamableHTTPServerTransport with resumability', () => {
     // Extract the event ID
     const idMatch = text.match(/id: ([^\n]+)/)
     expect(idMatch).toBeTruthy()
-    const firstEventId = idMatch![1]
+    const firstEventId = idMatch?.[1]
 
     // Send a second notification
     await mcpServer.server.sendLoggingMessage({
@@ -1255,7 +1255,7 @@ describe('StreamableHTTPServerTransport with resumability', () => {
     })
 
     // Close the first SSE stream to simulate a disconnect
-    await reader!.cancel()
+    await reader?.cancel()
 
     // Reconnect with the Last-Event-ID to get missed messages
     const reconnectResponse = await server.request('/', {

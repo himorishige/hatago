@@ -1,6 +1,6 @@
 import { type CreateAppOptions, createApp as createCoreApp, defaultPlugins } from '@hatago/core'
 import type { HatagoPlugin } from '@hatago/core'
-import { StreamableHTTPTransport } from '@hatago/core/transport'
+import { StreamableHTTPTransport, type Transport } from '@hatago/core/transport'
 
 export interface CreateNodeAppOptions extends Omit<CreateAppOptions, 'env'> {
   /** Node.js environment variables */
@@ -36,7 +36,9 @@ export async function createApp(options: CreateNodeAppOptions = {}) {
   if (app) {
     app.all('/mcp', async c => {
       const transport = new StreamableHTTPTransport()
-      await server.connect(transport as any) // Temporary fix for sessionId type mismatch
+      // Initialize sessionId to satisfy Transport interface requirement
+      transport.sessionId = transport.sessionId ?? ''
+      await server.connect(transport as Transport)
       return transport.handleRequest(c)
     })
   }

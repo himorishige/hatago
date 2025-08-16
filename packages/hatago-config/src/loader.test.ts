@@ -1,6 +1,6 @@
-import { mkdirSync, rmSync, writeFileSync } from 'fs'
-import { tmpdir } from 'os'
-import { join } from 'path'
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { generateConfigTemplate, getDefaultConfig, loadConfig, validateConfig } from './loader.js'
 
@@ -12,8 +12,8 @@ describe('loadConfig', () => {
     mkdirSync(tempDir, { recursive: true })
 
     // Clear environment variables
-    delete process.env.HATAGO_TEST_VAR
-    delete process.env.TEST_TOKEN
+    process.env.HATAGO_TEST_VAR = undefined
+    process.env.TEST_TOKEN = undefined
   })
 
   afterEach(() => {

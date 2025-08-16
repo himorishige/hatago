@@ -119,8 +119,8 @@ const concurrencyLimiterPlugin: CapabilityAwarePluginFactory = (
     }
 
     // Request processing functions
-    const shouldBypassLimiting = (path: string): boolean => {
-      return config.excludePaths!.some(excludePath => path.startsWith(excludePath))
+    const _shouldBypassLimiting = (path: string): boolean => {
+      return config.excludePaths?.some(excludePath => path.startsWith(excludePath)) || false
     }
 
     const processQueue = () => {
@@ -131,7 +131,7 @@ const concurrencyLimiterPlugin: CapabilityAwarePluginFactory = (
       }
     }
 
-    const acquireSlot = async (path: string): Promise<boolean> => {
+    const _acquireSlot = async (_path: string): Promise<boolean> => {
       totalRequests++
 
       // Check circuit breaker
@@ -273,7 +273,7 @@ const concurrencyLimiterPlugin: CapabilityAwarePluginFactory = (
                     timeout_requests: timeoutRequests,
                     rejection_rate:
                       totalRequests > 0
-                        ? ((rejectedRequests / totalRequests) * 100).toFixed(2) + '%'
+                        ? `${((rejectedRequests / totalRequests) * 100).toFixed(2)}%`
                         : '0%',
                   },
                 },
@@ -296,7 +296,7 @@ const concurrencyLimiterPlugin: CapabilityAwarePluginFactory = (
 
     // Cleanup function - but CapabilityAwarePlugin should return void
     // Store cleanup for later use if needed
-    const cleanup = () => {
+    const _cleanup = () => {
       // Clear any pending timeouts
       for (const entry of requestQueue) {
         clearTimeout(entry.timeout)

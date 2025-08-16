@@ -121,7 +121,7 @@ var require_uri_all = __commonJS({
         : typeof define === 'function' && define.amd
           ? define(['exports'], factory)
           : factory((global.URI = global.URI || {}))
-    })(exports, (exports2) => {
+    })(exports, exports2 => {
       function merge() {
         for (var _len = arguments.length, sets = Array(_len), _key = 0; _key < _len; _key++) {
           sets[_key] = arguments[_key]
@@ -501,7 +501,7 @@ var require_uri_all = __commonJS({
           }
         }
       })()
-      var toConsumableArray = /* @__PURE__ */ __name((arr) => {
+      var toConsumableArray = /* @__PURE__ */ __name(arr => {
         if (Array.isArray(arr)) {
           for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]
           return arr2
@@ -793,10 +793,14 @@ var require_uri_all = __commonJS({
         return output.join('')
       }, 'encode')
       var toUnicode = /* @__PURE__ */ __name(function toUnicode2(input) {
-        return mapDomain(input, (string) => regexPunycode.test(string) ? decode(string.slice(4).toLowerCase()) : string)
+        return mapDomain(input, string =>
+          regexPunycode.test(string) ? decode(string.slice(4).toLowerCase()) : string
+        )
       }, 'toUnicode')
       var toASCII = /* @__PURE__ */ __name(function toASCII2(input) {
-        return mapDomain(input, (string) => regexNonASCII.test(string) ? 'xn--' + encode(string) : string)
+        return mapDomain(input, string =>
+          regexNonASCII.test(string) ? 'xn--' + encode(string) : string
+        )
       }, 'toASCII')
       var punycode = {
         /**
@@ -2351,7 +2355,8 @@ var require_error_classes = __commonJS({
       this.ajv = this.validation = true
     }
     __name(ValidationError, 'ValidationError')
-    MissingRefError.message = (baseId, ref) => "can't resolve reference " + ref + ' from id ' + baseId
+    MissingRefError.message = (baseId, ref) =>
+      "can't resolve reference " + ref + ' from id ' + baseId
     function MissingRefError(baseId, ref, message) {
       this.message = message || MissingRefError.message(baseId, ref)
       this.missingRef = resolve.url(baseId, ref)
@@ -2382,11 +2387,11 @@ var require_fast_json_stable_stringify = __commonJS({
       var cycles = typeof opts.cycles === 'boolean' ? opts.cycles : false
       var cmp =
         opts.cmp &&
-        ((f) => (node) => (a, b) => {
-              var aobj = { key: a, value: node[a] }
-              var bobj = { key: b, value: node[b] }
-              return f(aobj, bobj)
-            })(opts.cmp)
+        (f => node => (a, b) => {
+          var aobj = { key: a, value: node[a] }
+          var bobj = { key: b, value: node[b] }
+          return f(aobj, bobj)
+        })(opts.cmp)
       var seen = []
       return /* @__PURE__ */ __name(function stringify(node) {
         if (node && node.toJSON && typeof node.toJSON === 'function') {
@@ -3310,7 +3315,7 @@ var require_compile = __commonJS({
           var deps = rule.definition.dependencies
           if (
             deps &&
-            !deps.every((keyword) => Object.prototype.hasOwnProperty.call(parentSchema, keyword))
+            !deps.every(keyword => Object.prototype.hasOwnProperty.call(parentSchema, keyword))
           )
             throw new Error('parent schema must have all required keywords: ' + deps.join(','))
           var validateSchema = rule.definition.validateSchema
@@ -3796,9 +3801,11 @@ var require_anyOf = __commonJS({
       var $closingBraces = ''
       $it.level++
       var $nextValid = 'valid' + $it.level
-      var $noEmptySchema = $schema.every(($sch2) => it.opts.strictKeywords
+      var $noEmptySchema = $schema.every($sch2 =>
+        it.opts.strictKeywords
           ? (typeof $sch2 == 'object' && Object.keys($sch2).length > 0) || $sch2 === false
-          : it.util.schemaHasRules($sch2, it.RULES.all))
+          : it.util.schemaHasRules($sch2, it.RULES.all)
+      )
       if ($noEmptySchema) {
         var $currentBaseId = $it.baseId
         out += ' var ' + $errs + ' = errors; var ' + $valid + ' = false;  '
@@ -7514,14 +7521,14 @@ var require_rules = __commonJS({
       var TYPES = ['number', 'integer', 'string', 'array', 'object', 'boolean', 'null']
       RULES.all = toHash(ALL)
       RULES.types = toHash(TYPES)
-      RULES.forEach((group) => {
-        group.rules = group.rules.map((keyword) => {
+      RULES.forEach(group => {
+        group.rules = group.rules.map(keyword => {
           var implKeywords
           if (typeof keyword == 'object') {
             var key = Object.keys(keyword)[0]
             implKeywords = keyword[key]
             keyword = key
-            implKeywords.forEach((k) => {
+            implKeywords.forEach(k => {
               ALL.push(k)
               RULES.all[k] = true
             })
@@ -7622,7 +7629,7 @@ var require_async = __commonJS({
         return schemaObj.validate || _compileAsync(schemaObj)
       })
       if (callback) {
-        p.then((v) => {
+        p.then(v => {
           callback(null, v)
         }, callback)
       }
@@ -7653,7 +7660,7 @@ var require_async = __commonJS({
             schemaPromise.then(removePromise, removePromise)
           }
           return schemaPromise
-            .then((sch) => {
+            .then(sch => {
               if (!added(ref)) {
                 return loadMetaSchemaOf(sch).then(() => {
                   if (!added(ref)) self.addSchema(sch, ref, void 0, meta)
@@ -7709,8 +7716,7 @@ var require_custom = __commonJS({
       } else {
         $schemaValue = $schema
       }
-      var 
-        $definition = 'definition' + $lvl,
+      var $definition = 'definition' + $lvl,
         $rDef = this.definition,
         $closingBraces = ''
       var $compile, $inline, $macro, $ruleValidate, $validateCode
@@ -9004,7 +9010,7 @@ init_checked_fetch()
 init_strip_cf_connecting_ip_header()
 init_modules_watch_stub()
 var util
-;((util2) => {
+;(util2 => {
   util2.assertEqual = _ => {}
   function assertIs(_arg) {}
   __name(assertIs, 'assertIs')
@@ -9030,7 +9036,7 @@ var util
     return util2.objectValues(filtered)
   }
   util2.objectValues = obj => {
-    return util2.objectKeys(obj).map((e) => obj[e])
+    return util2.objectKeys(obj).map(e => obj[e])
   }
   util2.objectKeys =
     typeof Object.keys === 'function'
@@ -9067,7 +9073,7 @@ var util
   }
 })(util || (util = {}))
 var objectUtil
-;((objectUtil2) => {
+;(objectUtil2 => {
   objectUtil2.mergeShapes = (first, second) => {
     return {
       ...first,
@@ -9191,9 +9197,7 @@ var ZodError = class extends Error {
     this.issues = issues
   }
   format(_mapper) {
-    const mapper =
-      _mapper ||
-      ((issue) => issue.message)
+    const mapper = _mapper || (issue => issue.message)
     const fieldErrors = { _errors: [] }
     const processError = /* @__PURE__ */ __name(error => {
       for (const issue of error.issues) {
@@ -9499,7 +9503,7 @@ init_checked_fetch()
 init_strip_cf_connecting_ip_header()
 init_modules_watch_stub()
 var errorUtil
-;((errorUtil2) => {
+;(errorUtil2 => {
   errorUtil2.errToObj = message => (typeof message === 'string' ? { message } : message || {})
   errorUtil2.toString = message => (typeof message === 'string' ? message : message?.message)
 })(errorUtil || (errorUtil = {}))
@@ -12962,7 +12966,7 @@ var late = {
   object: ZodObject.lazycreate,
 }
 var ZodFirstPartyTypeKind
-;((ZodFirstPartyTypeKind2) => {
+;(ZodFirstPartyTypeKind2 => {
   ZodFirstPartyTypeKind2['ZodString'] = 'ZodString'
   ZodFirstPartyTypeKind2['ZodNumber'] = 'ZodNumber'
   ZodFirstPartyTypeKind2['ZodNaN'] = 'ZodNaN'
@@ -13149,7 +13153,7 @@ var isJSONRPCResponse = /* @__PURE__ */ __name(
   'isJSONRPCResponse'
 )
 var ErrorCode
-;((ErrorCode2) => {
+;(ErrorCode2 => {
   ErrorCode2[(ErrorCode2['ConnectionClosed'] = -32e3)] = 'ConnectionClosed'
   ErrorCode2[(ErrorCode2['RequestTimeout'] = -32001)] = 'RequestTimeout'
   ErrorCode2[(ErrorCode2['ParseError'] = -32700)] = 'ParseError'
@@ -16455,7 +16459,7 @@ init_checked_fetch()
 init_strip_cf_connecting_ip_header()
 init_modules_watch_stub()
 var McpZodTypeKind
-;((McpZodTypeKind2) => {
+;(McpZodTypeKind2 => {
   McpZodTypeKind2['Completable'] = 'McpCompletable'
 })(McpZodTypeKind || (McpZodTypeKind = {}))
 var Completable = class extends ZodType {

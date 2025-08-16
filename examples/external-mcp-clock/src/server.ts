@@ -31,7 +31,7 @@ server.registerTool(
     description: 'Returns the current date and time in various formats',
     inputSchema: {},
   },
-  async (args, extra) => {
+  async (args, _extra) => {
     const { timezone = 'UTC', format = 'iso' } = args as {
       timezone?: string
       format?: 'iso' | 'locale' | 'unix'
@@ -57,13 +57,12 @@ server.registerTool(
             timeZoneName: 'short',
           })
           break
-        case 'iso':
         default:
           if (timezone === 'UTC') {
             formattedTime = now.toISOString()
           } else {
             // For non-UTC timezones, we'll show the ISO format with timezone info
-            formattedTime = now.toLocaleString('sv-SE', { timeZone: timezone }) + ` (${timezone})`
+            formattedTime = `${now.toLocaleString('sv-SE', { timeZone: timezone })} (${timezone})`
           }
           break
       }
@@ -115,7 +114,7 @@ server.registerTool(
       'Returns information about available timezones or details about a specific timezone',
     inputSchema: {},
   },
-  async (args, extra) => {
+  async (args, _extra) => {
     const { timezone, list = false } = args as {
       timezone?: string
       list?: boolean
@@ -187,7 +186,7 @@ server.registerTool(
               },
             ],
           }
-        } catch (tzError) {
+        } catch (_tzError) {
           return {
             content: [
               {
@@ -296,7 +295,7 @@ app.get('/', c => {
 const port = Number(process.env.PORT) || 8788
 const hostname = process.env.HOSTNAME || 'localhost'
 
-console.log(`🕐 External MCP Clock Server starting...`)
+console.log('🕐 External MCP Clock Server starting...')
 console.log(`   Server: http://${hostname}:${port}`)
 console.log(`   Health: http://${hostname}:${port}/health`)
 console.log(`   MCP:    http://${hostname}:${port}/mcp`)
@@ -308,4 +307,4 @@ serve({
 })
 
 console.log(`✅ Clock server running on http://${hostname}:${port}`)
-console.log(`📋 Available tools: clock.getTime, clock.getTimezone`)
+console.log('📋 Available tools: clock.getTime, clock.getTimezone')

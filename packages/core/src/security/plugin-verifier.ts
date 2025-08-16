@@ -101,7 +101,7 @@ export class InMemoryKeyRegistry implements TrustedKeyRegistry {
   async addKey(
     keyId: string,
     key: CryptoKey,
-    trusted = false,
+    trusted,
     metadata: {
       algorithm: string
       issuer?: string
@@ -361,9 +361,8 @@ export class PluginVerifier {
     // Ensure we got a key pair, not a single key
     if ('privateKey' in result && 'publicKey' in result) {
       return result as CryptoKeyPair
-    } else {
-      throw new Error('Expected CryptoKeyPair but got CryptoKey')
     }
+    throw new Error('Expected CryptoKeyPair but got CryptoKey')
   }
 
   private async generateKeyId(publicKey: CryptoKey): Promise<string> {
