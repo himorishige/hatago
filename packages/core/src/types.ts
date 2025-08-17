@@ -1,5 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { Hono } from 'hono'
+import type { RuntimeAdapter } from './types/runtime.js'
 
 /**
  * Hatago transport mode
@@ -25,6 +26,9 @@ export interface HatagoContext {
 
   /** Transport mode */
   mode?: HatagoMode
+
+  /** Runtime adapter for environment and I/O operations */
+  runtimeAdapter: RuntimeAdapter
 }
 
 /**

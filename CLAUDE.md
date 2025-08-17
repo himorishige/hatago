@@ -229,12 +229,14 @@ examples/
 ## Development Best Practices
 
 ### Functional Programming Guidelines
+
 - **Pure Functions**: Prefer pure functions with no side effects
 - **Immutable Data**: Use readonly types and immutable data structures
 - **Function Composition**: Build complex logic through function composition
 - **Side Effect Isolation**: Clearly separate side effects from pure logic
 
 ### Plugin Development Standards
+
 - Follow `HatagoPlugin` pattern: `(ctx: HatagoContext) => void | Promise<void>`
 - Keep plugins stateless when possible
 - Use environment variables for configuration
@@ -242,6 +244,7 @@ examples/
 - Always validate inputs using Zod or similar libraries
 
 ### Performance Considerations
+
 - Minimize startup time and memory footprint
 - Use streaming processing for large data
 - Avoid blocking operations in the main thread

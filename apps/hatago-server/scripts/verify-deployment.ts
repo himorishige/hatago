@@ -2,7 +2,7 @@
 
 /**
  * Deployment Verification Script for Hatago ChatGPT Connector
- * 
+ *
  * This script verifies that the deployed Hatago server is working correctly
  * with ChatGPT connector functionality.
  */
@@ -33,12 +33,12 @@ class DeploymentVerifier {
       'Content-Type': 'application/json',
       ...options.headers,
     }
-    
+
     // Add Accept header for MCP and SSE endpoints
     if (endpoint.includes('/mcp') || endpoint.includes('/sse/')) {
-      headers['Accept'] = 'application/json, text/event-stream'
+      headers.Accept = 'application/json, text/event-stream'
     }
-    
+
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       headers,
       ...options,
@@ -66,14 +66,16 @@ class DeploymentVerifier {
       }
       throw new Error('No data line found in SSE response')
     } catch (error) {
-      throw new Error(`Failed to parse SSE response: ${error instanceof Error ? error.message : String(error)}`)
+      throw new Error(
+        `Failed to parse SSE response: ${error instanceof Error ? error.message : String(error)}`
+      )
     }
   }
 
   async verifyHealthEndpoint(): Promise<void> {
     try {
       const { response, responseTime } = await this.makeRequest('/health')
-      
+
       if (response.ok) {
         this.addResult({
           endpoint: '/health',
@@ -120,7 +122,7 @@ class DeploymentVerifier {
       if (response.ok) {
         const text = await response.text()
         const data = this.parseSSEResponse(text)
-        if (data.result && data.result.protocolVersion) {
+        if (data.result?.protocolVersion) {
           this.addResult({
             endpoint: '/mcp (initialize)',
             status: 'pass',
@@ -170,7 +172,7 @@ class DeploymentVerifier {
           const tools = data.result.tools.map((tool: any) => tool.name)
           const hasSearch = tools.includes('search')
           const hasFetch = tools.includes('fetch')
-          
+
           if (hasSearch && hasFetch) {
             this.addResult({
               endpoint: '/mcp (tools/list)',
@@ -231,9 +233,9 @@ class DeploymentVerifier {
       if (response.ok) {
         const text = await response.text()
         const data = this.parseSSEResponse(text)
-        if (data.result && data.result.content && Array.isArray(data.result.content)) {
+        if (data.result?.content && Array.isArray(data.result.content)) {
           const content = data.result.content[0]
-          if (content && content.text) {
+          if (content?.text) {
             const searchResponse = JSON.parse(content.text)
             if (searchResponse.results && Array.isArray(searchResponse.results)) {
               this.addResult({
@@ -303,9 +305,9 @@ class DeploymentVerifier {
       if (response.ok) {
         const text = await response.text()
         const data = this.parseSSEResponse(text)
-        if (data.result && data.result.content && Array.isArray(data.result.content)) {
+        if (data.result?.content && Array.isArray(data.result.content)) {
           const content = data.result.content[0]
-          if (content && content.text) {
+          if (content?.text) {
             const document = JSON.parse(content.text)
             if (document.id && document.title && document.text) {
               this.addResult({
@@ -420,10 +422,9 @@ class DeploymentVerifier {
     if (failCount === 0) {
       logger.info('🎉 All tests passed! Deployment is ready for ChatGPT integration.')
       return true
-    } else {
-      logger.error('💥 Some tests failed. Please check the deployment before using with ChatGPT.')
-      return false
     }
+    logger.error('💥 Some tests failed. Please check the deployment before using with ChatGPT.')
+    return false
   }
 }
 

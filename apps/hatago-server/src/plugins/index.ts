@@ -1,8 +1,7 @@
+import type { HatagoPlugin } from '@hatago/core'
+import { createFetchTool, createSearchTool } from '@hatago/plugin-chatgpt-connector'
 import { helloHatago } from '@hatago/plugin-hello-hatago'
 import { oauthMetadata } from '@hatago/plugin-oauth-metadata'
-import { createSearchTool } from '@hatago/plugin-chatgpt-connector/search'
-import { createFetchTool } from '@hatago/plugin-chatgpt-connector/fetch'
-import type { HatagoPlugin } from '@hatago/core'
 import { enhancedMcpProxy } from './enhanced-mcp-proxy.js'
 import { githubOAuthTestPlugin } from './github-oauth-test.js'
 
@@ -25,7 +24,7 @@ export function createPlugins(env?: Record<string, unknown>): HatagoPlugin[] {
     }
     return defaultValue
   }
-  
+
   // Helper function for optional environment variables
   const getOptionalEnv = (key: string): string | undefined => {
     if (env?.[key] !== undefined) {
@@ -54,7 +53,7 @@ export function createPlugins(env?: Record<string, unknown>): HatagoPlugin[] {
   // ChatGPT connector environment variables
   const CHATGPT_MODE = getEnv('CHATGPT_MODE') === 'true'
   const CHATGPT_BASE_URL = getEnv('CHATGPT_BASE_URL', 'https://docs.hatago.dev/')
-  const CHATGPT_MAX_RESULTS = parseInt(getEnv('CHATGPT_MAX_RESULTS', '10'), 10)
+  const CHATGPT_MAX_RESULTS = Number.parseInt(getEnv('CHATGPT_MAX_RESULTS', '10'), 10)
 
   // Debug: Log environment variables (remove in production)
   console.log('Plugin environment debug:', {
@@ -97,14 +96,14 @@ export function createPlugins(env?: Record<string, unknown>): HatagoPlugin[] {
       requireAuth: REQUIRE_AUTH,
     })
   )
-  
+
   plugins.push(
     // Enhanced MCP Proxy - internal implementation (uses hatago.config.json)
     enhancedMcpProxy({
       useConfig: true, // Load from hatago.config.json
     })
   )
-  
+
   plugins.push(
     // GitHub OAuth Test Plugin - internal implementation (test/demo purpose)
     githubOAuthTestPlugin

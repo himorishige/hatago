@@ -3,15 +3,13 @@
  */
 import type { HatagoPlugin } from '@hatago/core'
 import { z } from 'zod'
-import { MockDataSource } from './mock-data.js'
+import { fetchDocument } from './mock-data.js'
 import type { ChatGPTConnectorConfig, Document } from './types.js'
 
 /**
  * Creates the fetch tool for ChatGPT MCP connector
  */
-export function createFetchTool(config: ChatGPTConnectorConfig = {}): HatagoPlugin {
-  const { dataSource = new MockDataSource(config.baseUrl) } = config
-
+export function createFetchTool(_config: ChatGPTConnectorConfig = {}): HatagoPlugin {
   return ctx => {
     ctx.server.registerTool(
       'fetch',
@@ -40,7 +38,8 @@ export function createFetchTool(config: ChatGPTConnectorConfig = {}): HatagoPlug
         }
 
         try {
-          const document = await dataSource.fetch(id.trim())
+          // For now, we use mock data
+          const document = fetchDocument(id.trim())
 
           if (!document) {
             return {
@@ -59,9 +58,9 @@ export function createFetchTool(config: ChatGPTConnectorConfig = {}): HatagoPlug
           const response: Document = {
             id: document.id,
             title: document.title,
+            content: document.content,
             text: document.text,
             url: document.url,
-            metadata: document.metadata,
           }
 
           return {

@@ -12,6 +12,8 @@
 
 import { Registry, redactText } from '@himorishige/noren-core'
 import * as securityPlugin from '@himorishige/noren-plugin-security'
+import type { RuntimeAdapter } from '../types/runtime.js'
+import { defaultRuntimeAdapter, detectRuntime } from '../types/runtime.js'
 import type { HatagoMode, SecureLogEntry, SecureLogLevel, SecureLoggerConfig } from './types.js'
 
 const LOG_LEVELS: Record<SecureLogLevel, number> = {
@@ -98,22 +100,27 @@ export interface SecureLogger {
 
 /**
  * Create a secure logger with PII masking capabilities
+ * @param config Logger configuration
+ * @param runtimeAdapter Runtime adapter for environment and I/O operations
  */
-export function createSecureLogger(config?: Partial<SecureLoggerConfig>): SecureLogger {
+export function createSecureLogger(
+  config?: Partial<SecureLoggerConfig>,
+  runtimeAdapter: RuntimeAdapter = defaultRuntimeAdapter
+): SecureLogger {
   // Default configuration
   const defaultConfig: SecureLoggerConfig = {
-    level: (process.env.LOG_LEVEL as SecureLogLevel) || 'info',
-    format: (process.env.LOG_FORMAT as 'json' | 'pretty') || 'pretty',
-    transport: (process.env.HATAGO_TRANSPORT as HatagoMode) || 'http',
-    redactKeys: process.env.LOG_REDACT?.split(',') || DEFAULT_REDACT_KEYS,
-    sampleRate: Number.parseFloat(process.env.LOG_SAMPLE_RATE || '1.0'),
+    level: (runtimeAdapter.getEnv('LOG_LEVEL') as SecureLogLevel) || 'info',
+    format: (runtimeAdapter.getEnv('LOG_FORMAT') as 'json' | 'pretty') || 'pretty',
+    transport: (runtimeAdapter.getEnv('HATAGO_TRANSPORT') as HatagoMode) || 'http',
+    redactKeys: runtimeAdapter.getEnv('LOG_REDACT')?.split(',') || DEFAULT_REDACT_KEYS,
+    sampleRate: Number.parseFloat(runtimeAdapter.getEnv('LOG_SAMPLE_RATE') || '1.0'),
   }
 
   const currentConfig = { ...defaultConfig, ...config }
   const context: Record<string, unknown> = {}
 
   // Noren masking (default: enabled, disable with NOREN_MASKING=false)
-  const useNorenMasking = process.env.NOREN_MASKING !== 'false'
+  const useNorenMasking = runtimeAdapter.getEnv('NOREN_MASKING') !== 'false'
 
   // stdio mode guard for stdout pollution prevention
   if (currentConfig.transport === 'stdio') {
@@ -227,39 +234,49 @@ export function createSecureLogger(config?: Partial<SecureLoggerConfig>): Secure
 
   /**
    * Color output determination
+   * Using Web Standards approach - no TTY detection needed
    */
   const shouldUseColors = (): boolean => {
     // Disabled if NO_COLOR environment variable is set
-    if (process.env.NO_COLOR) return false
+    if (runtimeAdapter.getEnv('NO_COLOR')) return false
 
     // Forced enabled if FORCE_COLOR is set
-    if (process.env.FORCE_COLOR) return true
+    if (runtimeAdapter.getEnv('FORCE_COLOR')) return true
 
-    // Disabled if not TTY (file redirect etc.)
+    // In stdio mode, default to no colors (can override with FORCE_COLOR)
     if (currentConfig.transport === 'stdio') {
-      return process.stderr.isTTY || false
+      return false
     }
-    // HTTP mode: development only (stdout is TTY)
-    return process.stdout.isTTY || false
+
+    // In HTTP mode, use colors in development
+    return runtimeAdapter.getEnv('NODE_ENV') !== 'production'
   }
 
   /**
-   * Actual output
+   * Actual output using Web Standards console API
    */
   const write = (level: SecureLogLevel, output: string) => {
-    // All output to stderr in stdio mode
-    if (currentConfig.transport === 'stdio') {
-      process.stderr.write(`${output}\n`)
-      return
-    }
-
-    // Separation for HTTP mode
-    if (level === 'fatal' || level === 'error') {
-      process.stderr.write(`${output}\n`)
-    } else {
-      // Info and below: stdout in development, stderr in production
-      const target = process.env.NODE_ENV === 'production' ? process.stderr : process.stdout
-      target.write(`${output}\n`)
+    // Use appropriate console method based on level
+    // Console API is a Web Standard and works across all runtimes
+    switch (level) {
+      case 'fatal':
+      case 'error':
+        console.error(output)
+        break
+      case 'warn':
+        console.warn(output)
+        break
+      case 'debug':
+      case 'trace':
+        // Some runtimes don't have console.debug, fallback to console.log
+        if (typeof console.debug === 'function') {
+          console.debug(output)
+        } else {
+          console.log(output)
+        }
+        break
+      default:
+        console.log(output)
     }
   }
 
@@ -289,9 +306,11 @@ export function createSecureLogger(config?: Partial<SecureLoggerConfig>): Secure
     const output = format(entry)
     write(level, output)
 
-    // Process exit on fatal level
-    if (level === 'fatal') {
-      process.exit(1)
+    // Process exit on fatal level - only in Node.js runtime
+    // Other runtimes don't support process.exit
+    if (level === 'fatal' && detectRuntime() === 'node') {
+      // Direct call to process.exit for Node.js
+      ;(globalThis as any).process?.exit(1)
     }
   }
 
@@ -312,7 +331,7 @@ export function createSecureLogger(config?: Partial<SecureLoggerConfig>): Secure
     getLevel: (): SecureLogLevel => currentConfig.level,
 
     child: (childContext: Record<string, unknown>): SecureLogger => {
-      const childLogger = createSecureLogger(currentConfig)
+      const childLogger = createSecureLogger(currentConfig, runtimeAdapter)
       // Copy current context and add child context
       const combinedContext = { ...context, ...childContext }
       // Set the context on the child logger
@@ -324,30 +343,21 @@ export function createSecureLogger(config?: Partial<SecureLoggerConfig>): Secure
 
 /**
  * stdout pollution guard (for stdio mode)
+ * Note: This function still uses console directly as it's modifying console behavior
  */
 function guardStdout() {
   // Disable console.log
   const _originalLog = console.log
   console.log = (...args: unknown[]) => {
-    process.stderr.write(`[STDOUT-GUARD] Redirected console.log: ${args.join(' ')}\n`)
+    // Use console.error to redirect log messages in stdio mode
+    console.error(`[STDOUT-GUARD] Redirected console.log: ${args.join(' ')}`)
   }
 
-  // Monitor process.stdout.write
-  const _originalWrite = process.stdout.write
-  process.stdout.write = (chunk: unknown, ..._args: unknown[]) => {
-    process.stderr.write(`[STDOUT-GUARD] Prevented stdout write: ${String(chunk)}`)
-    return true
-  }
+  // Note: stdout.write monitoring requires runtime-specific implementation
+  // This should be handled by the runtime adapter if needed
 }
 
-// Default logger instance
-export const logger = createSecureLogger()
-
-// Helper functions
-export function setLogLevel(level: SecureLogLevel) {
-  logger.setLevel(level)
-}
-
-export function getLogLevel(): SecureLogLevel {
-  return logger.getLevel()
+// Create logger with runtime adapter
+export function createDefaultSecureLogger(runtimeAdapter?: RuntimeAdapter): SecureLogger {
+  return createSecureLogger(undefined, runtimeAdapter)
 }

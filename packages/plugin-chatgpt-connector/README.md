@@ -75,10 +75,10 @@ The plugin registers two MCP tools required by ChatGPT:
 
 ```typescript
 interface SearchResult {
-  id: string      // Unique identifier
-  title: string   // Document title
-  text: string    // Relevant snippet
-  url?: string    // Optional URL for citations
+  id: string // Unique identifier
+  title: string // Document title
+  text: string // Relevant snippet
+  url?: string // Optional URL for citations
 }
 ```
 
@@ -86,10 +86,10 @@ interface SearchResult {
 
 ```typescript
 interface Document {
-  id: string                     // Unique identifier
-  title: string                  // Document title
-  text: string                   // Full document content
-  url?: string                   // Optional URL
+  id: string // Unique identifier
+  title: string // Document title
+  text: string // Full document content
+  url?: string // Optional URL
   metadata?: Record<string, any> // Optional metadata
 }
 ```

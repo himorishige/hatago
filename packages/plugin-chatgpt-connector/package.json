@@ -9,6 +9,14 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./search": {
+      "import": "./dist/search.js",
+      "types": "./dist/search.d.ts"
+    },
+    "./fetch": {
+      "import": "./dist/fetch.js",
+      "types": "./dist/fetch.d.ts"
     }
   },
   "scripts": {

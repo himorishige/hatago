@@ -5,6 +5,7 @@ import {
   helloHatago,
 } from '@hatago/core'
 import type { HatagoPlugin } from '@hatago/core'
+import { nodeRuntimeAdapter } from './runtime-adapter.js'
 
 export interface CreateNodeAppOptions extends Omit<CreateAppOptions, 'env'> {
   /** Node.js environment variables */
@@ -32,11 +33,12 @@ export async function createApp(options: CreateNodeAppOptions = {}) {
   // Use default plugins if none specified
   const finalPlugins = plugins ?? createDefaultPlugins(env)
 
-  // Create core app
+  // Create core app with Node.js runtime adapter
   const { app, server, ctx } = await createCoreApp({
     ...coreOptions,
     env,
     plugins: finalPlugins,
+    runtimeAdapter: nodeRuntimeAdapter,
   })
 
   return { app, server, ctx }

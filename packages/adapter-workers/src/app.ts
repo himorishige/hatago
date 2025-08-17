@@ -1,9 +1,6 @@
-import {
-  type CreateAppOptions,
-  createApp as createCoreApp,
-  helloHatago,
-} from '@hatago/core'
+import { type CreateAppOptions, createApp as createCoreApp, helloHatago } from '@hatago/core'
 import type { HatagoPlugin } from '@hatago/core'
+import { createWorkersRuntimeAdapter } from './runtime-adapter.js'
 
 export interface CreateWorkersAppOptions extends Omit<CreateAppOptions, 'env'> {
   /** Cloudflare Workers environment variables */
@@ -28,11 +25,15 @@ export async function createApp(options: CreateWorkersAppOptions = {}) {
   // Use default plugins if none specified
   const finalPlugins = plugins ?? createDefaultPlugins(options.env)
 
-  // Create core app
+  // Create runtime adapter with Workers environment
+  const runtimeAdapter = createWorkersRuntimeAdapter(options.env)
+
+  // Create core app with Workers runtime adapter
   const { app, server, ctx } = await createCoreApp({
     ...coreOptions,
     env: options.env ?? {},
     plugins: finalPlugins,
+    runtimeAdapter,
   })
 
   return { app, server, ctx }

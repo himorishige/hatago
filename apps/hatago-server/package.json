@@ -24,6 +24,7 @@
   "dependencies": {
     "@hatago/adapter-node": "workspace:*",
     "@hatago/core": "workspace:*",
+    "@hatago/plugin-chatgpt-connector": "workspace:*",
     "@hatago/plugin-hello-hatago": "workspace:*",
     "@hatago/plugin-oauth-metadata": "workspace:*",
     "@hatago/plugin-github-oauth": "workspace:*",

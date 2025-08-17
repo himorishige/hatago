@@ -4,6 +4,8 @@ import { setupMCPEndpoint } from './mcp-setup.js'
 import { correlationId } from './middleware/correlation-id.js'
 import { applyPlugins } from './plugins.js'
 import type { HatagoContext, HatagoMode, HatagoPlugin } from './types.js'
+import type { RuntimeAdapter } from './types/runtime.js'
+import { defaultRuntimeAdapter } from './types/runtime.js'
 
 export interface CreateAppOptions {
   /** Environment variables (runtime-specific) */
@@ -18,6 +20,9 @@ export interface CreateAppOptions {
 
   /** Transport mode */
   mode?: HatagoMode
+
+  /** Runtime adapter for environment and I/O operations */
+  runtimeAdapter?: RuntimeAdapter
 }
 
 /**
@@ -25,7 +30,14 @@ export interface CreateAppOptions {
  * This factory is runtime-agnostic and only uses Web Standard APIs
  */
 export async function createApp(options: CreateAppOptions = {}) {
-  const { env, plugins = [], name = 'hatago', version = '0.1.0', mode = 'http' } = options
+  const {
+    env,
+    plugins = [],
+    name = 'hatago',
+    version = '0.1.0',
+    mode = 'http',
+    runtimeAdapter = defaultRuntimeAdapter,
+  } = options
 
   const app = mode === 'http' ? new Hono() : null
 
@@ -51,7 +63,14 @@ export async function createApp(options: CreateAppOptions = {}) {
   const server = new McpServer({ name, version })
 
   // Create context for plugins
-  const ctx: HatagoContext = { app, server, env: env ?? {}, getBaseUrl, mode }
+  const ctx: HatagoContext = {
+    app,
+    server,
+    env: env ?? {},
+    getBaseUrl,
+    mode,
+    runtimeAdapter,
+  }
 
   // Apply plugins
   await applyPlugins(plugins, ctx)

@@ -1,33 +1,29 @@
 /**
  * Environment variable utilities for cross-runtime compatibility
+ * Following Hono's approach: no NodeJS types, pure functions
  */
 
 /**
- * Convert Node.js environment variables to generic record (pure function)
- * Filters out undefined values that are common in Node.js process.env
+ * Normalize environment variables to consistent string format
+ * Filters out undefined/null values and converts all values to strings
  */
-export const convertNodeEnv = (env?: NodeJS.ProcessEnv): Record<string, unknown> => {
+export const normalizeEnv = (env?: Record<string, unknown>): Record<string, string> => {
   if (!env) return {}
-  return Object.fromEntries(Object.entries(env).filter(([, v]) => v !== undefined)) as Record<
-    string,
-    unknown
-  >
+
+  const result: Record<string, string> = {}
+  for (const [key, value] of Object.entries(env)) {
+    // Skip undefined and null values
+    if (value !== undefined && value !== null) {
+      result[key] = String(value)
+    }
+  }
+  return result
 }
 
 /**
- * Normalize environment variables from any runtime to a consistent format
- * Handles both Node.js ProcessEnv and Workers env objects
+ * Convert Node.js style env to normalized format
+ * This is for backward compatibility and will be deprecated
  */
-export const normalizeEnv = (
-  env?: Record<string, unknown> | NodeJS.ProcessEnv
-): Record<string, unknown> => {
-  if (!env) return {}
-
-  // Handle Node.js ProcessEnv (which has optional string values)
-  if (typeof process !== 'undefined' && env === process.env) {
-    return convertNodeEnv(env as NodeJS.ProcessEnv)
-  }
-
-  // Handle other runtime environments (Workers, etc.)
-  return env as Record<string, unknown>
+export const convertNodeEnv = (env?: Record<string, unknown>): Record<string, unknown> => {
+  return normalizeEnv(env)
 }

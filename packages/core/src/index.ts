@@ -6,6 +6,8 @@ export * from './plugin-host.js'
 export * from './adapter.js'
 export * from './mcp-setup.js'
 export * from './env-utils.js'
+export type { RuntimeAdapter, RuntimeKey } from './types/runtime.js'
+export { defaultRuntimeAdapter, detectRuntime, getEnvironment } from './types/runtime.js'
 export {
   createLogger,
   createDefaultLogger,

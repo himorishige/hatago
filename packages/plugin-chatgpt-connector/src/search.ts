@@ -3,14 +3,14 @@
  */
 import type { HatagoPlugin } from '@hatago/core'
 import { z } from 'zod'
-import { MockDataSource } from './mock-data.js'
+import { searchDocuments } from './mock-data.js'
 import type { ChatGPTConnectorConfig, SearchResponse } from './types.js'
 
 /**
  * Creates the search tool for ChatGPT MCP connector
  */
 export function createSearchTool(config: ChatGPTConnectorConfig = {}): HatagoPlugin {
-  const { maxResults = 10, dataSource = new MockDataSource(config.baseUrl) } = config
+  const { maxResults = 10 } = config
 
   return ctx => {
     ctx.server.registerTool(
@@ -33,6 +33,7 @@ export function createSearchTool(config: ChatGPTConnectorConfig = {}): HatagoPlu
                 type: 'text',
                 text: JSON.stringify({
                   results: [],
+                  total: 0,
                 } as SearchResponse),
               },
             ],
@@ -40,10 +41,12 @@ export function createSearchTool(config: ChatGPTConnectorConfig = {}): HatagoPlu
         }
 
         try {
-          const results = await dataSource.search(query.trim(), maxResults)
+          // For now, we use mock data
+          const results = searchDocuments(query.trim(), maxResults)
 
           const response: SearchResponse = {
             results,
+            total: results.length,
           }
 
           return {

@@ -25,32 +25,39 @@ export { LogLevel } from './types.js'
 export { createLogger, createDefaultLogger, DEFAULT_LOGGER_CONFIG } from './basic.js'
 
 // Secure logger (PII masking, for production use)
-export {
-  createSecureLogger,
-  logger as secureLogger,
-  setLogLevel,
-  getLogLevel,
-  type SecureLogger,
-} from './secure.js'
+export { createSecureLogger, createDefaultSecureLogger, type SecureLogger } from './secure.js'
+
+import { createDefaultLogger as createBasic } from './basic.js'
+// Import for createEnvironmentLogger
+import { createSecureLogger as createSecure } from './secure.js'
+
+import type { RuntimeAdapter } from '../types/runtime.js'
+import { defaultRuntimeAdapter } from '../types/runtime.js'
 
 /**
  * Create logger based on environment
  * - Development: basic logger with pretty formatting
  * - Production: secure logger with PII masking
+ * @param component Component name for the logger
+ * @param runtimeAdapter Runtime adapter for environment access
  */
-export function createEnvironmentLogger(component?: string) {
-  const isProduction = typeof process !== 'undefined' && process.env?.NODE_ENV === 'production'
+export function createEnvironmentLogger(
+  component?: string,
+  runtimeAdapter: RuntimeAdapter = defaultRuntimeAdapter
+) {
+  const isProduction = runtimeAdapter.getEnv('NODE_ENV') === 'production'
 
   if (isProduction) {
-    const { createSecureLogger } = require('./secure.js')
-    return createSecureLogger({
-      level: 'info' as const,
-      format: 'json' as const,
-      transport: 'http' as const,
-    })
+    return createSecure(
+      {
+        level: 'info' as const,
+        format: 'json' as const,
+        transport: 'http' as const,
+      },
+      runtimeAdapter
+    )
   }
-  const { createDefaultLogger } = require('./basic.js')
-  return createDefaultLogger(component)
+  return createBasic(component, runtimeAdapter)
 }
 
 // Legacy exports for backward compatibility
