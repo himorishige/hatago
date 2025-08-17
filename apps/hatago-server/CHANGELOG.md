@@ -1,5 +1,13 @@
 # @hatago/reference-server
 
+## 0.3.1
+
+### Patch Changes
+
+- Updated dependencies [fb06c02]
+  - @hatago/adapter-node@0.3.1
+  - @hatago/core@0.3.1
+
 ## 0.3.0
 
 ### Minor Changes
