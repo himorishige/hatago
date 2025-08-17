@@ -12,7 +12,11 @@
     "build:stdio": "tsc src/stdio-server.ts --outDir dist --module ESNext --moduleResolution node --target ES2022",
     "typecheck": "tsc --noEmit",
     "start": "node --enable-source-maps dist/dev-node.js",
-    "start:stdio": "node --enable-source-maps dist/stdio-server.js"
+    "start:stdio": "node --enable-source-maps dist/stdio-server.js",
+    "deploy:dev": "pnpm build && wrangler deploy --env development",
+    "deploy:staging": "pnpm build && wrangler deploy --env staging",
+    "deploy:prod": "pnpm build && wrangler deploy --env production",
+    "verify:deployment": "tsx scripts/verify-deployment.ts"
   },
   "engines": {
     "node": ">=18"
@@ -33,6 +37,6 @@
     "@types/node": "^20.19.11",
     "tsx": "^4.20.4",
     "typescript": "^5.9.2",
-    "wrangler": "^3.114.13"
+    "wrangler": "^4.30.0"
   }
 }

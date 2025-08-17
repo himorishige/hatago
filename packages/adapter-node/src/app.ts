@@ -3,7 +3,6 @@ import {
   convertNodeEnv,
   createApp as createCoreApp,
   helloHatago,
-  setupMCPEndpoint,
 } from '@hatago/core'
 import type { HatagoPlugin } from '@hatago/core'
 
@@ -39,11 +38,6 @@ export async function createApp(options: CreateNodeAppOptions = {}) {
     env,
     plugins: finalPlugins,
   })
-
-  // Configure MCP endpoint using shared setup function
-  if (app) {
-    setupMCPEndpoint(app, server)
-  }
 
   return { app, server, ctx }
 }

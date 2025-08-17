@@ -2,7 +2,6 @@ import {
   type CreateAppOptions,
   createApp as createCoreApp,
   helloHatago,
-  setupMCPEndpoint,
 } from '@hatago/core'
 import type { HatagoPlugin } from '@hatago/core'
 
@@ -35,11 +34,6 @@ export async function createApp(options: CreateWorkersAppOptions = {}) {
     env: options.env ?? {},
     plugins: finalPlugins,
   })
-
-  // Configure MCP endpoint using shared setup function
-  if (app) {
-    setupMCPEndpoint(app, server)
-  }
 
   return { app, server, ctx }
 }

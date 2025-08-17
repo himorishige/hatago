@@ -1,5 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { Hono } from 'hono'
+import { setupMCPEndpoint } from './mcp-setup.js'
 import { correlationId } from './middleware/correlation-id.js'
 import { applyPlugins } from './plugins.js'
 import type { HatagoContext, HatagoMode, HatagoPlugin } from './types.js'
@@ -54,6 +55,11 @@ export async function createApp(options: CreateAppOptions = {}) {
 
   // Apply plugins
   await applyPlugins(plugins, ctx)
+
+  // Setup MCP endpoint for HTTP mode
+  if (app && mode === 'http') {
+    setupMCPEndpoint(app, server)
+  }
 
   // Basic landing page (only in HTTP mode)
   if (app) {

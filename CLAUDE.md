@@ -6,6 +6,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Hatago is a lightweight, fast, and simple remote MCP (Model Context Protocol) server built with **Hono + @hono/mcp + MCP TypeScript SDK**. It features a plugin-based architecture for extensibility.
 
+## Hatago Core Principles
+
+- **高速・軽量・シンプル**: Performance-first design, minimal dependencies, simple API architecture
+- **Simplicity First (SF)**: Always choose the simplest viable solution, complex implementations require clear justification
+- **Dependency Minimalism (DM)**: Strictly review new dependency additions, prioritize existing functionality utilization
+- **Functional Programming Priority**: Pure functions, minimize side effects, immutable data, function composition
+
+## Specification Compliance Requirements
+
+- **Hono Framework**: Middleware patterns, context management, type-safe routing
+- **Anthropic MCP Specification (2025-06-18)**: JSON-RPC 2.0, transport layer, security best practices
+- **RFC Standards**: OAuth 2.1, RFC 9728 Protected Resource Metadata, HTTP/HTTPS standards
+
+## Architecture Philosophy
+
 - **Core Philosophy**: Keep the core minimal and extend functionality through plugins
 - **Environment Agnostic**: Runs on Node.js, Cloudflare Workers, Deno, and Bun
 - **Plugin System**: OAuth PRM publishing and streaming "Hello Hatago" test tool included
@@ -198,6 +213,40 @@ examples/
 └── external-mcp-math/     # External MCP server example
 ```
 
+## Code Review Guidelines (Priority Order)
+
+1. **Basic Principles Compliance**: Fast/lightweight/simple, SF/DM principles, functional patterns
+2. **Hono Specification Compliance**: Middleware structure, context type safety, error handling
+3. **MCP Protocol Compliance**: JSON-RPC 2.0, tool/resource naming rules, progress notification
+4. **Functional Design**: Pure function implementation, side effect separation, immutable structures
+5. **Plugin Architecture**: HatagoPlugin type, stateless design, dependency management
+6. **Multi-Runtime Support**: Node.js/Workers/Deno/Bun, avoid runtime-specific APIs
+7. **Security**: OAuth 2.1, PII masking (Noren integration), input validation, transport security
+8. **Performance**: Startup time, memory footprint, streaming processing
+9. **Type Safety**: TypeScript strict, no any, type guards, explicit return types
+10. **Testability**: Mockability, unit/integration tests, coverage
+
+## Development Best Practices
+
+### Functional Programming Guidelines
+- **Pure Functions**: Prefer pure functions with no side effects
+- **Immutable Data**: Use readonly types and immutable data structures
+- **Function Composition**: Build complex logic through function composition
+- **Side Effect Isolation**: Clearly separate side effects from pure logic
+
+### Plugin Development Standards
+- Follow `HatagoPlugin` pattern: `(ctx: HatagoContext) => void | Promise<void>`
+- Keep plugins stateless when possible
+- Use environment variables for configuration
+- Implement proper TypeScript types for all interfaces
+- Always validate inputs using Zod or similar libraries
+
+### Performance Considerations
+- Minimize startup time and memory footprint
+- Use streaming processing for large data
+- Avoid blocking operations in the main thread
+- Consider runtime compatibility (Node.js/Workers/Deno/Bun)
+
 ## Development Notes
 
 - The core is intentionally minimal - all functionality is added through plugins
@@ -209,6 +258,8 @@ examples/
 - **Tool Naming**: Use underscores in tool names for MCP compliance (e.g., `hello_hatago`)
 - **Test Plugins**: `github-oauth-test.ts` is for development only - disable in production
 - **Configuration**: MCP proxy settings are managed via `hatago.config.json`
+- **Pure Function Priority**: Implement business logic as pure functions, isolate side effects
+- **Performance Impact**: Always consider startup time and memory usage impact of changes
 
 ## MCP Security Best Practices
 
