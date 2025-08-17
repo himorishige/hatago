@@ -195,7 +195,6 @@ NODE_ENV=development        # development|production
 
 ```typescript
 import { createApp } from '@hatago/adapter-node'
-import { defaultPlugins } from '@hatago/core'
 import type { HatagoPlugin } from '@hatago/core'
 
 // Custom plugin
@@ -218,7 +217,7 @@ const myPlugin: HatagoPlugin = ctx => {
 }
 
 const { app, server } = await createApp({
-  plugins: [...defaultPlugins.createDefaultPlugins(process.env), myPlugin],
+  plugins: [myPlugin],
 })
 ```
 

@@ -220,6 +220,27 @@ Creates a new Hatago application instance.
 - `server`: MCP server instance
 - `ctx`: Plugin context for runtime information
 
+#### `setupMCPEndpoint(app: Hono, server: McpServer)`
+
+Configures the standard MCP endpoint (`/mcp`) for HTTP transport. This utility function is used internally by adapters to provide consistent MCP endpoint behavior.
+
+```typescript
+import { setupMCPEndpoint } from '@hatago/core'
+
+// Used internally by adapters
+setupMCPEndpoint(app, server)
+```
+
+#### `convertNodeEnv(env?: NodeJS.ProcessEnv)`
+
+Converts Node.js environment variables to a generic record format. This utility normalizes environment variable handling across different runtimes.
+
+```typescript
+import { convertNodeEnv } from '@hatago/core'
+
+const env = convertNodeEnv(process.env)
+```
+
 #### `defaultPlugins.createDefaultPlugins(env?)`
 
 Creates the default plugin set for Hatago.

@@ -601,7 +601,6 @@ export default {
 
 ```typescript
 import { createApp } from '@hatago/adapter-workers'
-import { defaultPlugins } from '@hatago/core'
 import { kvPlugin, metricsPlugin } from './plugins'
 
 export default {
@@ -609,7 +608,7 @@ export default {
     const { app } = await createApp({
       name: 'advanced-mcp-server',
       env: env as Record<string, unknown>,
-      plugins: [...defaultPlugins.createDefaultPlugins(env), kvPlugin(), metricsPlugin()],
+      plugins: [kvPlugin(), metricsPlugin()],
     })
 
     return app?.fetch(request, env) ?? new Response('Error', { status: 500 })
