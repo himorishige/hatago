@@ -25,7 +25,11 @@
     "changeset:version": "changeset version && pnpm install --lockfile-only",
     "changeset:publish": "pnpm build && changeset publish",
     "version": "changeset version && pnpm install --lockfile-only",
-    "release": "pnpm build && changeset publish"
+    "release": "pnpm build && changeset publish",
+    "ex": "tsx examples/_shared/runner.ts",
+    "ex:all": "pnpm ex --all --mode=smoke",
+    "test:examples": "vitest run examples/**/*.test.ts",
+    "test:examples:watch": "vitest examples/**/*.test.ts"
   },
   "workspaces": [
     "packages/*",

@@ -1,0 +1,34 @@
+{
+  "name": "@hatago/examples",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Hatago plugin examples with functional programming patterns",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:examples": "vitest run plugin-*/scenario.test.ts",
+    "test:examples:watch": "vitest plugin-*/scenario.test.ts",
+    "run:hello": "tsx _shared/runner.ts --plugin hello-hatago",
+    "run:logger": "tsx _shared/runner.ts --plugin logger",
+    "run:rate-limit": "tsx _shared/runner.ts --plugin rate-limit",
+    "run:concurrency": "tsx _shared/runner.ts --plugin concurrency-limiter",
+    "run:kv": "tsx _shared/runner.ts --plugin kv",
+    "run:oauth": "tsx _shared/runner.ts --plugin oauth-metadata",
+    "run:github": "tsx _shared/runner.ts --plugin github-oauth",
+    "run:all": "tsx _shared/runner.ts --all --mode smoke"
+  },
+  "dependencies": {
+    "@hatago/core": "workspace:*",
+    "@hatago/adapter-node": "workspace:*",
+    "@hatago/hono-mcp": "workspace:*",
+    "hono": "^4.9.1",
+    "@modelcontextprotocol/sdk": "^1.17.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.10",
+    "tsx": "^4.20.4",
+    "typescript": "^5.9.2",
+    "vitest": "^2.1.8"
+  }
+}

@@ -21,3 +21,6 @@ packages/*/coverage/
 
 # serena
 .serena/cache
+
+# worktree
+_wt/

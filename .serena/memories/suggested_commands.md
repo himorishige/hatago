@@ -3,6 +3,7 @@
 ## 基本開発コマンド
 
 ### 依存関係管理
+
 ```bash
 # 依存関係インストール
 pnpm i
@@ -15,6 +16,7 @@ pnpm add -D <package>
 ```
 
 ### 開発サーバー
+
 ```bash
 # Node.js HTTP モード（推奨）
 pnpm dev
@@ -27,6 +29,7 @@ pnpm dev:cf
 ```
 
 ### ビルドとタイプチェック
+
 ```bash
 # 全パッケージビルド
 pnpm build
@@ -39,6 +42,7 @@ pnpm clean && pnpm build
 ```
 
 ### テスト
+
 ```bash
 # テスト実行
 pnpm test
@@ -54,6 +58,7 @@ pnpm test:ui
 ```
 
 ### コード品質
+
 ```bash
 # リント（Biome）
 pnpm lint
@@ -72,6 +77,7 @@ pnpm check:fix
 ```
 
 ### 本番環境
+
 ```bash
 # HTTPサーバー起動
 pnpm start
@@ -81,6 +87,7 @@ pnpm start:stdio
 ```
 
 ### バージョン管理とリリース
+
 ```bash
 # Changeset追加
 pnpm changeset
@@ -95,6 +102,7 @@ pnpm changeset:publish
 ## システムユーティリティ（macOS）
 
 ### ファイル操作
+
 ```bash
 # ファイル一覧
 ls -la
@@ -110,6 +118,7 @@ grep -r "pattern" src/
 ```
 
 ### Git操作
+
 ```bash
 # ステータス確認
 git status
@@ -125,6 +134,7 @@ git log --oneline -10
 ```
 
 ### プロセス管理
+
 ```bash
 # ポート使用状況確認
 lsof -i :8787
@@ -136,11 +146,13 @@ ps aux | grep node
 ## MCP テストコマンド
 
 ### Health Check
+
 ```bash
 curl http://localhost:8787/health
 ```
 
 ### MCP 初期化
+
 ```bash
 curl -X POST http://localhost:8787/mcp \
   -H "Content-Type: application/json" \
@@ -148,6 +160,7 @@ curl -X POST http://localhost:8787/mcp \
 ```
 
 ### ツール一覧取得
+
 ```bash
 curl -X POST http://localhost:8787/mcp \
   -H "Content-Type: application/json" \
@@ -157,6 +170,7 @@ curl -X POST http://localhost:8787/mcp \
 ## 環境変数設定例
 
 ### 開発環境
+
 ```bash
 export LOG_LEVEL=debug
 export LOG_FORMAT=pretty
@@ -165,6 +179,7 @@ export HATAGO_TRANSPORT=http
 ```
 
 ### 本番環境
+
 ```bash
 export LOG_LEVEL=info
 export LOG_FORMAT=json
