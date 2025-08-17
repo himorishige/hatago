@@ -5,6 +5,7 @@
 ## 概要
 
 このプラグインは：
+
 - 構造化ログ（JSON/Pretty両対応）
 - PII（個人識別情報）の自動マスキング
 - ログレベルの動的制御
@@ -30,6 +31,7 @@ NOREN_MASKING=false pnpm ex --plugin logger --mode smoke
 ## 期待される出力
 
 ### Pretty Format（開発用）
+
 ```
 2024-01-01T00:00:00.000Z [INFO] Plugin initialized
 2024-01-01T00:00:00.000Z [INFO] Request processed {
@@ -41,6 +43,7 @@ NOREN_MASKING=false pnpm ex --plugin logger --mode smoke
 ```
 
 ### JSON Format（本番用）
+
 ```json
 {
   "timestamp": "2024-01-01T00:00:00.000Z",
@@ -58,6 +61,7 @@ NOREN_MASKING=false pnpm ex --plugin logger --mode smoke
 ## プラグイン機能
 
 ### ログレベル制御
+
 - `TRACE` - 最も詳細（開発時のみ）
 - `DEBUG` - デバッグ情報
 - `INFO` - 一般的な情報（デフォルト）
@@ -66,7 +70,9 @@ NOREN_MASKING=false pnpm ex --plugin logger --mode smoke
 - `FATAL` - 致命的エラー
 
 ### PIIマスキング機能
+
 自動的に以下の情報をマスクする：
+
 - メールアドレス：`user@example.com` → `***@***.***`
 - クレジットカード番号：`4111-1111-1111-1111` → `****-****-****-****`
 - APIトークン：`sk_live_abc123...` → `***TOKEN***`
@@ -75,7 +81,9 @@ NOREN_MASKING=false pnpm ex --plugin logger --mode smoke
 ### MCPツール
 
 #### `logs_query`
+
 ログクエリツール（フィルタリング機能付き）
+
 ```typescript
 {
   "level": "error",           // ログレベルでフィルタ
@@ -86,7 +94,9 @@ NOREN_MASKING=false pnpm ex --plugin logger --mode smoke
 ```
 
 #### `logs_config`
+
 ログ設定の取得・更新
+
 ```typescript
 {
   "action": "get" | "set",
@@ -101,6 +111,7 @@ NOREN_MASKING=false pnpm ex --plugin logger --mode smoke
 ## 実装パターン
 
 ### 関数合成による処理パイプライン
+
 ```typescript
 // ログフォーマッターの合成例
 const formatter = compose(
@@ -112,6 +123,7 @@ const formatter = compose(
 ```
 
 ### 不変性を保証したログエントリ
+
 ```typescript
 interface LogEntry {
   readonly timestamp: string
@@ -122,19 +134,19 @@ interface LogEntry {
 ```
 
 ### ミドルウェアパターン
+
 ```typescript
-const logMiddleware = (formatter: LogFormatter) => 
-  async (c: Context, next: Next) => {
-    const start = Date.now()
-    await next()
-    const duration = Date.now() - start
-    
-    formatter({
-      level: 'info',
-      message: 'Request processed',
-      data: { method: c.req.method, duration }
-    })
-  }
+const logMiddleware = (formatter: LogFormatter) => async (c: Context, next: Next) => {
+  const start = Date.now()
+  await next()
+  const duration = Date.now() - start
+
+  formatter({
+    level: 'info',
+    message: 'Request processed',
+    data: { method: c.req.method, duration },
+  })
+}
 ```
 
 ## 学習ポイント

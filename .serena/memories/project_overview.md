@@ -1,9 +1,11 @@
 # Hatago プロジェクト概要
 
 ## プロジェクトの目的
+
 HatagoはModel Context Protocol (MCP) サーバーフレームワークで、軽量で高速、拡張可能なアーキテクチャを持つ。プラグインベースの設計により、コアを最小限に保ちながら機能を拡張できる。
 
 ## 主要な特徴
+
 - **マルチランタイム対応**: Node.js、Cloudflare Workers、Deno、Bunで動作
 - **プラグインアーキテクチャ**: 拡張性を重視した設計
 - **デュアルトランスポート**: stdio と HTTP の両方をサポート
@@ -13,11 +15,13 @@ HatagoはModel Context Protocol (MCP) サーバーフレームワークで、軽
 ## テクノロジースタック
 
 ### コアフレームワーク
+
 - **Hono**: 軽量Webフレームワーク
 - **TypeScript**: 型安全性とDX向上
 - **MCP TypeScript SDK**: Model Context Protocol実装
 
 ### 開発ツール
+
 - **pnpm**: パッケージマネージャー (v8.15.0)
 - **Biome**: 高速なリンター
 - **Prettier**: コードフォーマッター
@@ -25,11 +29,13 @@ HatagoはModel Context Protocol (MCP) サーバーフレームワークで、軽
 - **Changesets**: バージョン管理とリリース
 
 ### 運用基盤
+
 - **OAuth 2.1**: 認証・認可
 - **Noren v0.6.2**: PII マスキング機能付きロガー
 - **Progressive Web**: Server-Sent Events (SSE) サポート
 
 ## アーキテクチャ構造
+
 ```
 ┌─────────────────────────────────────────┐
 │                 Your App                │
@@ -45,6 +51,7 @@ HatagoはModel Context Protocol (MCP) サーバーフレームワークで、軽
 ```
 
 モノレポ構造で、以下のパッケージが含まれる：
+
 - **packages/**: コアフレームワーク、アダプター、プラグイン
 - **apps/**: サンプルアプリケーション
 - **examples/**: 外部MCPサーバーの例

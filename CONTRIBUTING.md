@@ -5,6 +5,7 @@ Thank you for your interest in contributing to Hatago! We welcome all contributi
 ## How to Contribute
 
 We welcome various forms of contributions, including:
+
 - **Reporting Bugs**: Filing detailed bug reports.
 - **Suggesting Enhancements**: Proposing new features or improvements.
 - **Submitting Pull Requests**: Contributing code, documentation, or tests.
@@ -16,12 +17,14 @@ Please use the [GitHub Issues](https://github.com/himorishige/hatago/issues) pag
 To get started with the development, please follow these steps:
 
 1.  **Fork & Clone**: Fork the repository to your own GitHub account and then clone it to your local machine.
+
     ```sh
     git clone https://github.com/himorishige/hatago.git
     cd noren
     ```
 
 2.  **Install Dependencies**: This project uses `pnpm` for package management. Make sure you have it installed.
+
     ```sh
     pnpm install
     ```
@@ -34,6 +37,7 @@ To get started with the development, please follow these steps:
 ## Making Changes
 
 1.  **Create a Branch**: Create a new branch for your changes.
+
     ```sh
     git checkout -b my-feature-or-fix
     ```
@@ -41,6 +45,7 @@ To get started with the development, please follow these steps:
 2.  **Implement Changes**: Make your desired changes to the code or documentation. The source code is located in the `packages/` directory.
 
 3.  **Run Checks**: Before committing, ensure all tests and quality checks pass.
+
     ```sh
     # Run tests for all packages
     pnpm test
@@ -48,7 +53,9 @@ To get started with the development, please follow these steps:
     # Run linter and formatter checks
     pnpm check
     ```
+
     To automatically fix formatting issues, you can run:
+
     ```sh
     pnpm format
     ```

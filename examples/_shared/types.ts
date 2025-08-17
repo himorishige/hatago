@@ -11,7 +11,7 @@ export interface ExampleConfig {
   readonly name: string
   readonly description: string
   readonly plugin: HatagoPlugin
-  readonly testScenarios?: ReadonlyArray<TestScenario>
+  readonly testScenarios?: readonly TestScenario[]
   readonly env?: Readonly<Record<string, string>>
 }
 
@@ -33,6 +33,8 @@ export interface ExampleResult {
   readonly output: unknown
   readonly duration: number
   readonly error?: string
+  readonly pluginName?: string
+  readonly mode?: ExampleMode
 }
 
 /**
