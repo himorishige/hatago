@@ -31,12 +31,101 @@ pnpm dev:cf
 
 - `hello-hatago` … ツール `hello.hatago` を追加。**progress 通知**で "Hello Hatago" を一文字ずつ送って、最後に結果を返す
 - `oauth-metadata` … PRM を配信し、必要なら `/mcp` に Bearer 認可を強制する（デフォルトは強制しない）
+- `github-oauth` … GitHub OAuth Device Flow 認証。ブラウザ不要でMCP経由でGitHub APIを使用
 
-環境変数：
+### OAuth設定環境変数：
 
 - `AUTH_ISSUER` … Authorization Server の issuer（例: `https://auth.example.com`）
 - `RESOURCE` … リソース識別子 URL（省略時はリクエストの origin から自動）
 - `REQUIRE_AUTH` … `"true"` のとき `/mcp` に Bearer を要求
+
+### GitHub OAuth設定：
+
+- `GITHUB_CLIENT_ID` … GitHub OAuth App の Client ID（必須）
+- `GITHUB_CLIENT_SECRET` … GitHub OAuth App の Client Secret（推奨、トークン取り消しに必要）
+- `GITHUB_OAUTH_SCOPE` … OAuth スコープ（デフォルト: `public_repo read:user`）
+
+## GitHub OAuth App セットアップ
+
+### 1. GitHub OAuth App作成
+
+1. https://github.com/settings/applications/new にアクセス
+2. 以下を入力：
+   - **Application name**: `Hatago MCP Server`
+   - **Homepage URL**: `https://github.com/your-username/hatago`
+   - **Authorization callback URL**: `http://localhost:8787/callback`（Device Flowでは未使用だが必須）
+3. **Register application** をクリック
+4. Client ID と Client Secret を取得
+
+### 2. Cloudflare Workers環境での設定
+
+#### A. Client IDの設定
+
+`wrangler.jsonc` の環境変数に追加（既に設定済み）：
+
+```jsonc
+{
+  "vars": {
+    "GITHUB_CLIENT_ID": "Ov23li...", // 取得したClient ID
+  },
+}
+```
+
+#### B. Client Secretの設定（セキュア）
+
+```bash
+# 開発環境
+wrangler secret put GITHUB_CLIENT_SECRET --env development
+# 入力プロンプトで取得したClient Secretを入力
+
+# 本番環境
+wrangler secret put GITHUB_CLIENT_SECRET --env production
+```
+
+### 3. デバイスフロー認証の使用
+
+#### ⚠️ セキュリティ注意事項
+
+**現在の実装は単一ユーザー環境向けです。**
+
+- **本番環境での制限**: 複数ユーザーが同時にアクセスする環境では、セッション競合が発生する可能性があります
+- **推奨用途**: 個人開発、テスト環境、単一ユーザーのMCPクライアント
+- **本番対応**: 複数ユーザー環境では、HTTPセッション管理や専用認証レイヤーの実装が必要です
+
+#### 利用可能なMCPツール
+
+デバイスフロー認証は以下のMCPツールを提供：
+
+- `github_auth_start` … 認証開始（user_codeとverification_uriを取得）
+- `github_auth_status` … 認証状態確認（ポーリング）
+- `github_logout` … ログアウト・トークン取り消し
+- `github_user_authenticated` … 認証済みユーザー情報取得
+- `github_repos_authenticated` … 認証済みリポジトリ一覧
+
+#### 使用例：
+
+```bash
+# 1. 認証開始
+curl -sS http://localhost:8787/mcp -H 'content-type: application/json' -d '{
+  "jsonrpc":"2.0","id":1,"method":"tools/call",
+  "params":{"name":"github_auth_start","arguments":{}}
+}'
+# → user_code と verification_uri を取得
+
+# 2. ブラウザで https://github.com/login/device にアクセスしてuser_codeを入力
+
+# 3. 認証状態確認
+curl -sS http://localhost:8787/mcp -H 'content-type: application/json' -d '{
+  "jsonrpc":"2.0","id":2,"method":"tools/call",
+  "params":{"name":"github_auth_status","arguments":{}}
+}'
+
+# 4. 認証完了後、GitHub APIを使用
+curl -sS http://localhost:8787/mcp -H 'content-type: application/json' -d '{
+  "jsonrpc":"2.0","id":3,"method":"tools/call",
+  "params":{"name":"github_user_authenticated","arguments":{}}
+}'
+```
 
 ## ツール呼び出し（curl お試し）
 

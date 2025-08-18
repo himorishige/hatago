@@ -27,6 +27,10 @@
     "./transport": {
       "import": "./dist/transport/index.js",
       "types": "./dist/transport/index.d.ts"
+    },
+    "./types/runtime": {
+      "import": "./dist/types/runtime.js",
+      "types": "./dist/types/runtime.d.ts"
     }
   },
   "files": [
@@ -65,7 +69,6 @@
   },
   "devDependencies": {
     "@modelcontextprotocol/sdk": "^1.17.2",
-    "@types/node": "^20.19.10",
     "hono": "^4.9.1",
     "msw": "^2.7.0",
     "typescript": "^5.9.2",
