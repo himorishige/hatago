@@ -5,7 +5,6 @@ import {
   helloHatago,
 } from '@hatago/core'
 import type { HatagoPlugin } from '@hatago/core'
-import { githubDeviceFlowPlugin } from '@hatago/plugin-github-oauth'
 import { nodeRuntimeAdapter } from './runtime-adapter.js'
 
 export interface CreateNodeAppOptions extends Omit<CreateAppOptions, 'env'> {
@@ -18,7 +17,7 @@ export interface CreateNodeAppOptions extends Omit<CreateAppOptions, 'env'> {
  */
 const createDefaultPlugins = (_env?: Record<string, unknown>): HatagoPlugin[] => {
   // Node.js runtime has full capabilities
-  return [helloHatago, githubDeviceFlowPlugin]
+  return [helloHatago]
 }
 
 /**

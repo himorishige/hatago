@@ -62,3 +62,22 @@ export function createEnvironmentLogger(
 
 // Legacy exports for backward compatibility
 export { createLogger as createBasicLogger } from './basic.js'
+
+// Global log level management for testing
+let globalLogLevel = 'info'
+
+/**
+ * Get current global log level
+ * @returns Current log level
+ */
+export function getLogLevel(): string {
+  return globalLogLevel
+}
+
+/**
+ * Set global log level
+ * @param level Log level to set
+ */
+export function setLogLevel(level: string): void {
+  globalLogLevel = level
+}
