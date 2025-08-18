@@ -80,7 +80,7 @@ export async function createApp(options: CreateAppOptions = {}) {
 
   // Setup MCP endpoint for HTTP mode
   if (app && mode === 'http') {
-    setupMCPEndpoint(app, server)
+    setupMCPEndpoint(app, server, plugins, env ?? {})
   }
 
   // Basic landing page (only in HTTP mode)

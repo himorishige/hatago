@@ -42,6 +42,7 @@ export interface DeviceAuthSession {
   userCode?: string // User display code
   githubToken?: GitHubToken // Access token
   userId?: string // GitHub user ID/login
+  sessionRotated?: boolean // Whether session ID was rotated after authentication
   createdAt: number
   lastAccessedAt: number
   expiresAt: number

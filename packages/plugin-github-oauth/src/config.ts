@@ -9,8 +9,8 @@ import type { GitHubDeviceFlowConfig } from './types.js'
  * This allows users to authenticate without creating their own OAuth App
  */
 export const HATAGO_GITHUB_CONFIG = {
-  // TODO: Replace with actual Hatago GitHub OAuth App Client ID when created
-  CLIENT_ID: 'Ov23liCXXXXXXXXXXXXX', // Placeholder - will be replaced with real App ID
+  // No default client ID - users must provide their own until shared app is created
+  CLIENT_ID: undefined,
   SCOPE: 'public_repo read:user',
 } as const
 
@@ -29,12 +29,25 @@ function getEnvVar(env: Record<string, unknown>, key: string): string | undefine
  * Get GitHub OAuth configuration from environment with fallback to shared app
  * @param env Environment variables from HatagoContext
  * @returns GitHub OAuth configuration
+ * @throws Error if GITHUB_CLIENT_ID is not provided
  */
 export function getGitHubConfig(env: Record<string, unknown> = {}): GitHubDeviceFlowConfig {
   // Use custom client ID if provided, otherwise use shared Hatago app
   const clientId = getEnvVar(env, 'GITHUB_CLIENT_ID') || HATAGO_GITHUB_CONFIG.CLIENT_ID
   const clientSecret = getEnvVar(env, 'GITHUB_CLIENT_SECRET') // Optional for device flow
   const scope = getEnvVar(env, 'GITHUB_OAUTH_SCOPE') || HATAGO_GITHUB_CONFIG.SCOPE
+
+  if (!clientId) {
+    throw new Error(
+      'GitHub Client ID is required. Please set GITHUB_CLIENT_ID environment variable.\n' +
+        'To create a GitHub OAuth App:\n' +
+        '1. Go to https://github.com/settings/applications/new\n' +
+        '2. Set Application name: "Hatago MCP Server"\n' +
+        '3. Set Homepage URL: http://localhost:8787\n' +
+        '4. Set Authorization callback URL: http://localhost:8787\n' +
+        '5. Copy the Client ID and set GITHUB_CLIENT_ID=your_client_id'
+    )
+  }
 
   return {
     clientId,
@@ -50,8 +63,9 @@ export function getGitHubConfig(env: Record<string, unknown> = {}): GitHubDevice
  * @param config GitHub configuration
  * @returns true if using shared app, false if using custom app
  */
-export function isUsingSharedApp(config: GitHubDeviceFlowConfig): boolean {
-  return config.clientId === HATAGO_GITHUB_CONFIG.CLIENT_ID
+export function isUsingSharedApp(_config: GitHubDeviceFlowConfig): boolean {
+  // Since shared app is not yet available, always return false
+  return false
 }
 
 /**
@@ -60,21 +74,9 @@ export function isUsingSharedApp(config: GitHubDeviceFlowConfig): boolean {
  * @returns Setup instructions for the user
  */
 export function getSetupInstructions(config: GitHubDeviceFlowConfig): string[] {
-  if (isUsingSharedApp(config)) {
-    return [
-      'Using Hatago shared GitHub App - no setup required!',
-      'Just run github_auth_start to begin authentication.',
-      '',
-      'Note: If you prefer to use your own OAuth App:',
-      '1. Create GitHub OAuth App at https://github.com/settings/applications/new',
-      '2. Set environment variable: GITHUB_CLIENT_ID=your_client_id',
-      '3. Optionally set: GITHUB_CLIENT_SECRET=your_client_secret',
-    ]
-  }
-
   const hasSecret = !!config.clientSecret
   return [
-    `Using custom GitHub OAuth App: ${config.clientId}`,
+    `Using GitHub OAuth App: ${config.clientId}`,
     hasSecret
       ? '✓ Client Secret configured'
       : '⚠ Client Secret not configured (token revocation disabled)',
@@ -82,5 +84,12 @@ export function getSetupInstructions(config: GitHubDeviceFlowConfig): string[] {
     'Environment variables:',
     `GITHUB_CLIENT_ID=${config.clientId}`,
     hasSecret ? 'GITHUB_CLIENT_SECRET=***' : 'GITHUB_CLIENT_SECRET=(not set)',
+    '',
+    'To create a GitHub OAuth App:',
+    '1. Go to https://github.com/settings/applications/new',
+    '2. Set Application name: "Hatago MCP Server"',
+    '3. Set Homepage URL: http://localhost:8787',
+    '4. Set Authorization callback URL: http://localhost:8787',
+    '5. Copy the Client ID and set GITHUB_CLIENT_ID=your_client_id',
   ]
 }

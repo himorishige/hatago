@@ -1,10 +1,14 @@
-/**
- * Reference server using @hatago/adapter-node with proper signal handling
- */
 import { serve } from '@hatago/adapter-node'
 import { createApp } from '@hatago/core'
 import { createDefaultLogger } from '@hatago/core'
+/**
+ * Reference server using @hatago/adapter-node with proper signal handling
+ */
+import { config } from 'dotenv'
 import { createPlugins } from './plugins/index.js'
+
+// Load environment variables from .env.local
+config({ path: '.env.local' })
 
 const port = Number(process.env.PORT || 8787)
 const hostname = process.env.HOSTNAME || 'localhost'

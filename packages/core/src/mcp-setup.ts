@@ -3,15 +3,12 @@ import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js'
 import type { Hono } from 'hono'
 import { createDefaultLogger } from './logger/index.js'
 import { type SessionData, SessionManager } from './session/index.js'
+import type { HatagoPlugin } from './types.js'
 
 const logger = createDefaultLogger('mcp-setup')
 
-// Module-level unified session management
-const sessionManager = new SessionManager({
-  ttlMs: 30 * 60 * 1000, // 30 minutes
-  cleanupIntervalMs: 60 * 1000, // 1 minute
-  maxSessions: 1000,
-})
+// Module-level session manager (will be initialized with plugins)
+let sessionManager: SessionManager
 
 /**
  * Session context interface for MCP tools
@@ -100,7 +97,22 @@ export function createPluginSessionContext(server: any, pluginId: string): Plugi
  * Configure MCP endpoint for HTTP transport with session management
  * This function sets up the standard /mcp endpoint with multi-user session support
  */
-export const setupMCPEndpoint = (app: Hono, server: McpServer): void => {
+export const setupMCPEndpoint = (
+  app: Hono,
+  _server: McpServer,
+  plugins: HatagoPlugin[] = [],
+  env: Record<string, unknown> = {}
+): void => {
+  // Initialize session manager with plugins if not already done
+  if (!sessionManager) {
+    sessionManager = new SessionManager({
+      ttlMs: 30 * 60 * 1000, // 30 minutes
+      cleanupIntervalMs: 60 * 1000, // 1 minute
+      maxSessions: 1000,
+      plugins,
+      env,
+    })
+  }
   app.all('/mcp', async c => {
     const sessionId = c.req.header('mcp-session-id')
 
@@ -120,7 +132,7 @@ export const setupMCPEndpoint = (app: Hono, server: McpServer): void => {
       })
     }
 
-    // Create session context for server
+    // Create session context for the session-specific server
     const sessionContext: MCPSessionContext = {
       sessionId: sessionRecord.id,
       sessionStore: {
@@ -140,11 +152,19 @@ export const setupMCPEndpoint = (app: Hono, server: McpServer): void => {
       },
     }
 
-    // Inject session context into server with getter function
-    ;(server as any).sessionContext = sessionContext
-    ;(server as any).getSessionContext = () => sessionContext
+    // Inject session context into session-specific server
+    ;(sessionRecord.server as any).sessionContext = sessionContext
+    ;(sessionRecord.server as any).getSessionContext = () => sessionContext
 
-    await server.connect(sessionRecord.transport as Transport)
+    // Connect only if not already initialized
+    if (!sessionRecord.initialized) {
+      await sessionRecord.server.connect(sessionRecord.transport as Transport)
+      sessionRecord.initialized = true
+      logger.debug('MCP server connected to transport', {
+        sessionId: sessionRecord.id,
+      })
+    }
+
     return sessionRecord.transport.handleRequest(c)
   })
 

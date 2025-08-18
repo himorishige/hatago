@@ -3,7 +3,10 @@
  * Addresses race conditions between transport and session store management
  */
 import { StreamableHTTPTransport } from '@hatago/hono-mcp'
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { createDefaultLogger } from '../logger/index.js'
+import type { HatagoPlugin } from '../types.js'
+import { defaultRuntimeAdapter } from '../types/runtime.js'
 import { createSessionStore, generateSessionId } from './index.js'
 import type { SessionData } from './types.js'
 
@@ -15,7 +18,9 @@ const logger = createDefaultLogger('session-manager')
 interface SessionRecord {
   id: string
   transport: StreamableHTTPTransport
+  server: McpServer
   data: SessionData
+  initialized: boolean
   createdAt: number
   lastAccessedAt: number
   expiresAt: number
@@ -31,6 +36,10 @@ export interface SessionManagerConfig {
   cleanupIntervalMs?: number
   /** Maximum number of sessions (default: 1000) */
   maxSessions?: number
+  /** Plugins to apply to each MCP server instance */
+  plugins?: HatagoPlugin[]
+  /** Environment variables to pass to plugins */
+  env?: Record<string, unknown>
 }
 
 /**
@@ -39,7 +48,10 @@ export interface SessionManagerConfig {
  */
 export class SessionManager {
   private readonly sessions = new Map<string, SessionRecord>()
-  private readonly config: Required<SessionManagerConfig>
+  private readonly config: Required<Omit<SessionManagerConfig, 'env'>> & {
+    env: Record<string, unknown>
+  }
+  private readonly plugins: HatagoPlugin[]
   private readonly cleanupIntervalId: number
   private isDestroyed = false
 
@@ -48,7 +60,10 @@ export class SessionManager {
       ttlMs: config.ttlMs ?? 30 * 60 * 1000, // 30 minutes
       cleanupIntervalMs: config.cleanupIntervalMs ?? 60 * 1000, // 1 minute
       maxSessions: config.maxSessions ?? 1000,
+      plugins: config.plugins ?? [],
+      env: config.env ?? {},
     }
+    this.plugins = config.plugins ?? []
 
     // Start cleanup timer
     this.cleanupIntervalId = setInterval(() => {
@@ -89,6 +104,39 @@ export class SessionManager {
       },
     })
 
+    // Create MCP server instance for this session
+    const server = new McpServer(
+      {
+        name: 'hatago',
+        version: '0.1.0',
+      },
+      {
+        capabilities: {
+          tools: {
+            listChanged: true,
+          },
+        },
+      }
+    )
+
+    // Apply plugins to this MCP server instance
+    this.plugins.forEach(plugin => {
+      try {
+        plugin({
+          app: null, // No HTTP app for individual sessions
+          server,
+          env: this.config.env,
+          getBaseUrl: () => new URL('http://localhost:8787'), // Default base URL
+          runtimeAdapter: defaultRuntimeAdapter,
+        })
+      } catch (error) {
+        logger.error('Failed to apply plugin', {
+          pluginName: plugin.name || 'unknown',
+          error: error instanceof Error ? error.message : String(error),
+        })
+      }
+    })
+
     // Create session data
     const sessionData: SessionData = {
       id: sessionId,
@@ -102,7 +150,9 @@ export class SessionManager {
     const sessionRecord: SessionRecord = {
       id: sessionId,
       transport,
+      server,
       data: sessionData,
+      initialized: false,
       createdAt: now,
       lastAccessedAt: now,
       expiresAt: now + this.config.ttlMs,
@@ -184,11 +234,13 @@ export class SessionManager {
       },
     })
 
-    // Create new session record
+    // Create new session record with same MCP server (reuse initialized server)
     const newSessionRecord: SessionRecord = {
       id: newSessionId,
       transport: newTransport,
+      server: oldSession.server, // Reuse existing MCP server instance
       data: newSessionData,
+      initialized: oldSession.initialized, // Preserve initialization state
       createdAt: oldSession.createdAt, // Keep original creation time
       lastAccessedAt: now,
       expiresAt: now + this.config.ttlMs,
@@ -363,13 +415,23 @@ export class SessionManager {
     // Stop cleanup timer
     clearInterval(this.cleanupIntervalId)
 
-    // Close all transports and clear sessions
+    // Close all transports, servers and clear sessions
     for (const [_sessionId, session] of this.sessions) {
+      // Close transport
       if (session.transport && typeof (session.transport as any).close === 'function') {
         try {
           ;(session.transport as any).close()
         } catch (error) {
           logger.warn('Failed to close transport during destroy', { error })
+        }
+      }
+
+      // Close MCP server if it has a close method
+      if (session.server && typeof (session.server as any).close === 'function') {
+        try {
+          ;(session.server as any).close()
+        } catch (error) {
+          logger.warn('Failed to close MCP server during destroy', { error })
         }
       }
     }

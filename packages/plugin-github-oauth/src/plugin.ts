@@ -219,8 +219,8 @@ export function createGitHubDeviceFlowPlugin(
             }
           }
 
-          // Already authenticated
-          if (session.githubToken) {
+          // Already authenticated and session rotated
+          if (session.githubToken && session.sessionRotated) {
             return {
               content: [
                 {
@@ -229,6 +229,66 @@ export function createGitHubDeviceFlowPlugin(
                     status: 'authenticated',
                     username: session.userId,
                     scope: session.githubToken.scope,
+                    message: `Successfully authenticated as ${session.userId}`,
+                  }),
+                },
+              ],
+            }
+          }
+
+          // Already authenticated but session not rotated - rotate now
+          if (session.githubToken && !session.sessionRotated) {
+            // SECURITY: Rotate session ID to prevent session fixation attacks
+            const mainSessionContext = (server as any).getSessionContext?.()
+            if (!mainSessionContext) {
+              throw new Error('Failed to access session context for rotation')
+            }
+
+            const oldSessionId = pluginSession.sessionId!
+            const newSessionId = generateSessionId()
+
+            // Rotate session (move data to new ID, delete old)
+            const rotated = mainSessionContext.sessionStore.rotateSession(
+              oldSessionId,
+              newSessionId
+            )
+
+            if (!rotated) {
+              throw new Error('Failed to rotate session for security')
+            }
+
+            // Create new plugin session context with rotated session ID
+            const newPluginSession = createPluginSessionContext(server, PLUGIN_ID)
+
+            // Update session with rotation flag using new session ID
+            const updatedSession: DeviceAuthSession = {
+              ...session,
+              id: newSessionId,
+              sessionRotated: true,
+              lastAccessedAt: Date.now(),
+            }
+
+            // Save to new session
+            newPluginSession.sessionStore.set('auth-session', updatedSession)
+
+            logger.info('Session rotated for existing authentication', {
+              username: session.userId,
+              rotated: true,
+            })
+
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify({
+                    status: 'authenticated',
+                    username: session.userId,
+                    scope: session.githubToken.scope,
+                    message: `Successfully authenticated as ${session.userId}`,
+                    sessionRotated: true,
+                    newSessionId: newSessionId,
+                    notice:
+                      'Session ID has been rotated for security. Please use the new session ID for subsequent requests.',
                   }),
                 },
               ],
@@ -272,6 +332,7 @@ export function createGitHubDeviceFlowPlugin(
                 id: newSessionId,
                 githubToken: token,
                 userId: user.login,
+                sessionRotated: true,
                 lastAccessedAt: Date.now(),
               }
 
@@ -294,6 +355,7 @@ export function createGitHubDeviceFlowPlugin(
                       scope: token.scope,
                       message: `Successfully authenticated as ${user.login}`,
                       sessionRotated: true,
+                      newSessionId: newSessionId,
                       notice:
                         'Session ID has been rotated for security. Please use the new session ID for subsequent requests.',
                     }),
