@@ -1,0 +1,121 @@
+# Hatago Configuration Example (YAML format)
+# Copy to .hatagorc.yaml, hatago.config.yaml, or other supported locations
+
+# MCP Proxy Configuration
+proxy:
+  # List of MCP servers to proxy
+  servers:
+    - id: filesystem
+      name: Filesystem MCP Server
+      url: http://localhost:3001/mcp
+      enabled: true
+      priority: 1
+
+    - id: github
+      name: GitHub MCP Server
+      url: http://localhost:3002/mcp
+      enabled: true
+      priority: 2
+
+  # Namespace strategy for tool/resource naming
+  # Options: prefix, suffix, replace, none
+  namespaceStrategy: prefix
+
+  # Conflict resolution strategy
+  # Options: error, rename, skip, override
+  conflictResolution: rename
+
+  # Namespace configuration
+  namespace:
+    separator: '_'
+    caseSensitive: false
+    maxLength: 64
+    autoPrefix:
+      enabled: true
+      format: '{server}_{index}'
+
+# Server Configuration
+server:
+  port: 8787
+  hostname: localhost
+  cors: true
+  timeout: 30000
+
+# Logging Configuration
+logging:
+  level: info # trace, debug, info, warn, error, fatal
+  format: pretty # json, pretty
+  output: console # console, file
+
+# Security Configuration
+security:
+  requireAuth: false
+  allowedOrigins:
+    - '*'
+  rateLimit:
+    enabled: false
+    windowMs: 60000
+    maxRequests: 100
+
+# Runner Configuration (for subprocess MCP servers)
+runner:
+  servers:
+    - id: sqlite
+      name: SQLite MCP Server
+      package: '@modelcontextprotocol/server-sqlite'
+      packageManager: npx
+      args:
+        - '--db'
+        - './data/database.db'
+      transport:
+        type: stdio
+      autoStart: true
+      restartOnFailure: true
+      maxRestarts: 3
+      permissions:
+        network: false
+        fsRead: true
+        fsWrite: true
+        env: false
+        spawn: false
+        allowedPaths:
+          - './data'
+      limits:
+        memory: 256 # MB
+        timeout: 30 # seconds
+
+    - id: puppeteer
+      name: Puppeteer MCP Server
+      package: '@modelcontextprotocol/server-puppeteer'
+      packageManager: npx
+      transport:
+        type: http
+        port: 3456
+      autoStart: false
+      restartOnFailure: true
+      maxRestarts: 3
+      permissions:
+        network: true
+        fsRead: true
+        fsWrite: false
+        env: true
+        spawn: true
+
+  # Default settings for all servers
+  defaults:
+    packageManager: npx
+    limits:
+      memory: 512
+      timeout: 60
+    permissions:
+      network: false
+      fsRead: false
+      fsWrite: false
+      env: false
+      spawn: false
+
+  # NPM registry URL (optional)
+  registry: https://registry.npmjs.org
+
+  # Cache directory for downloaded packages
+  cacheDir: ~/.hatago/cache

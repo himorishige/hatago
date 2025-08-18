@@ -28,6 +28,10 @@
       "import": "./dist/transport/index.js",
       "types": "./dist/transport/index.d.ts"
     },
+    "./runner": {
+      "import": "./dist/runner/index.js",
+      "types": "./dist/runner/index.d.ts"
+    },
     "./types/runtime": {
       "import": "./dist/types/runtime.js",
       "types": "./dist/types/runtime.d.ts"
@@ -58,13 +62,13 @@
     "format:fix": "prettier -w src"
   },
   "peerDependencies": {
-    "@modelcontextprotocol/sdk": "^1.17.2",
     "hono": ">=4.0.0"
   },
   "dependencies": {
     "@hatago/hono-mcp": "workspace:*",
     "@himorishige/noren-core": "^0.6.2",
     "@himorishige/noren-plugin-security": "^0.6.2",
+    "@modelcontextprotocol/sdk": "^1.17.2",
     "zod": "^3.25.76"
   },
   "devDependencies": {

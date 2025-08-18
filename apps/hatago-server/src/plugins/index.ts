@@ -4,6 +4,7 @@ import { createGitHubDeviceFlowPlugin, testSharedAppPlugin } from '@hatago/plugi
 import { helloHatago } from '@hatago/plugin-hello-hatago'
 import { oauthMetadata } from '@hatago/plugin-oauth-metadata'
 import { enhancedMcpProxy } from './enhanced-mcp-proxy.js'
+import { createRunnerPlugin } from './runner.js'
 
 /**
  * Create plugins based on environment variables
@@ -103,6 +104,21 @@ export function createPlugins(env?: Record<string, unknown>): HatagoPlugin[] {
       useConfig: true, // Load from hatago.config.json
     })
   )
+
+  // Runner Plugin - manages npx-based MCP servers
+  const RUNNER_ENABLED = getEnv('RUNNER_ENABLED', 'true') === 'true'
+  const RUNNER_AUTO_START = getEnv('RUNNER_AUTO_START', 'false') === 'true'
+
+  if (RUNNER_ENABLED) {
+    console.log('Adding Runner plugin...')
+    plugins.push(
+      createRunnerPlugin({
+        enabled: true,
+        autoStart: RUNNER_AUTO_START,
+      })
+    )
+    console.log('Runner plugin added successfully')
+  }
 
   // GitHub OAuth settings
   const GITHUB_CLIENT_ID = getOptionalEnv('GITHUB_CLIENT_ID')

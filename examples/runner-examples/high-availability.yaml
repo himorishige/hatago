@@ -1,0 +1,280 @@
+# High Availability Configuration with Auto-Recovery
+# This example shows production-ready setup with monitoring and failover
+
+runner:
+  servers:
+    # Critical database service
+    - id: primary-db
+      name: Primary Database
+      package: '@modelcontextprotocol/server-postgres'
+      packageManager: npx
+      env:
+        DATABASE_URL: ${PRIMARY_DATABASE_URL}
+        PG_STATEMENT_TIMEOUT: '30000'
+        PG_CONNECTION_TIMEOUT: '10000'
+        PG_IDLE_TIMEOUT: '60000'
+      transport:
+        type: stdio
+      autoStart: true
+
+      # Automatic recovery
+      restartOnFailure: true
+      maxRestarts: 5
+      restartDelay: 2000 # 2 second delay between restarts
+
+      # Health monitoring
+      healthCheck:
+        enabled: true
+        interval: 30000 # Check every 30 seconds
+        timeout: 5000 # 5 second timeout
+        retries: 3 # Retry 3 times before marking unhealthy
+        path: 'tools/list' # MCP endpoint to check
+
+      # Performance settings
+      permissions:
+        network: true
+        fsRead: true
+        fsWrite: false
+        env: true
+        spawn: false
+
+      limits:
+        memory: 1024 # 1GB for database operations
+        timeout: 60 # 60 second query timeout
+        cpuTime: 300 # 5 minutes CPU time
+
+    # Replica database for read operations
+    - id: replica-db
+      name: Database Replica
+      package: '@modelcontextprotocol/server-postgres'
+      packageManager: npx
+      env:
+        DATABASE_URL: ${REPLICA_DATABASE_URL}
+        PG_STATEMENT_TIMEOUT: '30000'
+        PG_READ_ONLY: 'true'
+      transport:
+        type: stdio
+      autoStart: true
+      restartOnFailure: true
+      maxRestarts: 5
+      restartDelay: 3000
+
+      healthCheck:
+        enabled: true
+        interval: 30000
+        timeout: 5000
+        retries: 3
+
+      permissions:
+        network: true
+        fsRead: true
+        fsWrite: false
+        env: true
+        spawn: false
+
+      limits:
+        memory: 1024
+        timeout: 60
+        cpuTime: 300
+
+    # Cache service
+    - id: cache
+      name: Redis Cache
+      package: '@modelcontextprotocol/server-redis'
+      packageManager: npx
+      env:
+        REDIS_URL: ${REDIS_URL}
+        REDIS_MAX_RETRIES: '3'
+        REDIS_RETRY_DELAY: '1000'
+      transport:
+        type: stdio
+      autoStart: true
+
+      # Quick recovery for cache
+      restartOnFailure: true
+      maxRestarts: 10 # More restarts for stateless service
+      restartDelay: 1000 # Quick restart
+
+      healthCheck:
+        enabled: true
+        interval: 15000 # More frequent checks for cache
+        timeout: 2000 # Quick timeout
+        retries: 2
+
+      permissions:
+        network: true
+        fsRead: false
+        fsWrite: false
+        env: true
+        spawn: false
+
+      limits:
+        memory: 512 # Less memory for cache
+        timeout: 10 # Quick operations
+
+    # Message queue processor
+    - id: queue
+      name: Queue Processor
+      package: '@modelcontextprotocol/server-rabbitmq'
+      packageManager: npx
+      env:
+        AMQP_URL: ${AMQP_URL}
+        QUEUE_NAME: 'mcp-tasks'
+        PREFETCH_COUNT: '10'
+        AUTO_ACK: 'false'
+      transport:
+        type: stdio
+      autoStart: true
+
+      # Robust queue processing
+      restartOnFailure: true
+      maxRestarts: 8
+      restartDelay: 5000 # 5 second backoff
+
+      healthCheck:
+        enabled: true
+        interval: 20000
+        timeout: 3000
+        retries: 3
+
+      permissions:
+        network: true
+        fsRead: true
+        fsWrite: true # May need to write processed files
+        env: true
+        spawn: false
+        allowedPaths:
+          - './queue-data'
+          - './processed'
+
+      limits:
+        memory: 768
+        timeout: 120 # Longer for batch processing
+        cpuTime: 600 # 10 minutes for long tasks
+
+    # Monitoring and alerting
+    - id: monitor
+      name: Health Monitor
+      package: '@modelcontextprotocol/server-prometheus'
+      packageManager: npx
+      transport:
+        type: http
+        port: 9090
+      autoStart: true
+
+      # Monitor must stay up
+      restartOnFailure: true
+      maxRestarts: 100 # Essentially unlimited
+      restartDelay: 500 # Quick recovery
+
+      healthCheck:
+        enabled: true
+        interval: 10000 # Frequent self-checks
+        timeout: 1000
+        retries: 1 # Quick failure detection
+
+      permissions:
+        network: true # Send alerts
+        fsRead: true # Read metrics
+        fsWrite: true # Write logs
+        env: true
+        spawn: false
+        allowedPaths:
+          - './metrics'
+          - './logs'
+
+      limits:
+        memory: 256
+        timeout: 30
+
+  # Production defaults
+  defaults:
+    packageManager: npx
+    restartOnFailure: true
+    maxRestarts: 3
+    restartDelay: 2000
+
+    healthCheck:
+      enabled: true
+      interval: 60000 # Default 1 minute checks
+      timeout: 5000
+      retries: 3
+
+    permissions:
+      network: false
+      fsRead: false
+      fsWrite: false
+      env: false
+      spawn: false
+
+    limits:
+      memory: 512
+      timeout: 30
+      cpuTime: 300
+
+  # Production registry
+  registry: ${NPM_REGISTRY:-https://registry.npmjs.org}
+  cacheDir: /var/cache/hatago
+
+# Server configuration
+server:
+  port: ${PORT:-8787}
+  hostname: '0.0.0.0' # All interfaces for load balancer
+  cors: false # Handled by API gateway
+  timeout: 60000 # 1 minute timeout
+
+# Production logging
+logging:
+  level: ${LOG_LEVEL:-info}
+  format: json # Structured for log aggregation
+  output: console
+
+  # Include metadata
+  metadata:
+    service: 'hatago'
+    environment: ${NODE_ENV:-production}
+    version: ${APP_VERSION}
+    instance: ${INSTANCE_ID}
+
+# Production security
+security:
+  requireAuth: true
+  allowedOrigins:
+    - https://api.example.com
+    - https://app.example.com
+
+  rateLimit:
+    enabled: true
+    windowMs: 60000
+    maxRequests: 1000 # Higher for production
+
+    # Per-endpoint limits
+    endpoints:
+      '/mcp': 100
+      '/runner/start': 10
+      '/runner/stop': 10
+      '/health': 1000
+
+  # JWT validation
+  jwt:
+    enabled: true
+    issuer: ${JWT_ISSUER}
+    audience: ${JWT_AUDIENCE}
+    algorithms: ['RS256']
+    publicKey: ${JWT_PUBLIC_KEY}
+
+# Observability
+observability:
+  metrics:
+    enabled: true
+    endpoint: /metrics
+
+  tracing:
+    enabled: true
+    endpoint: ${JAEGER_ENDPOINT}
+    serviceName: 'hatago-runner'
+
+  healthCheck:
+    enabled: true
+    endpoint: /health
+    detailed: true # Include component health

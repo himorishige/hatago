@@ -1,4 +1,5 @@
 # .env
+.env
 .env.*
 
 # pnpm
@@ -25,6 +26,9 @@ packages/*/coverage/
 
 # serena
 .serena/cache
+
+# wrangler
+.wrangler
 
 # worktree
 _wt/

@@ -1,9 +1,10 @@
 /**
  * Configuration loader for Hatago
+ * Supports multiple formats: JSON, JSONC, YAML, TOML, JS/TS
  */
 
-import { readFile } from 'node:fs/promises'
-import { resolve } from 'node:path'
+import { cosmiconfig } from 'cosmiconfig'
+import { TypeScriptLoader } from 'cosmiconfig-typescript-loader'
 import { logger } from '../utils/logger.js'
 import type { HatagoConfig } from './types.js'
 
@@ -48,42 +49,111 @@ const defaultConfig: HatagoConfig = {
 }
 
 /**
+ * Create cosmiconfig explorer
+ */
+const createExplorer = () => {
+  return cosmiconfig('hatago', {
+    searchPlaces: [
+      'package.json',
+      '.hatagorc',
+      '.hatagorc.json',
+      '.hatagorc.jsonc',
+      '.hatagorc.yaml',
+      '.hatagorc.yml',
+      '.hatagorc.toml',
+      '.hatagorc.js',
+      '.hatagorc.cjs',
+      '.hatagorc.mjs',
+      '.hatagorc.ts',
+      'hatago.config.json',
+      'hatago.config.jsonc',
+      'hatago.config.yaml',
+      'hatago.config.yml',
+      'hatago.config.toml',
+      'hatago.config.js',
+      'hatago.config.cjs',
+      'hatago.config.mjs',
+      'hatago.config.ts',
+    ],
+    loaders: {
+      '.ts': TypeScriptLoader(),
+      '.jsonc': (_filepath: string, content: string) => {
+        // Simple JSONC support (remove comments)
+        const cleaned = content.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')
+        return JSON.parse(cleaned)
+      },
+    },
+  })
+}
+
+/**
  * Load configuration from file
  * @param configPath - Path to config file (optional)
  * @returns Merged configuration
  */
 export async function loadConfig(configPath?: string): Promise<HatagoConfig> {
-  const paths = [
-    configPath,
-    resolve(process.cwd(), 'hatago.config.json'),
-    resolve(process.cwd(), 'hatago.config.jsonc'),
-    resolve(process.cwd(), '.hatagorc.json'),
-  ].filter(Boolean) as string[]
+  const explorer = createExplorer()
 
-  for (const path of paths) {
-    try {
-      logger.debug(`Attempting to load configuration from: ${path}`)
-      const content = await readFile(path, 'utf-8')
+  try {
+    let result
 
-      // Simple JSONC support (remove comments)
-      const cleaned = content.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')
-      const userConfig = JSON.parse(cleaned) as Partial<HatagoConfig>
-
-      logger.info('Configuration loaded successfully', { config_path: path })
-      return mergeConfig(defaultConfig, userConfig)
-    } catch (error) {
-      if (configPath === path) {
-        // If specific path was requested but failed, throw error
-        throw new Error(`Failed to load config from ${path}: ${(error as Error).message}`)
-      }
-      // Continue trying other paths
-      logger.debug(`Config file not found: ${path}`)
+    if (configPath) {
+      // Load from specific path
+      logger.debug(`Loading configuration from: ${configPath}`)
+      result = await explorer.load(configPath)
+    } else {
+      // Search for config file
+      logger.debug('Searching for configuration file...')
+      result = await explorer.search()
     }
+
+    if (result?.config) {
+      logger.info('Configuration loaded successfully', {
+        filepath: result.filepath,
+        format: result.filepath.split('.').pop(),
+      })
+
+      // Validate configuration
+      const validated = validateConfig(result.config)
+      return mergeConfig(defaultConfig, validated)
+    }
+
+    // No config file found, use defaults
+    logger.info('No configuration file found, using defaults')
+    return defaultConfig
+  } catch (error) {
+    logger.error('Failed to load configuration', { error: (error as Error).message })
+
+    if (configPath) {
+      // If specific path was requested but failed, throw error
+      throw new Error(`Failed to load config from ${configPath}: ${(error as Error).message}`)
+    }
+
+    // Fall back to defaults
+    logger.warn('Falling back to default configuration')
+    return defaultConfig
+  }
+}
+
+/**
+ * Validate configuration
+ */
+function validateConfig(config: unknown): Partial<HatagoConfig> {
+  // Basic validation - ensure it's an object
+  if (typeof config !== 'object' || config === null) {
+    throw new Error('Configuration must be an object')
   }
 
-  // No config file found, use defaults
-  logger.info('No configuration file found, using defaults')
-  return defaultConfig
+  // TODO: Add schema validation with Zod
+  return config as Partial<HatagoConfig>
+}
+
+/**
+ * Clear configuration cache (for testing)
+ */
+export function clearConfigCache(): void {
+  const explorer = createExplorer()
+  explorer.clearCaches()
 }
 
 /**

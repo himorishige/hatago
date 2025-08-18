@@ -1,0 +1,35 @@
+# Basic SQLite Server Configuration
+# This example shows a minimal setup for running an SQLite MCP server
+
+runner:
+  servers:
+    - id: sqlite-db
+      name: SQLite Database Server
+      package: '@modelcontextprotocol/server-sqlite'
+      packageManager: npx
+
+      # Command-line arguments for the server
+      args:
+        - '--db'
+        - './data/app.db'
+
+      # Transport configuration
+      transport:
+        type: stdio
+
+      # Auto-start when Hatago starts
+      autoStart: true
+
+      # Basic error recovery
+      restartOnFailure: true
+      maxRestarts: 3
+
+# Server configuration
+server:
+  port: 8787
+  hostname: localhost
+
+# Logging
+logging:
+  level: info
+  format: pretty
