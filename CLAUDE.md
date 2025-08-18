@@ -264,6 +264,28 @@ examples/
 - **Pure Function Priority**: Implement business logic as pure functions, isolate side effects
 - **Performance Impact**: Always consider startup time and memory usage impact of changes
 
+## Recent Development Updates (2025-08-18)
+
+### Session Management & OAuth Integration
+
+- **Session-specific MCP servers**: Each session now gets its own MCP server instance for proper isolation
+- **GitHub OAuth Device Flow**: Complete implementation with session rotation for security
+- **Environment variable propagation**: Fixed the chain from adapters → SessionManager → plugins
+- **Session rotation**: Automatic ID rotation on authentication to prevent session fixation attacks
+
+### Test Suite Improvements
+
+- **All 175 tests passing**: Fixed async test timeouts, logger mocks, and import issues
+- **Logger test fixes**: Changed from process.stdout.write to console.log/error mocks
+- **Session rotation tests**: Proper Promise-based async handling instead of setTimeout callbacks
+- **Import fixes**: Corrected @hatago/plugin-github-oauth imports (createGitHubDeviceFlowPlugin)
+
+### Known Limitations
+
+- **HTTP session persistence**: MCP specification limitation - each HTTP request creates new session
+- **Chrome extension polling**: External factor causing session proliferation (user-identified issue)
+- **Cloudflare Workers deployment**: Requires Durable Objects for stateful session management
+
 ## MCP Security Best Practices
 
 Hatago implements security measures based on the [Model Context Protocol Security Specifications](https://modelcontextprotocol.io/specification/2025-06-18/basic/security_best_practices).
@@ -588,6 +610,9 @@ This section provides comprehensive guidance for developers working with Hatago,
 - **Error Handling**: Structured logging with security-aware error responses
 - **Resource Binding**: Environment-variable controlled resource identification
 - **Anti-CSRF Protection**: State parameter validation in OAuth flows
+- **Session Management**: SessionManager with per-session MCP servers
+- **Environment Variable Propagation**: Fixed env passing from adapters through SessionManager to plugins
+- **Test Suite Reliability**: All 175 tests passing including session rotation and logger tests
 
 **Partially Implemented** ⚠️:
 
@@ -598,9 +623,9 @@ This section provides comprehensive guidance for developers working with Hatago,
 
 **Not Yet Implemented** ❌:
 
-- **Session Management**: Secure session ID generation and management
 - **Rate Limiting**: API rate limiting for production environments
 - **Comprehensive Audit Logging**: Full audit trail implementation
+- **HTTP Session Persistence**: Current limitation due to MCP specification
 
 ### Recommended Development Priorities
 
