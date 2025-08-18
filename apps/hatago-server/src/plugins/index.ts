@@ -1,9 +1,9 @@
 import type { HatagoPlugin } from '@hatago/core'
 import { createFetchTool, createSearchTool } from '@hatago/plugin-chatgpt-connector'
+import { createGitHubDeviceFlowPlugin, testSharedAppPlugin } from '@hatago/plugin-github-oauth'
 import { helloHatago } from '@hatago/plugin-hello-hatago'
 import { oauthMetadata } from '@hatago/plugin-oauth-metadata'
 import { enhancedMcpProxy } from './enhanced-mcp-proxy.js'
-import { githubOAuthTestPlugin } from './github-oauth-test.js'
 
 /**
  * Create plugins based on environment variables
@@ -104,10 +104,39 @@ export function createPlugins(env?: Record<string, unknown>): HatagoPlugin[] {
     })
   )
 
-  plugins.push(
-    // GitHub OAuth Test Plugin - internal implementation (test/demo purpose)
-    githubOAuthTestPlugin
-  )
+  // GitHub OAuth settings
+  const GITHUB_CLIENT_ID = getOptionalEnv('GITHUB_CLIENT_ID')
+  const GITHUB_CLIENT_SECRET = getOptionalEnv('GITHUB_CLIENT_SECRET')
+  const GITHUB_OAUTH_SCOPE = getOptionalEnv('GITHUB_OAUTH_SCOPE')
+
+  // Debug GitHub settings
+  console.log('GitHub OAuth debug:', {
+    hasClientId: !!GITHUB_CLIENT_ID,
+    clientIdPrefix: `${GITHUB_CLIENT_ID?.substring(0, 8)}...`,
+    hasClientSecret: !!GITHUB_CLIENT_SECRET,
+    scope: GITHUB_OAUTH_SCOPE || 'default: public_repo read:user',
+  })
+
+  // Add GitHub OAuth Device Flow plugin if client ID is configured
+  if (GITHUB_CLIENT_ID) {
+    console.log('Adding GitHub OAuth Device Flow plugin...')
+    try {
+      plugins.push(
+        createGitHubDeviceFlowPlugin({
+          clientId: GITHUB_CLIENT_ID,
+          clientSecret: GITHUB_CLIENT_SECRET,
+          scope: GITHUB_OAUTH_SCOPE || 'public_repo read:user',
+        })
+      )
+      console.log('GitHub OAuth Device Flow plugin added successfully')
+    } catch (error) {
+      console.error('Failed to create GitHub OAuth Device Flow plugin:', error)
+    }
+  } else {
+    console.log('GitHub OAuth disabled - adding test plugin for shared app demonstration')
+    // Add test plugin to demonstrate shared app functionality
+    plugins.push(testSharedAppPlugin)
+  }
 
   return plugins
 }

@@ -291,7 +291,25 @@ Hatago implements security measures based on the [Model Context Protocol Securit
 - **User Binding**: Bind session IDs to user-specific information
 - **Cryptographic Random**: Use secure random number generators for session ID generation
 
-**Current Status**: ⚠️ Session management not yet implemented in Hatago
+**Implementation Status**: ✅ **Fully Implemented**
+
+- ✅ **SessionManager**: Unified transport and session data management
+- ✅ **Session Rotation**: Automatic ID rotation on authentication (prevents session fixation)
+- ✅ **Plugin Namespace Isolation**: `plugin:{pluginId}:{key}` isolation pattern
+- ✅ **Cryptographic Session IDs**: 256-bit entropy using `crypto.getRandomValues()`
+- ✅ **No Session ID Logging**: Complete removal from logs for security
+- ✅ **TTL and Cleanup**: Automatic session expiration and resource cleanup
+- ✅ **Multi-User Isolation**: Complete session separation between users
+- ✅ **Comprehensive Testing**: Race conditions, security, and integration tests
+
+**Security Features**:
+
+- Session fixation attack prevention via automatic rotation
+- Plugin data isolation using namespace prefixes
+- Transport lifecycle management with proper cleanup
+- Runtime-agnostic design (Node.js, Workers, Deno, Bun)
+
+See [Session Management Documentation](./docs/session-management.md) for detailed usage.
 
 ### Request Validation and Input Security
 
@@ -595,7 +613,7 @@ This section provides comprehensive guidance for developers working with Hatago,
 
 **Priority 2 - Production Readiness**:
 
-1. **Session Management**: Implement secure session handling
+1. **Advanced Session Features**: Session-level mutex, tombstone pattern for rotated IDs
 2. **Audit Logging**: Add comprehensive audit logging
 3. **Privacy Policy**: Create privacy policy for directory submission
 4. **Health Check Enhancement**: Add detailed health and metrics endpoints

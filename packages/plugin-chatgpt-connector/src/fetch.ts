@@ -3,8 +3,8 @@
  */
 import type { HatagoPlugin } from '@hatago/core'
 import { z } from 'zod'
-import { fetchDocument } from './mock-data.js'
-import type { ChatGPTConnectorConfig, Document } from './types.js'
+import { fetchDocument, getDocumentMetadata } from './mock-data.js'
+import type { ChatGPTConnectorConfig, OpenAIDocument } from './types.js'
 
 /**
  * Creates the fetch tool for ChatGPT MCP connector
@@ -34,6 +34,7 @@ export function createFetchTool(_config: ChatGPTConnectorConfig = {}): HatagoPlu
                 }),
               },
             ],
+            isError: true,
           }
         }
 
@@ -51,16 +52,20 @@ export function createFetchTool(_config: ChatGPTConnectorConfig = {}): HatagoPlu
                   }),
                 },
               ],
+              isError: true,
             }
           }
 
-          // Return document in the format expected by ChatGPT
-          const response: Document = {
+          // Get metadata if available
+          const metadata = getDocumentMetadata ? getDocumentMetadata(id.trim()) : undefined
+
+          // Return document in OpenAI format
+          const response: OpenAIDocument = {
             id: document.id,
             title: document.title,
-            content: document.content,
-            text: document.text,
+            text: document.content, // content becomes text
             url: document.url,
+            ...(metadata && { metadata }),
           }
 
           return {
@@ -81,6 +86,7 @@ export function createFetchTool(_config: ChatGPTConnectorConfig = {}): HatagoPlu
                 }),
               },
             ],
+            isError: true,
           }
         }
       }

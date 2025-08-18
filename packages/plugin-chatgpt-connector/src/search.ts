@@ -4,7 +4,7 @@
 import type { HatagoPlugin } from '@hatago/core'
 import { z } from 'zod'
 import { searchDocuments } from './mock-data.js'
-import type { ChatGPTConnectorConfig, SearchResponse } from './types.js'
+import type { ChatGPTConnectorConfig, OpenAISearchResult } from './types.js'
 
 /**
  * Creates the search tool for ChatGPT MCP connector
@@ -27,14 +27,12 @@ export function createSearchTool(config: ChatGPTConnectorConfig = {}): HatagoPlu
         const { query } = args
 
         if (!query || !query.trim()) {
+          // Return empty array for OpenAI compliance
           return {
             content: [
               {
                 type: 'text',
-                text: JSON.stringify({
-                  results: [],
-                  total: 0,
-                } as SearchResponse),
+                text: JSON.stringify([]),
               },
             ],
           }
@@ -42,32 +40,35 @@ export function createSearchTool(config: ChatGPTConnectorConfig = {}): HatagoPlu
 
         try {
           // For now, we use mock data
-          const results = searchDocuments(query.trim(), maxResults)
+          const searchResults = searchDocuments(query.trim(), maxResults)
 
-          const response: SearchResponse = {
-            results,
-            total: results.length,
-          }
+          // Convert to OpenAI format
+          const openAIResults: OpenAISearchResult[] = searchResults.map(result => ({
+            id: result.id,
+            title: result.title,
+            text: result.snippet, // snippet becomes text
+            url: result.url,
+          }))
 
+          // Return array directly for OpenAI compliance
           return {
             content: [
               {
                 type: 'text',
-                text: JSON.stringify(response),
+                text: JSON.stringify(openAIResults),
               },
             ],
           }
-        } catch (error) {
+        } catch (_error) {
+          // Return empty array with error (OpenAI format)
           return {
             content: [
               {
                 type: 'text',
-                text: JSON.stringify({
-                  results: [],
-                  error: `Search failed: ${error instanceof Error ? error.message : String(error)}`,
-                }),
+                text: JSON.stringify([]),
               },
             ],
+            isError: true,
           }
         }
       }

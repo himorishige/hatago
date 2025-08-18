@@ -1,5 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { Hono } from 'hono'
+import type { MCPSessionContext } from './mcp-setup.js'
 import type { RuntimeAdapter } from './types/runtime.js'
 
 /**
@@ -29,6 +30,9 @@ export interface HatagoContext {
 
   /** Runtime adapter for environment and I/O operations */
   runtimeAdapter: RuntimeAdapter
+
+  /** Session management context (available when MCP session management is enabled) */
+  sessionContext?: MCPSessionContext
 }
 
 /**

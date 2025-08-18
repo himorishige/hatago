@@ -5,6 +5,23 @@ export interface ChatGPTConnectorConfig {
   dataSource?: 'docs' | 'api' | 'github' // Optional data source for different mock data sets
 }
 
+// OpenAI Responses API compliant types
+export interface OpenAISearchResult {
+  id: string
+  title: string
+  text: string // relevant snippet for search terms
+  url?: string
+}
+
+export interface OpenAIDocument {
+  id: string
+  title: string
+  text: string // full text content
+  url?: string
+  metadata?: Record<string, unknown>
+}
+
+// Legacy types for backward compatibility
 export interface Document {
   id: string
   title: string

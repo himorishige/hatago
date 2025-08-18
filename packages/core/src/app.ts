@@ -2,6 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { Hono } from 'hono'
 import { setupMCPEndpoint } from './mcp-setup.js'
 import { correlationId } from './middleware/correlation-id.js'
+import { mcpSecurityHeaders } from './middleware/security-headers.js'
 import { applyPlugins } from './plugins.js'
 import type { HatagoContext, HatagoMode, HatagoPlugin } from './types.js'
 import type { RuntimeAdapter } from './types/runtime.js'
@@ -41,8 +42,9 @@ export async function createApp(options: CreateAppOptions = {}) {
 
   const app = mode === 'http' ? new Hono() : null
 
-  // Add correlation ID middleware (only in HTTP mode)
+  // Add security and correlation ID middleware (only in HTTP mode)
   if (app) {
+    app.use('*', mcpSecurityHeaders())
     app.use('*', correlationId())
   }
 
@@ -70,6 +72,7 @@ export async function createApp(options: CreateAppOptions = {}) {
     getBaseUrl,
     mode,
     runtimeAdapter,
+    // sessionContext will be injected by mcp-setup when available
   }
 
   // Apply plugins
