@@ -213,28 +213,29 @@ describe('Session Rotation Security', () => {
       })
     })
 
-    it('should preserve session metadata correctly', () => {
+    it('should preserve session metadata correctly', async () => {
       const session = sessionManager.createSession()
       const oldId = session.id
       const originalCreatedAt = session.createdAt
 
       // Wait a bit to ensure timestamp difference
-      setTimeout(() => {
-        const newId = generateSessionId()
-        sessionManager.rotateSession(oldId, newId)
+      await new Promise(resolve => setTimeout(resolve, 10))
 
-        const newSession = sessionManager.getSession(newId)
-        expect(newSession).toBeDefined()
+      const newId = generateSessionId()
+      const rotated = sessionManager.rotateSession(oldId, newId)
+      expect(rotated).toBe(true)
 
-        // Creation time should be preserved from original
-        expect(newSession!.createdAt).toBe(originalCreatedAt)
+      const newSession = sessionManager.getSession(newId)
+      expect(newSession).toBeDefined()
 
-        // Last accessed should be updated
-        expect(newSession!.lastAccessedAt).toBeGreaterThan(originalCreatedAt)
+      // Creation time should be preserved from original
+      expect(newSession!.createdAt).toBe(originalCreatedAt)
 
-        // Expiration should be extended
-        expect(newSession!.expiresAt).toBeGreaterThan(session.expiresAt)
-      }, 10)
+      // Last accessed should be updated
+      expect(newSession!.lastAccessedAt).toBeGreaterThan(originalCreatedAt)
+
+      // Expiration should be extended
+      expect(newSession!.expiresAt).toBeGreaterThan(session.expiresAt)
     })
 
     it('should handle empty session data during rotation', () => {
