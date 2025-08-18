@@ -49,7 +49,7 @@ export interface PluginSessionContext {
  * @param pluginId Unique plugin identifier for namespace isolation
  * @returns Plugin-scoped session context
  */
-export function createPluginSessionContext(server: any, pluginId: string): PluginSessionContext {
+export function createPluginSessionContext(server: McpServer & { getSessionContext?: () => MCPSessionContext | undefined }, pluginId: string): PluginSessionContext {
   const sessionContext = server.getSessionContext?.() as MCPSessionContext | undefined
 
   if (!sessionContext?.sessionId) {
@@ -71,23 +71,23 @@ export function createPluginSessionContext(server: any, pluginId: string): Plugi
     sessionId: sessionContext.sessionId,
     sessionStore: {
       set: (key: string, data: unknown) => {
+        if (!sessionContext.sessionId) return
         sessionContext.sessionStore.setPluginData(
-          sessionContext.sessionId!,
+          sessionContext.sessionId,
           createPluginKey(key),
           data
         )
       },
       get: (key: string) => {
+        if (!sessionContext.sessionId) return undefined
         return sessionContext.sessionStore.getPluginData(
-          sessionContext.sessionId!,
+          sessionContext.sessionId,
           createPluginKey(key)
         )
       },
       delete: (key: string) => {
-        sessionContext.sessionStore.deletePluginData(
-          sessionContext.sessionId!,
-          createPluginKey(key)
-        )
+        if (!sessionContext.sessionId) return
+        sessionContext.sessionStore.deletePluginData(sessionContext.sessionId, createPluginKey(key))
       },
     },
   }
@@ -153,8 +153,13 @@ export const setupMCPEndpoint = (
     }
 
     // Inject session context into session-specific server
-    ;(sessionRecord.server as any).sessionContext = sessionContext
-    ;(sessionRecord.server as any).getSessionContext = () => sessionContext
+    // Extend server with session context
+    const extendedServer = sessionRecord.server as McpServer & {
+      sessionContext?: MCPSessionContext
+      getSessionContext?: () => MCPSessionContext
+    }
+    extendedServer.sessionContext = sessionContext
+    extendedServer.getSessionContext = () => sessionContext
 
     // Connect only if not already initialized
     if (!sessionRecord.initialized) {
@@ -181,5 +186,5 @@ export const setupMCPEndpoint = (
   }
 
   // Export cleanup for manual use
-  ;(setupMCPEndpoint as any).cleanup = cleanup
+  ;(setupMCPEndpoint as typeof setupMCPEndpoint & { cleanup?: () => void }).cleanup = cleanup
 }

@@ -1,0 +1,174 @@
+# Security-Focused Restricted Sandbox Configuration
+# This example demonstrates strict security controls for untrusted environments
+
+runner:
+  servers:
+    # Highly restricted filesystem access
+    - id: restricted-fs
+      name: Restricted Filesystem Access
+      package: '@modelcontextprotocol/server-filesystem'
+      packageManager: npx
+      args:
+        - '--readonly' # Read-only mode
+        - '--no-hidden' # Don't show hidden files
+        - '--max-depth' # Limit directory traversal
+        - '3'
+      transport:
+        type: stdio
+      autoStart: true
+
+      # Strict permissions
+      permissions:
+        network: false # No network access
+        fsRead: true # Can read files
+        fsWrite: false # Cannot write files
+        env: false # No environment access
+        spawn: false # Cannot spawn processes
+
+        # Restrict to specific directories
+        allowedPaths:
+          - './public' # Public content only
+          - './docs' # Documentation
+          # Explicitly exclude sensitive paths
+          # Even if parent is allowed, these are blocked
+        blockedPaths:
+          - './docs/internal'
+          - './public/.env'
+          - '**/.git/**'
+          - '**/node_modules/**'
+
+      # Resource limits
+      limits:
+        memory: 128 # 128MB max memory
+        cpuTime: 10 # 10 seconds CPU time
+        timeout: 5 # 5 second operation timeout
+
+    # Read-only database access
+    - id: readonly-db
+      name: Read-Only Database
+      package: '@modelcontextprotocol/server-sqlite'
+      packageManager: npx
+      args:
+        - '--db'
+        - './data/readonly.db'
+        - '--readonly' # SQLite read-only mode
+      transport:
+        type: stdio
+      autoStart: true
+
+      permissions:
+        network: false # No network
+        fsRead: true # Read database file
+        fsWrite: false # Cannot modify database
+        env: false # No environment
+        spawn: false # No subprocesses
+        allowedPaths:
+          - './data/readonly.db'
+
+      limits:
+        memory: 256 # Reasonable for queries
+        timeout: 10 # 10 second query timeout
+
+    # Isolated computation service
+    - id: compute
+      name: Isolated Compute Service
+      package: '@modelcontextprotocol/server-math'
+      packageManager: npx
+      transport:
+        type: stdio
+      autoStart: false # Manual activation
+
+      permissions:
+        network: false # Completely isolated
+        fsRead: false # No file access
+        fsWrite: false # No file writing
+        env: false # No environment
+        spawn: false # No subprocesses
+
+      limits:
+        memory: 64 # Minimal memory
+        cpuTime: 5 # Short computations only
+        timeout: 2 # 2 second timeout
+
+    # Sandboxed markdown renderer
+    - id: markdown
+      name: Markdown Renderer
+      package: '@modelcontextprotocol/server-markdown'
+      packageManager: npx
+      transport:
+        type: stdio
+      autoStart: true
+
+      permissions:
+        network: false # No external resources
+        fsRead: true # Read markdown files
+        fsWrite: false # Cannot create files
+        env: false
+        spawn: false
+        allowedPaths:
+          - './content' # Content directory only
+          - './templates' # Template files
+
+      limits:
+        memory: 128
+        timeout: 5
+
+  # Strict defaults for all servers
+  defaults:
+    packageManager: npx
+    autoStart: false # Manual start by default
+    restartOnFailure: false # No auto-restart
+    maxRestarts: 1 # Minimal restart attempts
+
+    # Default to no permissions
+    permissions:
+      network: false
+      fsRead: false
+      fsWrite: false
+      env: false
+      spawn: false
+
+    # Conservative resource limits
+    limits:
+      memory: 64 # 64MB default
+      cpuTime: 5 # 5 seconds CPU
+      timeout: 2 # 2 second timeout
+
+# Server configuration
+server:
+  port: 8787
+  hostname: '127.0.0.1' # Localhost only
+  cors: false # No CORS in restricted mode
+  timeout: 10000 # 10 second request timeout
+
+# Strict logging
+logging:
+  level: warn # Only warnings and errors
+  format: json # Structured logging
+  output: console
+
+  # Redact sensitive information
+  redact:
+    - password
+    - token
+    - secret
+    - key
+    - auth
+
+# Maximum security
+security:
+  requireAuth: true # Always require authentication
+  allowedOrigins: # Specific origins only
+    - https://trusted.example.com
+
+  rateLimit:
+    enabled: true # Strict rate limiting
+    windowMs: 60000 # 1 minute window
+    maxRequests: 10 # Only 10 requests per minute
+
+  # Additional security headers
+  headers:
+    'X-Frame-Options': 'DENY'
+    'X-Content-Type-Options': 'nosniff'
+    'Content-Security-Policy': "default-src 'none'"
+    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'

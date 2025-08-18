@@ -1,41 +1,13 @@
 {
   "proxy": {
-    "servers": [],
-    "namespaceStrategy": "prefix",
-    "conflictResolution": "rename",
-    "namespace": {
-      "separator": ":",
-      "caseSensitive": false,
-      "maxLength": 64,
-      "autoPrefix": {
-        "enabled": true,
-        "format": "{server}_{index}"
+    "servers": [
+      {
+        "endpoint": "https://mcp.deepwiki.com/mcp",
+        "id": "deepwiki",
+        "timeout": 30000
       }
-    },
-    "connectionPool": {
-      "maxConnections": 10,
-      "idleTimeout": 30000,
-      "keepAlive": true
-    }
-  },
-  "server": {
-    "port": 8787,
-    "hostname": "localhost",
-    "cors": true,
-    "timeout": 30000
-  },
-  "logging": {
-    "level": "info",
-    "format": "pretty",
-    "output": "console"
-  },
-  "security": {
-    "requireAuth": false,
-    "allowedOrigins": ["*"],
-    "rateLimit": {
-      "enabled": false,
-      "windowMs": 60000,
-      "maxRequests": 100
-    }
+    ],
+    "namespaceStrategy": "prefix",
+    "conflictResolution": "rename"
   }
 }

@@ -1,0 +1,206 @@
+{
+  "name": "Hatago MCP Server",
+  "description": "Lightweight, fast, and simple remote MCP server with ChatGPT connector support",
+  "version": "0.3.1",
+  "protocol_version": "2025-06-18",
+  "endpoints": {
+    "development": {
+      "url": "https://hatago-dev.example.workers.dev",
+      "transport": "sse",
+      "sse_endpoint": "/sse/",
+      "health_endpoint": "/health"
+    },
+    "staging": {
+      "url": "https://hatago-staging.example.workers.dev",
+      "transport": "sse",
+      "sse_endpoint": "/sse/",
+      "health_endpoint": "/health"
+    },
+    "production": {
+      "url": "https://hatago-prod.example.workers.dev",
+      "transport": "sse",
+      "sse_endpoint": "/sse/",
+      "health_endpoint": "/health"
+    }
+  },
+  "capabilities": {
+    "tools": [
+      {
+        "name": "search",
+        "description": "Search for documents and return relevant results with snippets. Used for finding information across the knowledge base.",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "Search query to find relevant documents"
+            }
+          },
+          "required": ["query"]
+        },
+        "output_format": {
+          "type": "object",
+          "properties": {
+            "results": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Unique identifier for the document or search result item"
+                  },
+                  "title": {
+                    "type": "string",
+                    "description": "String title for the search result item"
+                  },
+                  "text": {
+                    "type": "string",
+                    "description": "Relevant snippet of text for the search terms"
+                  },
+                  "url": {
+                    "type": "string",
+                    "description": "URL to the document or search result item (useful for citations)"
+                  }
+                },
+                "required": ["id", "title", "text"]
+              }
+            }
+          },
+          "required": ["results"]
+        }
+      },
+      {
+        "name": "fetch",
+        "description": "Retrieve the full content of a document by its ID. Useful for getting complete information about a specific document found through search.",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Unique identifier of the document to retrieve"
+            }
+          },
+          "required": ["id"]
+        },
+        "output_format": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Unique identifier for the document"
+            },
+            "title": {
+              "type": "string",
+              "description": "String title for the document"
+            },
+            "text": {
+              "type": "string",
+              "description": "Full text content of the document"
+            },
+            "url": {
+              "type": "string",
+              "description": "URL to the document (useful for citations)"
+            },
+            "metadata": {
+              "type": "object",
+              "description": "Optional metadata about the document"
+            }
+          },
+          "required": ["id", "title", "text"]
+        }
+      }
+    ],
+    "resources": [],
+    "prompts": []
+  },
+  "authentication": {
+    "type": "none",
+    "note": "Authentication can be enabled by setting REQUIRE_AUTH=true and configuring OAuth 2.1"
+  },
+  "cors": {
+    "allowed_origins": ["https://chatgpt.com", "https://chat.openai.com"],
+    "allowed_methods": ["GET", "POST", "OPTIONS"],
+    "allowed_headers": ["Content-Type", "Authorization"]
+  },
+  "documentation": {
+    "setup_guide": "https://github.com/himorishige/hatago/blob/main/packages/plugin-chatgpt-connector/README.md",
+    "api_reference": "https://modelcontextprotocol.io/specification/2025-06-18/",
+    "examples": {
+      "search_query": {
+        "description": "Example search query",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": 1,
+          "method": "tools/call",
+          "params": {
+            "name": "search",
+            "arguments": {
+              "query": "MCP protocol introduction"
+            }
+          }
+        }
+      },
+      "fetch_document": {
+        "description": "Example document fetch",
+        "request": {
+          "jsonrpc": "2.0",
+          "id": 2,
+          "method": "tools/call",
+          "params": {
+            "name": "fetch",
+            "arguments": {
+              "id": "doc-1"
+            }
+          }
+        }
+      }
+    }
+  },
+  "deployment": {
+    "platform": "Cloudflare Workers",
+    "regions": ["global"],
+    "scaling": {
+      "type": "automatic",
+      "cold_start": "~50ms",
+      "concurrent_requests": "unlimited"
+    }
+  },
+  "data_sources": {
+    "mock": {
+      "enabled": true,
+      "description": "Built-in mock data source with 5 sample documents for testing",
+      "documents": [
+        {
+          "id": "doc-1",
+          "title": "Introduction to MCP",
+          "category": "protocol"
+        },
+        {
+          "id": "doc-2",
+          "title": "ChatGPT Integration Guide",
+          "category": "integration"
+        },
+        {
+          "id": "doc-3",
+          "title": "Hatago Framework Overview",
+          "category": "framework"
+        },
+        {
+          "id": "doc-4",
+          "title": "Cloudflare Workers Deployment",
+          "category": "deployment"
+        },
+        {
+          "id": "doc-5",
+          "title": "Authentication and Security",
+          "category": "security"
+        }
+      ]
+    },
+    "custom": {
+      "enabled": false,
+      "description": "Custom data source can be implemented by extending the DataSource interface"
+    }
+  }
+}

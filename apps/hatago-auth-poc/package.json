@@ -1,0 +1,32 @@
+{
+  "name": "@hatago/auth-poc",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Hatago Authentication POC with Cloudflare Containers and OAuth",
+  "scripts": {
+    "dev": "wrangler dev",
+    "dev:local": "wrangler dev --local",
+    "deploy": "wrangler deploy",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@cloudflare/containers": "^0.0.25",
+    "@cloudflare/workers-oauth-provider": "^0.0.6",
+    "@hatago/core": "workspace:*",
+    "@hatago/hono-mcp": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.17.3",
+    "hono": "^4.9.2",
+    "zod": "^3.24.1",
+    "zod-to-json-schema": "^3.24.6"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241224.0",
+    "@types/node": "^20.17.6",
+    "typescript": "^5.7.2",
+    "vitest": "^3.2.4",
+    "wrangler": "^4.30.0"
+  }
+}

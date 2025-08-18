@@ -1,0 +1,105 @@
+# Development Environment Toolchain
+# This example shows multiple MCP servers working together for development
+
+runner:
+  servers:
+    # Filesystem access for source code
+    - id: filesystem
+      name: Filesystem Server
+      package: '@modelcontextprotocol/server-filesystem'
+      packageManager: npx
+      args:
+        - '--readonly' # Read-only mode for safety
+        - './src' # Limit to source directory
+      transport:
+        type: stdio
+      autoStart: true
+      permissions:
+        fsRead: true
+        fsWrite: false # Prevent accidental modifications
+        network: false
+        spawn: false
+        allowedPaths:
+          - './src'
+          - './tests'
+          - './docs'
+
+    # Git operations
+    - id: git
+      name: Git Server
+      package: '@modelcontextprotocol/server-git'
+      packageManager: npx
+      transport:
+        type: stdio
+      autoStart: true
+      permissions:
+        fsRead: true
+        fsWrite: false # Prevent direct file writes
+        spawn: true # Allow git commands
+        network: true # Allow fetch/push
+
+    # PostgreSQL database
+    - id: postgres
+      name: PostgreSQL Server
+      package: '@modelcontextprotocol/server-postgres'
+      packageManager: npx
+      env:
+        DATABASE_URL: 'postgresql://user:pass@localhost:5432/devdb'
+        PG_CONNECTION_TIMEOUT: '10000'
+      transport:
+        type: stdio
+      autoStart: true
+      restartOnFailure: true
+      maxRestarts: 3
+      permissions:
+        network: true # Database connections
+        fsRead: false
+        fsWrite: false
+        spawn: false
+      limits:
+        memory: 512 # Limit memory usage
+        timeout: 30 # Query timeout
+
+    # Optional: Slack notifications
+    - id: slack
+      name: Slack Integration
+      package: '@modelcontextprotocol/server-slack'
+      packageManager: npx
+      env:
+        SLACK_BOT_TOKEN: ${SLACK_BOT_TOKEN} # From environment
+        SLACK_APP_TOKEN: ${SLACK_APP_TOKEN}
+      transport:
+        type: stdio
+      autoStart: false # Manual start when needed
+      permissions:
+        network: true # API calls
+        allowedHosts:
+          - 'slack.com'
+          - '*.slack.com'
+
+  # Default settings for all servers
+  defaults:
+    packageManager: npx
+    restartOnFailure: true
+    maxRestarts: 3
+    limits:
+      memory: 256
+      timeout: 60
+
+# Main server configuration
+server:
+  port: 8787
+  hostname: localhost
+  cors: true # Enable for dev tools
+
+# Development logging
+logging:
+  level: debug
+  format: pretty
+  output: console
+
+# Security (relaxed for development)
+security:
+  requireAuth: false
+  allowedOrigins:
+    - '*' # Allow all origins in development

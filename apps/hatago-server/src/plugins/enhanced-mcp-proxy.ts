@@ -227,7 +227,7 @@ export const enhancedMcpProxy =
     const proxyConfig: ProxyConfig = await (async () => {
       if (options.useConfig !== false) {
         try {
-          const hatagoConfig = await loadConfig(options.configPath)
+          const hatagoConfig = await loadConfig({ searchFrom: process.cwd() })
           logger.info('Enhanced MCP Proxy using configuration file')
           return (
             hatagoConfig.proxy || {

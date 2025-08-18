@@ -1,0 +1,118 @@
+# Hatago Configuration Example (TOML format)
+# Copy to .hatagorc.toml, hatago.config.toml, or other supported locations
+
+# MCP Proxy Configuration
+[proxy]
+namespaceStrategy = "prefix"
+conflictResolution = "rename"
+
+[[proxy.servers]]
+id = "filesystem"
+name = "Filesystem MCP Server"
+url = "http://localhost:3001/mcp"
+enabled = true
+priority = 1
+
+[[proxy.servers]]
+id = "github"
+name = "GitHub MCP Server"
+url = "http://localhost:3002/mcp"
+enabled = true
+priority = 2
+
+[proxy.namespace]
+separator = "_"
+caseSensitive = false
+maxLength = 64
+
+[proxy.namespace.autoPrefix]
+enabled = true
+format = "{server}_{index}"
+
+# Server Configuration
+[server]
+port = 8787
+hostname = "localhost"
+cors = true
+timeout = 30000
+
+# Logging Configuration
+[logging]
+level = "info"  # trace, debug, info, warn, error, fatal
+format = "pretty"  # json, pretty
+output = "console"  # console, file
+
+# Security Configuration
+[security]
+requireAuth = false
+allowedOrigins = ["*"]
+
+[security.rateLimit]
+enabled = false
+windowMs = 60000
+maxRequests = 100
+
+# Runner Configuration (for subprocess MCP servers)
+[runner]
+registry = "https://registry.npmjs.org"
+cacheDir = "~/.hatago/cache"
+
+[[runner.servers]]
+id = "sqlite"
+name = "SQLite MCP Server"
+package = "@modelcontextprotocol/server-sqlite"
+packageManager = "npx"
+args = ["--db", "./data/database.db"]
+autoStart = true
+restartOnFailure = true
+maxRestarts = 3
+
+[runner.servers.transport]
+type = "stdio"
+
+[runner.servers.permissions]
+network = false
+fsRead = true
+fsWrite = true
+env = false
+spawn = false
+allowedPaths = ["./data"]
+
+[runner.servers.limits]
+memory = 256  # MB
+timeout = 30  # seconds
+
+[[runner.servers]]
+id = "puppeteer"
+name = "Puppeteer MCP Server"
+package = "@modelcontextprotocol/server-puppeteer"
+packageManager = "npx"
+autoStart = false
+restartOnFailure = true
+maxRestarts = 3
+
+[runner.servers.transport]
+type = "http"
+port = 3456
+
+[runner.servers.permissions]
+network = true
+fsRead = true
+fsWrite = false
+env = true
+spawn = true
+
+# Default settings for all servers
+[runner.defaults]
+packageManager = "npx"
+
+[runner.defaults.limits]
+memory = 512
+timeout = 60
+
+[runner.defaults.permissions]
+network = false
+fsRead = false
+fsWrite = false
+env = false
+spawn = false
