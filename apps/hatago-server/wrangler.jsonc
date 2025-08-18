@@ -3,4 +3,63 @@
   "name": "hatago",
   "main": "src/worker.ts",
   "compatibility_date": "2025-08-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Environment variables for different stages
+  "vars": {
+    "LOG_LEVEL": "info",
+    "LOG_FORMAT": "json",
+    "NOREN_MASKING": "true",
+    "CHATGPT_MODE": "true",
+    "CHATGPT_BASE_URL": "https://docs.hatago.dev/",
+    "CHATGPT_MAX_RESULTS": "10",
+    // GitHub OAuth App settings (Client Secret should be set via wrangler secret)
+    "GITHUB_CLIENT_ID": "Ov23li52j8wEO3PnBlNO",
+  },
+
+  // Development environment
+  "env": {
+    "development": {
+      "name": "hatago-dev",
+      "vars": {
+        "LOG_LEVEL": "debug",
+        "LOG_FORMAT": "pretty",
+        "REQUIRE_AUTH": "false",
+        "CHATGPT_MODE": "true",
+        "CHATGPT_BASE_URL": "https://hatago-dev.example.workers.dev/",
+        "NOREN_MASKING": "true",
+        "CHATGPT_MAX_RESULTS": "10",
+        // GitHub OAuth App settings for development
+        "GITHUB_CLIENT_ID": "Ov23li52j8wEO3PnBlNO",
+      },
+    },
+    "staging": {
+      "name": "hatago-staging",
+      "vars": {
+        "LOG_LEVEL": "info",
+        "LOG_FORMAT": "json",
+        "REQUIRE_AUTH": "true",
+        "CHATGPT_MODE": "true",
+        "CHATGPT_BASE_URL": "https://hatago-staging.example.workers.dev/",
+        "NOREN_MASKING": "true",
+        "CHATGPT_MAX_RESULTS": "10",
+        // GitHub OAuth App settings for staging
+        "GITHUB_CLIENT_ID": "Ov23li52j8wEO3PnBlNO",
+      },
+    },
+    "production": {
+      "name": "hatago-prod",
+      "vars": {
+        "LOG_LEVEL": "warn",
+        "LOG_FORMAT": "json",
+        "REQUIRE_AUTH": "true",
+        "CHATGPT_MODE": "true",
+        "CHATGPT_BASE_URL": "https://hatago-prod.example.workers.dev/",
+        "NOREN_MASKING": "true",
+        "CHATGPT_MAX_RESULTS": "10",
+        // GitHub OAuth App settings for production
+        "GITHUB_CLIENT_ID": "Ov23li52j8wEO3PnBlNO",
+      },
+    },
+  },
 }
