@@ -3,6 +3,8 @@
  * Provides structured logging capabilities across all runtimes
  */
 
+import type { RuntimeAdapter } from '../types/runtime.js'
+import { defaultRuntimeAdapter } from '../types/runtime.js'
 import type { SafeValue } from '../types/utils.types.js'
 import { TypeGuards } from '../types/utils.types.js'
 import type { LogEntry, LogLevel, Logger, LoggerConfig } from './types.js'
@@ -154,9 +156,14 @@ export const DEFAULT_LOGGER_CONFIG: LoggerConfig = {
 
 /**
  * Create default logger with common settings
+ * @param component Component name for the logger
+ * @param runtimeAdapter Runtime adapter for environment access
  */
-export function createDefaultLogger(component?: string): Logger {
-  const isProduction = typeof process !== 'undefined' && process.env?.NODE_ENV === 'production'
+export function createDefaultLogger(
+  component?: string,
+  runtimeAdapter: RuntimeAdapter = defaultRuntimeAdapter
+): Logger {
+  const isProduction = runtimeAdapter.getEnv('NODE_ENV') === 'production'
 
   const config: LoggerConfig = {
     ...DEFAULT_LOGGER_CONFIG,

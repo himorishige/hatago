@@ -4,6 +4,7 @@ A lightweight, fast, and extensible MCP (Model Context Protocol) server framewor
 
 [![npm version](https://badge.fury.io/js/@hatago%2Fcore.svg)](https://www.npmjs.com/package/@hatago/core)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/himorishige/hatago)
 
 ## Overview
 

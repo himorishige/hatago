@@ -7,18 +7,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createSecureLogger, getLogLevel, setLogLevel } from '../../src/logger/index.js'
 
 describe('Logger Basic', () => {
-  let mockStdout: ReturnType<typeof vi.spyOn>
-  let mockStderr: ReturnType<typeof vi.spyOn>
+  let mockConsoleLog: ReturnType<typeof vi.spyOn>
+  let mockConsoleError: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
-    // stdout/stderr のモック
-    mockStdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true)
-    mockStderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
+    // console.log/error のモック
+    mockConsoleLog = vi.spyOn(console, 'log').mockImplementation(() => {})
+    mockConsoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
   })
 
   afterEach(() => {
-    mockStdout.mockRestore()
-    mockStderr.mockRestore()
+    mockConsoleLog.mockRestore()
+    mockConsoleError.mockRestore()
     setLogLevel('info') // リセット
   })
 
@@ -50,9 +50,9 @@ describe('Logger Basic', () => {
       await logger.info('test message')
       await logger.error('error message')
 
-      // stdio モードでは全て stderr
-      expect(mockStdout).not.toHaveBeenCalled()
-      expect(mockStderr).toHaveBeenCalledTimes(2)
+      // stdio モードでは全て console.error
+      expect(mockConsoleLog).not.toHaveBeenCalled()
+      expect(mockConsoleError).toHaveBeenCalledTimes(2)
     })
 
     it('should route appropriately in HTTP mode', async () => {
@@ -61,9 +61,9 @@ describe('Logger Basic', () => {
       await logger.info('info message')
       await logger.error('error message')
 
-      // HTTP モードでは info → stdout, error → stderr
-      expect(mockStdout).toHaveBeenCalledTimes(1)
-      expect(mockStderr).toHaveBeenCalledTimes(1)
+      // HTTP モードでは info → console.log, error → console.error
+      expect(mockConsoleLog).toHaveBeenCalledTimes(1)
+      expect(mockConsoleError).toHaveBeenCalledTimes(1)
     })
   })
 

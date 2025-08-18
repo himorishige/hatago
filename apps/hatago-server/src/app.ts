@@ -3,10 +3,19 @@
  */
 import { createApp as createCoreApp } from '@hatago/core'
 import type { CreateAppOptions } from '@hatago/core'
+import { createPlugins } from './plugins/index.js'
 
 export async function createApp(options: CreateAppOptions = {}) {
-  // Simply delegate to core implementation
-  return createCoreApp(options)
+  // Create plugins based on environment variables
+  const plugins = createPlugins(options.env)
+
+  // Delegate to core implementation with dynamic plugins
+  const { app, server, ctx } = await createCoreApp({
+    ...options,
+    plugins,
+  })
+
+  return { app, server, ctx }
 }
 
 export type { CreateAppOptions, HatagoContext, HatagoMode, HatagoPlugin } from '@hatago/core'

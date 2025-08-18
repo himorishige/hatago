@@ -1,35 +1,16 @@
 /**
- * GitHub OAuth Test Plugin for Hatago
- * 実際のGitHub APIを使用したOAuth認証テスト
+ * GitHub OAuth Plugin for Hatago
+ * Provides both traditional OAuth and device flow authentication
  */
 
-import crypto from 'node:crypto'
-import { createServer } from 'node:http'
 import type { HatagoPlugin } from '@hatago/core'
 import { createDefaultLogger } from '@hatago/core'
 import { z } from 'zod'
 
 const logger = createDefaultLogger('plugin-github-oauth')
 
-/**
- * GitHub OAuth configuration
- */
-export interface GitHubOAuthConfig {
-  clientId?: string
-  clientSecret?: string
-  scope?: string
-  userAgent?: string
-}
-
-/**
- * GitHub token structure
- */
-interface GitHubToken {
-  access_token: string
-  token_type: string
-  scope?: string
-  expires_at?: number
-}
+// Import types from types.ts
+import type { GitHubOAuthConfig, GitHubToken } from './types.js'
 
 /**
  * GitHub OAuth client instance interface
@@ -50,9 +31,23 @@ interface GitHubOAuthClientInstance {
 }
 
 /**
+ * Type-safe environment variable getter
+ * @param env Environment variables object
+ * @param key Environment variable key
+ * @returns String value or undefined
+ */
+function getEnvVar(env: Record<string, unknown>, key: string): string | undefined {
+  const value = env[key]
+  return typeof value === 'string' ? value : undefined
+}
+
+/**
  * Create GitHub OAuth client instance
  */
-export function createGitHubOAuthClient(config: GitHubOAuthConfig): GitHubOAuthClientInstance {
+export function createGitHubOAuthClient(
+  config: GitHubOAuthConfig,
+  env: Record<string, unknown> = {}
+): GitHubOAuthClientInstance {
   const clientConfig = {
     scope: 'repo read:user',
     userAgent: 'Hatago-GitHub-Plugin/1.0',
@@ -82,55 +77,13 @@ export function createGitHubOAuthClient(config: GitHubOAuthConfig): GitHubOAuthC
     return Date.now() >= currentToken.expires_at
   }
 
-  // Helper functions for OAuth flow
-  const generatePKCE = (): { verifier: string; challenge: string } => {
-    const verifier = crypto.randomBytes(32).toString('base64url')
-    const challenge = crypto.createHash('sha256').update(verifier).digest('base64url')
-    return { verifier, challenge }
-  }
-
-  const buildAuthorizationUrl = (redirectUri: string, challenge: string): string => {
-    const params = new URLSearchParams({
-      client_id: clientConfig.clientId!,
-      redirect_uri: redirectUri,
-      scope: clientConfig.scope!,
-      state: crypto.randomBytes(16).toString('hex'),
-      code_challenge: challenge,
-      code_challenge_method: 'S256',
-    })
-
-    return `https://github.com/login/oauth/authorize?${params}`
-  }
-
-  const startCallbackServer = (): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const server = createServer((_req, res) => {
-        res.writeHead(200, { 'Content-Type': 'text/html' })
-        res.end('<h1>OAuth callback received</h1><p>You can close this window.</p>')
-        server.close()
-      })
-
-      server.listen(0, 'localhost', () => {
-        const address = server.address()
-        if (!address || typeof address === 'string') {
-          reject(new Error('Failed to start callback server'))
-          return
-        }
-
-        const port = address.port
-        resolve(`http://localhost:${port}/callback`)
-      })
-
-      server.on('error', reject)
-    })
-  }
-
   /**
    * Check if authentication is needed
    */
   const needsAuthentication = async (): Promise<boolean> => {
     // Check environment token first
-    const envToken = process.env.GITHUB_PERSONAL_ACCESS_TOKEN || process.env.GITHUB_TOKEN
+    const envToken =
+      getEnvVar(env, 'GITHUB_PERSONAL_ACCESS_TOKEN') || getEnvVar(env, 'GITHUB_TOKEN')
     if (envToken) {
       currentToken = {
         access_token: envToken,
@@ -155,25 +108,10 @@ export function createGitHubOAuthClient(config: GitHubOAuthConfig): GitHubOAuthC
 
     logger.info('Starting GitHub OAuth authentication flow', { tool: 'github_oauth' })
 
-    // Generate PKCE challenge
-    const pkce = generatePKCE()
-
-    // Start local callback server
-    const callbackUrl = await startCallbackServer()
-
-    // Build authorization URL
-    const authUrl = buildAuthorizationUrl(callbackUrl, pkce.challenge)
-
-    logger.info('GitHub OAuth authorization URL generated', {
-      tool: 'github_oauth',
-      auth_url: authUrl,
-    })
-    logger.info('Waiting for OAuth callback', { tool: 'github_oauth' })
-
-    // In a real implementation, this would open the browser
-    // For testing, we'll simulate the flow
+    // Traditional OAuth flow is not supported in MCP context
+    // Recommend using device flow instead
     throw new Error(
-      'OAuth flow requires manual browser interaction. Please set GITHUB_PERSONAL_ACCESS_TOKEN for testing.'
+      'Traditional OAuth flow not supported in MCP context. Please use device flow authentication instead.'
     )
   }
 
@@ -325,17 +263,21 @@ class _GitHubOAuthClient {
 }
 
 /**
- * GitHub OAuth Test Plugin
+ * GitHub OAuth Test Plugin (Legacy)
+ * @deprecated Use createGitHubDeviceFlowPlugin() for modern OAuth support
  */
 export const githubOAuthTestPlugin: HatagoPlugin = async ctx => {
-  const { app, server } = ctx
+  const { app, server, env = {} } = ctx
 
   // Initialize GitHub client
-  const githubClient = createGitHubOAuthClient({
-    clientId: process.env.GITHUB_CLIENT_ID,
-    clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    scope: 'repo read:user read:org',
-  })
+  const githubClient = createGitHubOAuthClient(
+    {
+      clientId: getEnvVar(env, 'GITHUB_CLIENT_ID'),
+      clientSecret: getEnvVar(env, 'GITHUB_CLIENT_SECRET'),
+      scope: 'repo read:user read:org',
+    },
+    env
+  )
 
   // Register MCP tools with handlers
   server.registerTool(
@@ -546,9 +488,9 @@ export const githubOAuthTestPlugin: HatagoPlugin = async ctx => {
           authentication: {
             required: needsAuth,
             configured: !!(
-              process.env.GITHUB_PERSONAL_ACCESS_TOKEN ||
-              process.env.GITHUB_TOKEN ||
-              (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET)
+              getEnvVar(env, 'GITHUB_PERSONAL_ACCESS_TOKEN') ||
+              getEnvVar(env, 'GITHUB_TOKEN') ||
+              (getEnvVar(env, 'GITHUB_CLIENT_ID') && getEnvVar(env, 'GITHUB_CLIENT_SECRET'))
             ),
           },
           timestamp: new Date().toISOString(),
@@ -579,10 +521,10 @@ export const githubOAuthTestPlugin: HatagoPlugin = async ctx => {
           '   GITHUB_PERSONAL_ACCESS_TOKEN=your_token',
         ],
         currentConfig: {
-          hasClientId: !!process.env.GITHUB_CLIENT_ID,
-          hasClientSecret: !!process.env.GITHUB_CLIENT_SECRET,
-          hasPersonalToken: !!process.env.GITHUB_PERSONAL_ACCESS_TOKEN,
-          hasGenericToken: !!process.env.GITHUB_TOKEN,
+          hasClientId: !!getEnvVar(env, 'GITHUB_CLIENT_ID'),
+          hasClientSecret: !!getEnvVar(env, 'GITHUB_CLIENT_SECRET'),
+          hasPersonalToken: !!getEnvVar(env, 'GITHUB_PERSONAL_ACCESS_TOKEN'),
+          hasGenericToken: !!getEnvVar(env, 'GITHUB_TOKEN'),
         },
       })
     })
@@ -605,3 +547,23 @@ export const githubOAuthTestPlugin: HatagoPlugin = async ctx => {
 }
 
 export default githubOAuthTestPlugin
+
+// Export device flow plugin and related utilities
+export { createGitHubDeviceFlowPlugin } from './plugin.js'
+export { SessionStore } from './session-store.js'
+export { testSharedAppPlugin } from './test-shared-app.js'
+export {
+  getGitHubConfig,
+  isUsingSharedApp,
+  getSetupInstructions,
+  HATAGO_GITHUB_CONFIG,
+} from './config.js'
+export type {
+  DeviceAuthSession,
+  GitHubDeviceFlowConfig,
+  GitHubToken,
+  GitHubOAuthConfig,
+  GitHubUser,
+  DeviceCodeResponse,
+  AccessTokenResponse,
+} from './types.js'
